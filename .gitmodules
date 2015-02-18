@@ -1,0 +1,3 @@
+[submodule "make-utils"]
+	path = make-utils
+	url = git@github.com:wichtounet/make-utils.git
