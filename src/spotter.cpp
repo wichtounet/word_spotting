@@ -71,6 +71,19 @@ int command_train(const config& conf){
     std::cout << valid_image_names.size() << " validation word images in set" << std::endl;
     std::cout << test_image_names.size() << " test word images in set" << std::endl;
 
+    std::vector<cv::Mat> normalized_train_images;
+
+    for(auto& name : train_image_names){
+        auto& image = dataset.word_images[name];
+
+        cv::Mat normalized(cv::Size(650, 120), CV_8U);
+        normalized = cv::Scalar(255);
+
+        image.copyTo(normalized(cv::Rect((650 - image.size().width) / 2, 0, image.size().width, 120)));
+        normalized_train_images.push_back(std::move(image));
+    }
+
+
     return 0;
 }
 
