@@ -1,3 +1,6 @@
 [submodule "make-utils"]
 	path = make-utils
 	url = git@github.com:wichtounet/make-utils.git
+[submodule "dll"]
+	path = dll
+	url = git@github.com:wichtounet/dll.git
