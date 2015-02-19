@@ -8,6 +8,8 @@
 
 #include <iostream>
 
+#include "dll/conv_rbm.hpp"
+
 #include "config.hpp"
 #include "washington.hpp"
 
@@ -72,6 +74,7 @@ int command_train(const config& conf){
     std::cout << test_image_names.size() << " test word images in set" << std::endl;
 
     std::vector<cv::Mat> normalized_train_images;
+    std::vector<etl::dyn_matrix<double>> training_images;
 
     for(auto& name : train_image_names){
         auto& image = dataset.word_images[name];
@@ -81,7 +84,34 @@ int command_train(const config& conf){
 
         image.copyTo(normalized(cv::Rect((650 - image.size().width) / 2, 0, image.size().width, 120)));
         normalized_train_images.push_back(std::move(image));
+
+        etl::dyn_matrix<double> training_image(650, 120);
+        //std::vector<double> training_image(650 * 120);
+
+        for(std::size_t y = 0; y < 120; ++y){
+            for(std::size_t x = 0; x < 120; ++x){
+                auto pixel = normalized.at<uint8_t>(cv::Point(x, y));
+
+                training_image(x, y) = pixel == 0 ? 0.0 : 1.0;
+            }
+        }
+
+        if(training_images.size() < 2400){
+        training_images.emplace_back(std::move(training_image));
+        }
     }
+
+    using crbm_t =
+        dll::conv_rbm_desc<
+            650, 120, 1, 620, 90, 40,
+            dll::batch_size<25>,
+            dll::parallel
+        >::rbm_t;
+
+    auto crbm = std::make_unique<crbm_t>();
+
+    crbm->train(training_images, 1);
+
 
 
     return 0;
