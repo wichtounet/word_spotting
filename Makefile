@@ -12,9 +12,10 @@ $(eval $(call auto_folder_compile,src))
 $(eval $(call auto_add_executable,spotter))
 
 release: release_spotter
+release_debug: release_debug_spotter
 debug: debug_spotter
 
-all: release debug
+all: release release_debug debug
 
 cppcheck:
 	cppcheck --enable=all --std=c++11 -I include src
