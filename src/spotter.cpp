@@ -9,11 +9,46 @@
 #include <iostream>
 
 #include "dll/conv_rbm.hpp"
+#include "dll/conv_rbm_mp.hpp"
+
+#include "cpp_utils/parallel.hpp"
 
 #include "config.hpp"
 #include "washington.hpp"
 
+template<typename T>
+std::ostream& operator<<(std::ostream& stream, const std::vector<T>& vec){
+    std::string comma = "";
+    stream << "[";
+    for(auto& v : vec){
+        stream << comma << v;
+        comma = ", ";
+    }
+    stream << "]";
+
+    return stream;
+}
+
 namespace {
+
+etl::dyn_matrix<double> mat_to_dyn(cv::Mat& image){
+    cv::Mat normalized(cv::Size(650, 120), CV_8U);
+    normalized = cv::Scalar(255);
+
+    image.copyTo(normalized(cv::Rect((650 - image.size().width) / 2, 0, image.size().width, 120)));
+
+    etl::dyn_matrix<double> training_image(650, 120);
+
+    for(std::size_t y = 0; y < 120; ++y){
+        for(std::size_t x = 0; x < 650; ++x){
+            auto pixel = normalized.at<uint8_t>(cv::Point(x, y));
+
+            training_image(x, y) = pixel == 0 ? 0.0 : 1.0;
+        }
+    }
+
+    return training_image;
+}
 
 int command_train(const config& conf){
     if(conf.files.size() < 2){
@@ -44,25 +79,27 @@ int command_train(const config& conf){
     std::cout << set.test_set.size() << " test line images in set" << std::endl;
 
     std::vector<std::string> train_image_names;
+    std::vector<std::string> train_word_names;
     std::vector<std::string> test_image_names;
     std::vector<std::string> valid_image_names;
 
     for(auto& word_image : dataset.word_images){
         auto& name = word_image.first;
         for(auto& train_image : set.train_set){
-            if(name.find(std::string(train_image.begin(), train_image.end() - 4)) == 0){
+            if(name.find(train_image) == 0){
                 train_image_names.push_back(name);
+                train_word_names.emplace_back(name.begin(), name.end() - 4);
                 break;
             }
         }
         for(auto& test_image : set.test_set){
-            if(name.find(std::string(test_image.begin(), test_image.end() - 4)) == 0){
+            if(name.find(test_image) == 0){
                 test_image_names.push_back(name);
                 break;
             }
         }
         for(auto& valid_image : set.validation_set){
-            if(name.find(std::string(valid_image.begin(), valid_image.end() - 4)) == 0){
+            if(name.find(valid_image) == 0){
                 valid_image_names.push_back(name);
                 break;
             }
@@ -73,46 +110,140 @@ int command_train(const config& conf){
     std::cout << valid_image_names.size() << " validation word images in set" << std::endl;
     std::cout << test_image_names.size() << " test word images in set" << std::endl;
 
-    std::vector<cv::Mat> normalized_train_images;
     std::vector<etl::dyn_matrix<double>> training_images;
 
     for(auto& name : train_image_names){
-        auto& image = dataset.word_images[name];
-
-        cv::Mat normalized(cv::Size(650, 120), CV_8U);
-        normalized = cv::Scalar(255);
-
-        image.copyTo(normalized(cv::Rect((650 - image.size().width) / 2, 0, image.size().width, 120)));
-        normalized_train_images.push_back(std::move(image));
-
-        etl::dyn_matrix<double> training_image(650, 120);
-        //std::vector<double> training_image(650 * 120);
-
-        for(std::size_t y = 0; y < 120; ++y){
-            for(std::size_t x = 0; x < 120; ++x){
-                auto pixel = normalized.at<uint8_t>(cv::Point(x, y));
-
-                training_image(x, y) = pixel == 0 ? 0.0 : 1.0;
-            }
-        }
-
         if(training_images.size() < 2400){
-        training_images.emplace_back(std::move(training_image));
+            training_images.emplace_back(mat_to_dyn(dataset.word_images[name]));
         }
     }
 
     using crbm_t =
         dll::conv_rbm_desc<
-            650, 120, 1, 620, 90, 40,
-            dll::batch_size<25>,
-            dll::parallel
+              650, 120, 1           //650x120 input image (1 channel)
+            , 632, 102, 12
+            //, 2                     //Probabilistic max pooling (2x2)
+            , dll::batch_size<25>
+            , dll::parallel
+            , dll::verbose
+            , dll::momentum
+            , dll::weight_decay<dll::decay_type::L2>
+
         >::rbm_t;
 
     auto crbm = std::make_unique<crbm_t>();
 
-    crbm->train(training_images, 1);
+    //crbm->learning_rate *= 0.1;
 
+    std::cout << crbm->output_size() << " features" << std::endl;
 
+    crbm->train(training_images, 5);
+    crbm->store("method_1.dat");
+    //crbm->load("method_1.dat");
+
+    constexpr const std::size_t MAX_N = 50;
+
+    std::array<double, MAX_N + 1> recalls;
+    std::array<double, MAX_N + 1> precisions;
+    std::array<double, MAX_N + 1> fn;
+
+    std::fill(recalls.begin(), recalls.end(), 0);
+    std::fill(precisions.begin(), precisions.end(), 0);
+    std::fill(fn.begin(), fn.end(), 0);
+
+    std::cout << "Compute features on the test set..." << std::endl;
+
+    std::vector<etl::dyn_matrix<double, 3>> test_features_a;
+    std::vector<etl::dyn_matrix<double, 3>> test_features_s;
+
+    for(std::size_t i = 0; i < test_image_names.size(); ++i){
+        test_features_a.push_back(crbm->prepare_one_output());
+        test_features_s.push_back(crbm->prepare_one_output());
+    }
+
+    cpp::default_thread_pool<> pool;
+
+    cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
+        [&test_features_a, &test_features_s, &crbm, &dataset](auto& test_image, std::size_t i){
+            auto test_v = mat_to_dyn(dataset.word_images[test_image]);
+
+            crbm->activate_one(test_v, test_features_a[i], test_features_s[i]);
+        });
+
+    std::cout << "... done" << std::endl;
+
+    std::cout << "Evaluate performance..." << std::endl;
+
+    std::size_t evaluated = 0;
+
+    for(auto& keyword : set.keywords){
+        std::string training_image;
+        for(auto& labels : dataset.word_labels){
+            if(keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()){
+                training_image = labels.first;
+                break;
+            }
+        }
+
+        if(training_image.empty()){
+            continue;
+        }
+
+        ++evaluated;
+
+        auto ref_v = mat_to_dyn(dataset.word_images[training_image + ".png"]);
+        auto ref_a = crbm->prepare_one_output();
+        auto ref_s = crbm->prepare_one_output();
+
+        crbm->activate_one(ref_v, ref_a, ref_s);
+
+        std::vector<std::pair<std::string, double>> diffs_a;
+        std::vector<std::pair<std::string, double>> diffs_s;
+
+        for(std::size_t t = 0; t < test_image_names.size(); ++t){
+            decltype(auto) test_image = test_image_names[t];
+
+            double diff_a = etl::sum(etl::abs(ref_a - test_features_a[t]));
+            diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
+
+            double diff_s = etl::sum(etl::abs(ref_s - test_features_s[t]));
+            diffs_s.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_s);
+        }
+
+        std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
+        std::sort(diffs_s.begin(), diffs_s.end(), [](auto& a, auto& b){ return a.second < b.second; });
+
+        auto total_positive = std::count_if(diffs_a.begin(), diffs_a.end(),
+            [&dataset, &keyword](auto& d){ return dataset.word_labels[d.first] == keyword; });
+
+        std::cout << "Best diff(a):" << diffs_a.front().second << std::endl;
+        std::cout << "Worst diff(a):" << diffs_a.back().second << std::endl;
+        std::cout << "Best diff(s):" << diffs_s.front().second << std::endl;
+        std::cout << "Worst diff(s):" << diffs_s.back().second << std::endl;
+
+        for(std::size_t n = 1; n <= MAX_N; ++n){
+            int tp = 0;
+
+            for(std::size_t i = 0; i < n && i < diffs_a.size(); ++i){
+                if(dataset.word_labels[diffs_a[i].first] == keyword){
+                    ++tp;
+                }
+            }
+
+            recalls[n] += tp;
+            precisions[n] += tp;
+            fn[n] += total_positive - tp;
+        }
+    }
+
+    std::cout << "... done" << std::endl;
+
+    std::cout << evaluated << " keywords evaluated" << std::endl;
+
+    for(std::size_t n = 1; n <= MAX_N; ++n){
+        std::cout << "Precision(" << n << ") = " << (precisions[n] / (n * set.keywords.size())) << std::endl;
+        std::cout << "Recall(" << n << ") = " << (recalls[n] / fn[n]) << std::endl;
+    }
 
     return 0;
 }

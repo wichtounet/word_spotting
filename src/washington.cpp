@@ -110,7 +110,6 @@ void read_list(std::vector<std::string>& list, const std::string& path){
         }
     }
 }
-
 void read_keywords(std::vector<std::vector<std::string>>& list, const std::string& path){
     std::ifstream stream(path);
 
