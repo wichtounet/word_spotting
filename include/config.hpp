@@ -16,6 +16,7 @@ struct config {
     std::vector<std::string> files;
     std::string command;
     bool method_1 = false;
+    bool half = false;
 };
 
 void print_usage();
