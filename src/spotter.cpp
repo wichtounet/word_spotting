@@ -270,6 +270,7 @@ int command_train(const config& conf){
                         , dll::verbose
                         , dll::momentum
                         , dll::weight_decay<dll::decay_type::L2>
+                        , dll::dbn_only
                         //, dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
                     , dll::mp_layer_3d_desc<96,318,48,1,2,2>::layer_t
@@ -283,6 +284,7 @@ int command_train(const config& conf){
                         , dll::verbose
                         , dll::momentum
                         , dll::weight_decay<dll::decay_type::L2>
+                        , dll::dbn_only
                         //, dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
                     , dll::conv_rbm_desc<
@@ -295,6 +297,7 @@ int command_train(const config& conf){
                         , dll::verbose
                         , dll::momentum
                         , dll::weight_decay<dll::decay_type::L2>
+                        , dll::dbn_only
                         //, dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
                 >
