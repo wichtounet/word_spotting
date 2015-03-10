@@ -135,8 +135,8 @@ int command_train(const config& conf){
 
     std::vector<etl::dyn_matrix<weight>> training_images;
 
-    train_image_names.resize(300);
-    test_image_names.resize(300);
+    //train_image_names.resize(300);
+    //test_image_names.resize(300);
 
     for(auto& name : train_image_names){
         training_images.emplace_back(mat_to_dyn(conf, dataset.word_images[name]));
@@ -301,6 +301,7 @@ int command_train(const config& conf){
                         //, dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
                 >
+                , dll::memory
             >::dbn_t;
 
         auto cdbn = std::make_unique<cdbn_t>();
@@ -315,6 +316,7 @@ int command_train(const config& conf){
 
         std::cout << "DBN size: " << sizeof(cdbn_t) * div << "MB" << std::endl;
 
+        std::cout << "Layer 0 input storage: " << cdbn->template layer<0>().input_size() * mul << "MB necessary" << std::endl;
         std::cout << "Layer 0 tmp storage: " << cdbn->template layer<0>().output_size() * mul << "MB necessary" << std::endl;
         std::cout << "Layer 1 tmp storage: " << cdbn->template layer<1>().output_size() * mul << "MB necessary" << std::endl;
         std::cout << "Layer 2 tmp storage: " << cdbn->template layer<2>().output_size() * mul << "MB necessary" << std::endl;
