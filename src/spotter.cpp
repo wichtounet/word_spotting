@@ -350,10 +350,10 @@ int command_train(const config& conf){
             , dll::weight_decay<dll::decay_type::L2>
             >::rbm_t;
 
-        //auto crbm = std::make_unique<crbm_t>();
+        auto crbm = std::make_unique<crbm_t>();
 
-        //std::cout << crbm->output_size() << " output features" << std::endl;
-        //std::cout << ((train_image_names.size() * crbm->output_size() * sizeof(std::size_t)) / 1024 / 1024) << "MB necessary" << std::endl;
+        std::cout << crbm->output_size() << " output features" << std::endl;
+        std::cout << ((train_image_names.size() * crbm->output_size() * sizeof(std::size_t)) / 1024 / 1024) << "MB necessary" << std::endl;
 
         //crbm->train(training_images, 5);
         //crbm->store("method_1.dat");
