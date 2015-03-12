@@ -12,6 +12,12 @@ ifneq (,$(findstring clang,$(CXX)))
 	CXX_FLAGS += -stdlib=libc++
 endif
 
+ifneq (,$(findstring g++,$(CXX)))
+ifneq (,$(GCC_LD_LIBRARY_PATH))
+LD_FLAGS += -L$(GCC_LD_LIBRARY_PATH)
+endif
+endif
+
 $(eval $(call auto_folder_compile,src))
 $(eval $(call auto_add_executable,spotter))
 
