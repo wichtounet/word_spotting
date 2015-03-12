@@ -342,7 +342,7 @@ int command_train(const config& conf){
         //cdbn->load("method_1_half.dat");
 
         evaluate(cdbn);
-    } else if(conf.half){
+    } else if(conf.quarter){
         static constexpr const std::size_t NF = 7;
         static constexpr const std::size_t NF2 = 3;
         static constexpr const std::size_t NF3 = 3;
