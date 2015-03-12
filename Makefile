@@ -9,12 +9,12 @@ CXX_FLAGS += -Idll/etl/include -Idll/etl/lib/include -Idll/nice_svm/include -Idl
 LD_FLAGS  += -pthread -lopencv_core -lopencv_imgproc -lopencv_highgui -lsvm
 
 ifneq (,$(findstring clang,$(CXX)))
-	CXX_FLAGS += -stdlib=libc++
-endif
-
+CXX_FLAGS += -stdlib=libc++
+else
 ifneq (,$(findstring g++,$(CXX)))
 ifneq (,$(GCC_LD_LIBRARY_PATH))
 LD_FLAGS += -L$(GCC_LD_LIBRARY_PATH)
+endif
 endif
 endif
 
