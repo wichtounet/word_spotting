@@ -29,6 +29,9 @@ constexpr const std::size_t MAX_N = 50;
 static_assert(WIDTH % 2 == 0, "Width must be divisible by 2");
 static_assert(HEIGHT % 2 == 0, "Height must be divisible by 2");
 
+static_assert(WIDTH % 4 == 0, "Width must be divisible by 4");
+static_assert(HEIGHT % 4 == 0, "Height must be divisible by 4");
+
 template<typename T>
 std::ostream& operator<<(std::ostream& stream, const std::vector<T>& vec){
     std::string comma = "";
@@ -52,6 +55,10 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, cv::Mat& image){
 
     if(conf.half){
         cv::Mat scaled_normalized(cv::Size(WIDTH / 2, HEIGHT / 2), CV_8U);
+        cv::resize(normalized, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
+        cv::adaptiveThreshold(scaled_normalized, normalized, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
+    } else if(conf.quarter) {
+        cv::Mat scaled_normalized(cv::Size(WIDTH / 4, HEIGHT / 4), CV_8U);
         cv::resize(normalized, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
         cv::adaptiveThreshold(scaled_normalized, normalized, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
     }
@@ -262,41 +269,41 @@ int command_train(const config& conf){
                     dll::conv_rbm_desc<
                         WIDTH / 2, HEIGHT / 2, 1                    //330x60 input image (1 channel)
                         , WIDTH / 2 + 1 - NF , HEIGHT / 2 + 1 - NF  //Configure the size of the filter
-                        , 96                                       //Number of feature maps
+                        , 30                                       //Number of feature maps
                         //, 2                                       //Probabilistic max pooling (2x2)
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
                         , dll::parallel
                         , dll::verbose
                         , dll::momentum
-                        , dll::weight_decay<dll::decay_type::L2>
+                        //, dll::weight_decay<dll::decay_type::L2>
                         , dll::dbn_only
                         //, dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
-                    , dll::mp_layer_3d_desc<96,318,48,1,2,2>::layer_t
+                    , dll::mp_layer_3d_desc<30,318,48,1,2,2>::layer_t
                     , dll::conv_rbm_desc<
-                        159, 24, 96
+                        159, 24, 30
                         , 159 + 1 - NF2 , 24 + 1 - NF2
-                        , 64
+                        , 30
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
                         , dll::parallel
                         , dll::verbose
                         , dll::momentum
-                        , dll::weight_decay<dll::decay_type::L2>
+                        //, dll::weight_decay<dll::decay_type::L2>
                         , dll::dbn_only
                         //, dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
                     , dll::conv_rbm_desc<
-                        152, 17, 64
+                        152, 17, 30
                         , 152 + 1 - NF3 , 17 + 1 - NF3
-                        , 32
+                        , 30
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
                         , dll::parallel
                         , dll::verbose
                         , dll::momentum
-                        , dll::weight_decay<dll::decay_type::L2>
+                        //, dll::weight_decay<dll::decay_type::L2>
                         , dll::dbn_only
                         //, dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
@@ -327,12 +334,79 @@ int command_train(const config& conf){
 
         std::cout << "Final test features:" << test_image_names.size() * cdbn->output_size() * div << "MB" << std::endl;
 
-        cdbn->template layer<0>().learning_rate /= 10;
+        //cdbn->template layer<0>().learning_rate /= 10;
         //cdbn->template layer<1>()->learning_rate *= 10;
 
-        cdbn->pretrain(training_images, 10);
+        cdbn->pretrain(training_images, 2);
         cdbn->store("method_1_half.dat");
         //cdbn->load("method_1_half.dat");
+
+        evaluate(cdbn);
+    } else if(conf.half){
+        static constexpr const std::size_t NF = 7;
+        static constexpr const std::size_t NF2 = 3;
+        static constexpr const std::size_t NF3 = 3;
+
+        using cdbn_t =
+            dll::dbn_desc<
+                dll::dbn_layers<
+                    dll::conv_rbm_desc<
+                        WIDTH / 4, HEIGHT / 4, 1                    //165x30 input image (1 channel)
+                        , WIDTH / 4 + 1 - NF , HEIGHT / 4 + 1 - NF  //Configure the size of the filter
+                        , 30                                        //Number of feature maps
+                        //, 2                                       //Probabilistic max pooling (2x2)
+                        , dll::weight_type<weight>
+                        , dll::batch_size<25>
+                        , dll::parallel
+                        , dll::verbose
+                        , dll::momentum
+                        //, dll::weight_decay<dll::decay_type::L2>
+                        , dll::dbn_only
+                        //, dll::sparsity<dll::sparsity_method::LEE>
+                    >::rbm_t
+                    //, dll::mp_layer_3d_desc<30,318,48,1,2,2>::layer_t
+                    , dll::conv_rbm_desc<
+                        159, 24, 30
+                        , 159 + 1 - NF2 , 24 + 1 - NF2
+                        , 30
+                        , dll::weight_type<weight>
+                        , dll::batch_size<25>
+                        , dll::parallel
+                        , dll::verbose
+                        , dll::momentum
+                        //, dll::weight_decay<dll::decay_type::L2>
+                        , dll::dbn_only
+                        //, dll::sparsity<dll::sparsity_method::LEE>
+                    >::rbm_t
+                    , dll::conv_rbm_desc<
+                        157, 22, 30
+                        , 157 + 1 - NF3 , 22 + 1 - NF3
+                        , 30
+                        , dll::weight_type<weight>
+                        , dll::batch_size<25>
+                        , dll::parallel
+                        , dll::verbose
+                        , dll::momentum
+                        //, dll::weight_decay<dll::decay_type::L2>
+                        , dll::dbn_only
+                        //, dll::sparsity<dll::sparsity_method::LEE>
+                    >::rbm_t
+                >
+                , dll::memory
+            >::dbn_t;
+
+        auto cdbn = std::make_unique<cdbn_t>();
+
+        cdbn->display();
+
+        std::cout << cdbn->output_size() << " output features" << std::endl;
+
+        //cdbn->template layer<0>().learning_rate /= 10;
+        //cdbn->template layer<1>()->learning_rate *= 10;
+
+        cdbn->pretrain(training_images, 2);
+        cdbn->store("method_1_quarter.dat");
+        //cdbn->load("method_1_quarter.dat");
 
         evaluate(cdbn);
     } else {
