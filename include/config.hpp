@@ -17,6 +17,7 @@ struct config {
     std::string command;
     bool method_1 = false;
     bool half = false;
+    bool quarter = false;
 };
 
 void print_usage();
