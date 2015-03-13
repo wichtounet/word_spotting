@@ -326,6 +326,10 @@ int command_train(const config& conf){
         cdbn->store("method_1_half.dat");
         //cdbn->load("method_1_half.dat");
 
+        std::cout << "Evaluate on training set" << std::endl;
+        evaluate(cdbn, train_word_names, train_image_names);
+
+        std::cout << "Evaluate on test set" << std::endl;
         evaluate(cdbn, train_word_names, test_image_names);
     } else if(conf.quarter){
         static constexpr const std::size_t NF = 7;
@@ -395,32 +399,44 @@ int command_train(const config& conf){
         cdbn->store("method_1_quarter.dat");
         //cdbn->load("method_1_quarter.dat");
 
+        std::cout << "Evaluate on training set" << std::endl;
+        evaluate(cdbn, train_word_names, train_image_names);
+
+        std::cout << "Evaluate on test set" << std::endl;
         evaluate(cdbn, train_word_names, test_image_names);
     } else {
-        using crbm_t =
-            dll::conv_rbm_desc<
-            WIDTH, HEIGHT, 1                     //660x120 input image (1 channel)
-            , WIDTH + 1 - 19 , HEIGHT + 1 - 19   //Configure the size of the filter
-            , 12                                 //Number of feature maps
-            //, 2                                //Probabilistic max pooling (2x2)
-            , dll::batch_size<25>
-            , dll::parallel
-            , dll::verbose
-            , dll::momentum
-            , dll::weight_type<weight>
-            , dll::weight_decay<dll::decay_type::L2>
-            >::rbm_t;
+        using cdbn_t =
+            dll::dbn_desc<
+                dll::dbn_layers<
+                    dll::conv_rbm_desc<
+                    WIDTH, HEIGHT, 1                     //660x120 input image (1 channel)
+                    , WIDTH + 1 - 19 , HEIGHT + 1 - 19   //Configure the size of the filter
+                    , 12                                 //Number of feature maps
+                    //, 2                                //Probabilistic max pooling (2x2)
+                    , dll::batch_size<25>
+                    , dll::parallel
+                    , dll::verbose
+                    , dll::momentum
+                    , dll::weight_type<weight>
+                    , dll::weight_decay<dll::decay_type::L2>
+                    >::rbm_t
+                >
+                , dll::memory
+            >::dbn_t;
 
-        auto crbm = std::make_unique<crbm_t>();
+        auto cdbn = std::make_unique<cdbn_t>();
 
-        std::cout << crbm->output_size() << " output features" << std::endl;
-        std::cout << ((train_image_names.size() * crbm->output_size() * sizeof(std::size_t)) / 1024 / 1024) << "MB necessary" << std::endl;
+        std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        //crbm->train(training_images, 5);
-        //crbm->store("method_1.dat");
-        //crbm->load("method_1.dat");
+        cdbn->pretrain(training_images, 10);
+        cdbn->store("method_1.dat");
+        //cdbn->load("method_1.dat");
 
-        //evaluate(crbm, train_word_names, test_image_names);
+        std::cout << "Evaluate on training set" << std::endl;
+        evaluate(cdbn, train_word_names, train_image_names);
+
+        std::cout << "Evaluate on test set" << std::endl;
+        evaluate(cdbn, train_word_names, test_image_names);
     }
 
     return 0;
