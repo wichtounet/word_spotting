@@ -24,7 +24,7 @@ using weight = double;
 static constexpr const std::size_t WIDTH = 660;
 static constexpr const std::size_t HEIGHT = 120;
 
-constexpr const std::size_t MAX_N = 50;
+constexpr const std::size_t MAX_N = 25;
 
 static_assert(WIDTH % 2 == 0, "Width must be divisible by 2");
 static_assert(HEIGHT % 2 == 0, "Height must be divisible by 2");
@@ -149,7 +149,7 @@ int command_train(const config& conf){
         training_images.emplace_back(mat_to_dyn(conf, dataset.word_images[name]));
     }
 
-    auto evaluate = [&](auto& crbm){
+    auto evaluate = [&dataset,&set,&conf](auto& crbm, auto& train_word_names, auto& test_image_names){
         std::array<double, MAX_N + 1> tp;
         std::array<double, MAX_N + 1> fn;
 
@@ -341,7 +341,7 @@ int command_train(const config& conf){
         cdbn->store("method_1_half.dat");
         //cdbn->load("method_1_half.dat");
 
-        evaluate(cdbn);
+        evaluate(cdbn, train_word_names, test_image_names);
     } else if(conf.quarter){
         static constexpr const std::size_t NF = 7;
         static constexpr const std::size_t NF2 = 3;
@@ -410,7 +410,7 @@ int command_train(const config& conf){
         cdbn->store("method_1_quarter.dat");
         //cdbn->load("method_1_quarter.dat");
 
-        evaluate(cdbn);
+        evaluate(cdbn, train_word_names, test_image_names);
     } else {
         using crbm_t =
             dll::conv_rbm_desc<
@@ -435,7 +435,7 @@ int command_train(const config& conf){
         //crbm->store("method_1.dat");
         //crbm->load("method_1.dat");
 
-        //evaluate(crbm);
+        //evaluate(crbm, train_word_names, test_image_names);
     }
 
     return 0;
