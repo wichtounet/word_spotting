@@ -156,20 +156,16 @@ int command_train(const config& conf){
         std::fill(tp.begin(), tp.end(), 0);
         std::fill(fn.begin(), fn.end(), 0);
 
-        std::cout << "Compute features on the test set..." << std::endl;
-
         std::vector<etl::dyn_matrix<weight, 3>> test_features_a;
-        //std::vector<etl::dyn_matrix<weight, 3>> test_features_s;
 
         for(std::size_t i = 0; i < test_image_names.size(); ++i){
             test_features_a.emplace_back(crbm->prepare_one_output());
-            //test_features_s.push_back(crbm->prepare_one_output());
         }
 
         cpp::default_thread_pool<> pool;
 
         cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
-            [&test_features_a, /*&test_features_s, */&crbm, &dataset, &conf](auto& test_image, std::size_t i){
+            [&test_features_a, &crbm, &dataset, &conf](auto& test_image, std::size_t i){
                 auto test_v = mat_to_dyn(conf, dataset.word_images[test_image]);
 
                 crbm->activation_probabilities(test_v, test_features_a[i]);
@@ -209,30 +205,19 @@ int command_train(const config& conf){
 
             auto ref_v = mat_to_dyn(conf, dataset.word_images[training_image + ".png"]);
             auto ref_a = crbm->prepare_one_output();
-            //auto ref_s = crbm->prepare_one_output();
 
             crbm->activation_probabilities(ref_v, ref_a);
 
             std::vector<std::pair<std::string, weight>> diffs_a;
-            //std::vector<std::pair<std::string, weight>> diffs_s;
 
             for(std::size_t t = 0; t < test_image_names.size(); ++t){
                 decltype(auto) test_image = test_image_names[t];
 
                 auto diff_a = etl::sum(etl::abs(ref_a - test_features_a[t]));
                 diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
-
-                //auto diff_s = etl::sum(etl::abs(ref_s - test_features_s[t]));
-                //diffs_s.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_s);
             }
 
             std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
-            //std::sort(diffs_s.begin(), diffs_s.end(), [](auto& a, auto& b){ return a.second < b.second; });
-
-            //std::cout << "Best diff(a):" << diffs_a.front().second << std::endl;
-            //std::cout << "Worst diff(a):" << diffs_a.back().second << std::endl;
-            //std::cout << "Best diff(s):" << diffs_s.front().second << std::endl;
-            //std::cout << "Worst diff(s):" << diffs_s.back().second << std::endl;
 
             for(std::size_t n = 1; n <= MAX_N; ++n){
                 int tp_n = 0;
