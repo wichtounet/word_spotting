@@ -402,9 +402,9 @@ int command_train(const config& conf){
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
         cdbn->template layer<0>().learning_rate /= 10;
-        cdbn->template layer<1>()->learning_rate /= 10;
-        cdbn->template layer<2>()->learning_rate /= 10;
-        cdbn->template layer<2>()->pbias_lambda *= 2;
+        cdbn->template layer<1>().learning_rate /= 10;
+        cdbn->template layer<2>().learning_rate /= 10;
+        cdbn->template layer<2>().pbias_lambda *= 2;
 
         cdbn->pretrain(training_images, 10);
         cdbn->store("method_1_quarter.dat");
