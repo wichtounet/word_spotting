@@ -29,6 +29,9 @@ constexpr const std::size_t MAX_N = 25;
 static_assert(WIDTH % 2 == 0, "Width must be divisible by 2");
 static_assert(HEIGHT % 2 == 0, "Height must be divisible by 2");
 
+static_assert(WIDTH % 3 == 0, "Width must be divisible by 4");
+static_assert(HEIGHT % 3 == 0, "Height must be divisible by 4");
+
 static_assert(WIDTH % 4 == 0, "Width must be divisible by 4");
 static_assert(HEIGHT % 4 == 0, "Height must be divisible by 4");
 
@@ -59,6 +62,10 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, cv::Mat& image){
         cv::adaptiveThreshold(scaled_normalized, normalized, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
     } else if(conf.quarter) {
         cv::Mat scaled_normalized(cv::Size(WIDTH / 4, HEIGHT / 4), CV_8U);
+        cv::resize(normalized, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
+        cv::adaptiveThreshold(scaled_normalized, normalized, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
+    } else if(conf.third) {
+        cv::Mat scaled_normalized(cv::Size(WIDTH / 3, HEIGHT / 3), CV_8U);
         cv::resize(normalized, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
         cv::adaptiveThreshold(scaled_normalized, normalized, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
     }
@@ -238,6 +245,8 @@ int command_train(const config& conf){
         std::cout << evaluated << " keywords evaluated" << std::endl;
 
         for(std::size_t n = 1; n <= MAX_N; ++n){
+            std::cout << "TP(" << n << ") = " << tp[n] << std::endl;
+            std::cout << "FN(" << n << ") = " << fn[n] << std::endl;
             std::cout << "Precision(" << n << ") = " << (tp[n] / (n * set.keywords.size())) << std::endl;
             std::cout << "Recall(" << n << ") = " << (tp[n] / (tp[n] + fn[n])) << std::endl;
         }
@@ -325,6 +334,80 @@ int command_train(const config& conf){
         cdbn->pretrain(training_images, 2);
         cdbn->store("method_1_half.dat");
         //cdbn->load("method_1_half.dat");
+
+        std::cout << "Evaluate on training set" << std::endl;
+        evaluate(cdbn, train_word_names, train_image_names);
+
+        std::cout << "Evaluate on test set" << std::endl;
+        evaluate(cdbn, train_word_names, test_image_names);
+    } else if(conf.third){
+        static constexpr const std::size_t NF = 13;
+        static constexpr const std::size_t NF2 = 7;
+        static constexpr const std::size_t NF3 = 3;
+
+        using cdbn_t =
+            dll::dbn_desc<
+                dll::dbn_layers<
+                    dll::conv_rbm_desc<
+                        WIDTH / 3, HEIGHT / 3, 1                    //165x30 input image (1 channel)
+                        , WIDTH / 3 + 1 - NF , HEIGHT / 3 + 1 - NF  //Configure the size of the filter
+                        , 30                                        //Number of feature maps
+                        //, 2                                       //Probabilistic max pooling (2x2)
+                        , dll::weight_type<weight>
+                        , dll::batch_size<25>
+                        , dll::parallel
+                        , dll::verbose
+                        , dll::momentum
+                        , dll::weight_decay<dll::decay_type::L2>
+                        , dll::dbn_only
+                        , dll::sparsity<dll::sparsity_method::LEE>
+                    >::rbm_t
+                    , dll::mp_layer_3d_desc<30,208,28,1,2,2>::layer_t
+                    , dll::conv_rbm_desc<
+                        104, 14, 30
+                        , 104 + 1 - NF2 , 14 + 1 - NF2
+                        , 30
+                        , dll::weight_type<weight>
+                        , dll::batch_size<25>
+                        , dll::parallel
+                        , dll::verbose
+                        , dll::momentum
+                        , dll::weight_decay<dll::decay_type::L2>
+                        , dll::dbn_only
+                        , dll::sparsity<dll::sparsity_method::LEE>
+                    >::rbm_t
+                    , dll::mp_layer_3d_desc<30,98,8,1,2,2>::layer_t
+                    , dll::conv_rbm_desc<
+                        49, 4, 30
+                        , 49 + 1 - NF3 , 4 + 1 - NF3
+                        , 30
+                        , dll::weight_type<weight>
+                        , dll::batch_size<25>
+                        , dll::parallel
+                        , dll::verbose
+                        , dll::momentum
+                        , dll::weight_decay<dll::decay_type::L2>
+                        , dll::dbn_only
+                        , dll::sparsity<dll::sparsity_method::LEE>
+                    >::rbm_t
+                >
+                , dll::memory
+            >::dbn_t;
+
+        auto cdbn = std::make_unique<cdbn_t>();
+
+        cdbn->display();
+
+        std::cout << cdbn->output_size() << " output features" << std::endl;
+
+        cdbn->template layer<0>().learning_rate /= 10;
+        cdbn->template layer<2>().learning_rate /= 10;
+        cdbn->template layer<4>().learning_rate /= 10;
+        cdbn->template layer<4>().pbias_lambda *= 2;
+
+        cdbn->pretrain(training_images, 10);
+        cdbn->store("method_1_third.dat");
+        //cdbn->load("method_1_quarter.dat");
 
         std::cout << "Evaluate on training set" << std::endl;
         evaluate(cdbn, train_word_names, train_image_names);

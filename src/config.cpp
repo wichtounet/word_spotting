@@ -17,6 +17,7 @@ void print_usage(){
     std::cout << " -1 : Method 1" << std::endl;
     std::cout << " -half : Takes half resolution images only" << std::endl;
     std::cout << " -quarter : Takes quarter resolution images only" << std::endl;
+    std::cout << " -third : Takes third resolution images only" << std::endl;
 }
 
 config parse_args(int argc, char** argv){
@@ -34,6 +35,8 @@ config parse_args(int argc, char** argv){
             conf.half = true;
         } else if(conf.args[i] == "-quarter"){
             conf.quarter = true;
+        } else if(conf.args[i] == "-third"){
+            conf.third = true;
         } else {
             break;
         }

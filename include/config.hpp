@@ -18,6 +18,7 @@ struct config {
     bool method_1 = false;
     bool half = false;
     bool quarter = false;
+    bool third = false;
 };
 
 void print_usage();
