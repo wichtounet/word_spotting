@@ -4,3 +4,6 @@
 [submodule "dll"]
 	path = dll
 	url = https://github.com/wichtounet/dll.git
+[submodule "nice_svm"]
+	path = nice_svm
+	url = https://github.com/wichtounet/nice_svm.git

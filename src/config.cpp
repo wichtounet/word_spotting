@@ -18,6 +18,7 @@ void print_usage(){
     std::cout << " -half : Takes half resolution images only" << std::endl;
     std::cout << " -quarter : Takes quarter resolution images only" << std::endl;
     std::cout << " -third : Takes third resolution images only" << std::endl;
+    std::cout << " -svm : Use a SVM" << std::endl;
 }
 
 config parse_args(int argc, char** argv){
@@ -37,6 +38,8 @@ config parse_args(int argc, char** argv){
             conf.quarter = true;
         } else if(conf.args[i] == "-third"){
             conf.third = true;
+        } else if(conf.args[i] == "-svm"){
+            conf.svm = true;
         } else {
             break;
         }
