@@ -14,6 +14,8 @@
 #include "dll/avgp_layer.hpp"
 #include "dll/mp_layer.hpp"
 
+#include "etl/print.hpp"
+
 #include "nice_svm.hpp"
 
 #include "cpp_utils/parallel.hpp"
@@ -201,6 +203,9 @@ int command_train(const config& conf){
                 continue;
             }
 
+            std::cout << "Keyword " << keyword << std::endl;
+            std::cout << "Reference " << training_image << std::endl;
+
             auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
                 [&dataset, &keyword](auto& i){ return dataset.word_labels[{i.begin(), i.end() - 4}] == keyword; });
 
@@ -222,7 +227,7 @@ int command_train(const config& conf){
             for(std::size_t t = 0; t < test_image_names.size(); ++t){
                 decltype(auto) test_image = test_image_names[t];
 
-                auto diff_a = etl::sum(etl::abs(ref_a - test_features_a[t]));
+                auto diff_a = std::sqrt(etl::sum((ref_a - test_features_a[t]) * (ref_a - test_features_a[t])));
                 diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
             }
 
@@ -407,15 +412,27 @@ int command_train(const config& conf){
         cdbn->template layer<4>().learning_rate /= 10;
         cdbn->template layer<4>().pbias_lambda *= 2;
 
-        cdbn->pretrain(training_images, 10);
-        cdbn->store("method_1_third.dat");
-        //cdbn->load("method_1_quarter.dat");
+        //cdbn->pretrain(training_images, 10);
+        //cdbn->store("method_1_third.dat");
+        cdbn->load("method_1_third.dat");
 
         std::cout << "Evaluate on training set" << std::endl;
         evaluate(cdbn, train_word_names, train_image_names);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate(cdbn, train_word_names, test_image_names);
+        //evaluate(cdbn, train_word_names, test_image_names);
+
+        for(std::size_t i = 0; i < 4; ++i){
+            auto features = cdbn->prepare_one_output();
+
+            cdbn->activation_probabilities(
+                training_images[i],
+                features);
+
+            std::cout << features << std::endl;
+            std::cout << etl::sum(features) << std::endl;
+            //std::cout << etl::to_string(features) << std::endl;
+        }
 
         if(conf.svm){
             std::vector<std::vector<double>> training_samples(train_image_names.size());
