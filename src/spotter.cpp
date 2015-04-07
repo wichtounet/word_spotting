@@ -13,6 +13,7 @@
 #include "dll/dbn.hpp"
 #include "dll/avgp_layer.hpp"
 #include "dll/mp_layer.hpp"
+#include "dll/ocv_visualizer.hpp"
 
 #include "etl/print.hpp"
 
@@ -412,99 +413,107 @@ int command_train(const config& conf){
         cdbn->template layer<4>().learning_rate /= 10;
         cdbn->template layer<4>().pbias_lambda *= 2;
 
-        //cdbn->pretrain(training_images, 10);
-        //cdbn->store("method_1_third.dat");
-        cdbn->load("method_1_third.dat");
+        std::string file_name = "method_1_third.dat";
 
-        std::cout << "Evaluate on training set" << std::endl;
-        evaluate(cdbn, train_word_names, train_image_names);
+        if(conf.view){
+            cdbn->load(file_name);
 
-        std::cout << "Evaluate on test set" << std::endl;
-        //evaluate(cdbn, train_word_names, test_image_names);
+            dll::visualize_rbm(cdbn->template layer<0>());
+        } else {
+            //cdbn->pretrain(training_images, 10);
+            //cdbn->store(file_name);
+            cdbn->load(file_name);
 
-        for(std::size_t i = 0; i < 4; ++i){
-            auto features = cdbn->prepare_one_output();
+            std::cout << "Evaluate on training set" << std::endl;
+            evaluate(cdbn, train_word_names, train_image_names);
 
-            cdbn->activation_probabilities(
-                training_images[i],
-                features);
+            std::cout << "Evaluate on test set" << std::endl;
+            //evaluate(cdbn, train_word_names, test_image_names);
 
-            std::cout << features << std::endl;
-            std::cout << etl::sum(features) << std::endl;
-            //std::cout << etl::to_string(features) << std::endl;
-        }
+            for(std::size_t i = 0; i < 4; ++i){
+                auto features = cdbn->prepare_one_output();
 
-        if(conf.svm){
-            std::vector<std::vector<double>> training_samples(train_image_names.size());
-            std::vector<etl::dyn_matrix<weight, 3>> training_features;
-            std::vector<std::size_t> training_labels(train_image_names.size());
+                cdbn->activation_probabilities(
+                    training_images[i],
+                    features);
 
-            for(std::size_t i = 0; i < train_image_names.size(); ++i){
-                training_features.emplace_back(cdbn->prepare_one_output());
+                std::cout << features << std::endl;
+                std::cout << etl::sum(features) << std::endl;
+                //std::cout << etl::to_string(features) << std::endl;
             }
 
-            cpp::default_thread_pool<> pool;
+            if(conf.svm){
+                std::vector<std::vector<double>> training_samples(train_image_names.size());
+                std::vector<etl::dyn_matrix<weight, 3>> training_features;
+                std::vector<std::size_t> training_labels(train_image_names.size());
 
-            std::map<std::vector<std::string>, std::size_t> ids;
-            std::size_t next =  0;
-
-            for(std::size_t i = 0; i < train_image_names.size(); ++i){
-                auto test_image = train_image_names[i];
-
-                auto test_v = mat_to_dyn(conf, dataset.word_images[test_image]);
-
-                cdbn->activation_probabilities(test_v, training_features[i]);
-
-                std::copy(training_features[i].begin(), training_features[i].end(), std::back_inserter(training_samples[i]));
-
-                test_image = std::string(test_image.begin(), test_image.end() - 4);
-
-                std::cout << "test_image=\"" << test_image << "\"" << std::endl;
-                std::cout << "word_label.first=" << dataset.word_labels.begin()->first << std::endl;
-
-                if(dataset.word_labels.count(test_image)){
-                    std::cout << "WTF" << std::endl;
+                for(std::size_t i = 0; i < train_image_names.size(); ++i){
+                    training_features.emplace_back(cdbn->prepare_one_output());
                 }
 
-                auto label = dataset.word_labels[test_image];
-                std::cout << label << std::endl;
-                if(!ids.count(label)){
-                    ids[label] = next++;
+                cpp::default_thread_pool<> pool;
+
+                std::map<std::vector<std::string>, std::size_t> ids;
+                std::size_t next =  0;
+
+                for(std::size_t i = 0; i < train_image_names.size(); ++i){
+                    auto test_image = train_image_names[i];
+
+                    auto test_v = mat_to_dyn(conf, dataset.word_images[test_image]);
+
+                    cdbn->activation_probabilities(test_v, training_features[i]);
+
+                    std::copy(training_features[i].begin(), training_features[i].end(), std::back_inserter(training_samples[i]));
+
+                    test_image = std::string(test_image.begin(), test_image.end() - 4);
+
+                    std::cout << "test_image=\"" << test_image << "\"" << std::endl;
+                    std::cout << "word_label.first=" << dataset.word_labels.begin()->first << std::endl;
+
+                    if(dataset.word_labels.count(test_image)){
+                        std::cout << "WTF" << std::endl;
+                    }
+
+                    auto label = dataset.word_labels[test_image];
+                    std::cout << label << std::endl;
+                    if(!ids.count(label)){
+                        ids[label] = next++;
+                    }
+
+                    training_labels[i] = ids[label];
+
+                    std::cout << training_labels[i] << std::endl;
                 }
 
-                training_labels[i] = ids[label];
+                std::cout << "... done" << std::endl;
 
-                std::cout << training_labels[i] << std::endl;
+                auto training_problem = svm::make_problem(training_labels, training_samples);
+                //auto test_problem = svm::make_problem(dataset.test_labels, dataset.test_images, 0, false);
+
+                auto mnist_parameters = svm::default_parameters();
+
+                mnist_parameters.svm_type = C_SVC;
+                mnist_parameters.kernel_type = RBF;
+                mnist_parameters.probability = 1;
+                mnist_parameters.C = 2.8;
+                mnist_parameters.gamma = 0.0073;
+
+                //Make it quiet
+                svm::make_quiet();
+
+                //Make sure parameters are not too messed up
+                if(!svm::check(training_problem, mnist_parameters)){
+                    return 1;
+                }
+
+                svm::model model;
+                model = svm::train(training_problem, mnist_parameters);
+
+                std::cout << "Number of classes: " << model.classes() << std::endl;
+
+                std::cout << "Test on training set" << std::endl;
+                svm::test_model(training_problem, model);
             }
-
-            std::cout << "... done" << std::endl;
-
-            auto training_problem = svm::make_problem(training_labels, training_samples);
-            //auto test_problem = svm::make_problem(dataset.test_labels, dataset.test_images, 0, false);
-
-            auto mnist_parameters = svm::default_parameters();
-
-            mnist_parameters.svm_type = C_SVC;
-            mnist_parameters.kernel_type = RBF;
-            mnist_parameters.probability = 1;
-            mnist_parameters.C = 2.8;
-            mnist_parameters.gamma = 0.0073;
-
-            //Make it quiet
-            svm::make_quiet();
-
-            //Make sure parameters are not too messed up
-            if(!svm::check(training_problem, mnist_parameters)){
-                return 1;
-            }
-
-            svm::model model;
-            model = svm::train(training_problem, mnist_parameters);
-
-            std::cout << "Number of classes: " << model.classes() << std::endl;
-
-            std::cout << "Test on training set" << std::endl;
-            svm::test_model(training_problem, model);
         }
     } else if(conf.quarter){
         static constexpr const std::size_t NF = 7;

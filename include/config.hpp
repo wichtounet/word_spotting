@@ -20,6 +20,7 @@ struct config {
     bool quarter = false;
     bool third = false;
     bool svm = false;
+    bool view = false;
 };
 
 void print_usage();
