@@ -163,12 +163,6 @@ int command_train(const config& conf){
     }
 
     auto evaluate = [&dataset,&set,&conf](auto& crbm, auto& train_word_names, auto& test_image_names){
-        std::array<double, MAX_N + 1> tp;
-        std::array<double, MAX_N + 1> fn;
-
-        std::fill(tp.begin(), tp.end(), 0);
-        std::fill(fn.begin(), fn.end(), 0);
-
         std::vector<etl::dyn_matrix<weight, 3>> test_features_a;
 
         for(std::size_t i = 0; i < test_image_names.size(); ++i){
@@ -190,6 +184,14 @@ int command_train(const config& conf){
 
         std::size_t evaluated = 0;
 
+        std::array<double, MAX_N + 1> tp;
+        std::array<double, MAX_N + 1> fn;
+        std::array<double, MAX_N + 1> maps;
+
+        std::fill(tp.begin(), tp.end(), 0.0);
+        std::fill(fn.begin(), fn.end(), 0.0);
+        std::fill(maps.begin(), maps.end(), 0.0);
+
         for(auto& keyword : set.keywords){
             std::string training_image;
             for(auto& labels : dataset.word_labels){
@@ -204,9 +206,6 @@ int command_train(const config& conf){
                 std::cout << "Skipped " << keyword << " since there are no example in the training set" << std::endl;
                 continue;
             }
-
-            std::cout << "Keyword " << keyword << std::endl;
-            std::cout << "Reference " << training_image << std::endl;
 
             auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
                 [&dataset, &keyword](auto& i){ return dataset.word_labels[{i.begin(), i.end() - 4}] == keyword; });
@@ -246,6 +245,28 @@ int command_train(const config& conf){
 
                 tp[n] += tp_n;
                 fn[n] += total_positive - tp_n;
+
+                double avep = 0.0;
+
+                if(tp_n > 0){
+                    for(std::size_t k = 1; k <= n; ++k){
+                        if(dataset.word_labels[diffs_a[k-1].first] == keyword){
+                            int tp_nn = 0;
+
+                            for(std::size_t i = 0; i < k && i < diffs_a.size(); ++i){
+                                if(dataset.word_labels[diffs_a[i].first] == keyword){
+                                    ++tp_nn;
+                                }
+                            }
+
+                            avep += static_cast<double>(tp_nn) / k;
+                        }
+                    }
+
+                    avep /= tp_n;
+                }
+
+                maps[n] += avep;
             }
         }
 
@@ -255,9 +276,11 @@ int command_train(const config& conf){
 
         for(std::size_t n = 1; n <= MAX_N; ++n){
             std::cout << "TP(" << n << ") = " << tp[n] << std::endl;
+            std::cout << "FP(" << n << ") = " << (n * set.keywords.size() - tp[n]) << std::endl;
             std::cout << "FN(" << n << ") = " << fn[n] << std::endl;
             std::cout << "Precision(" << n << ") = " << (tp[n] / (n * set.keywords.size())) << std::endl;
             std::cout << "Recall(" << n << ") = " << (tp[n] / (tp[n] + fn[n])) << std::endl;
+            std::cout << "MAP(" << n << ") = " << (maps[n] / set.keywords.size()) << std::endl;
         }
     };
 
@@ -425,9 +448,9 @@ int command_train(const config& conf){
 
             dll::visualize_rbm(cdbn->template layer<0>());
         } else {
-            cdbn->pretrain(training_images, 10);
-            cdbn->store(file_name);
-            //cdbn->load(file_name);
+            //cdbn->pretrain(training_images, 10);
+            //cdbn->store(file_name);
+            cdbn->load(file_name);
 
             std::cout << "Evaluate on training set" << std::endl;
             evaluate(cdbn, train_word_names, train_image_names);
@@ -435,17 +458,17 @@ int command_train(const config& conf){
             std::cout << "Evaluate on test set" << std::endl;
             //evaluate(cdbn, train_word_names, test_image_names);
 
-            for(std::size_t i = 0; i < 4; ++i){
-                auto features = cdbn->prepare_one_output();
+            //for(std::size_t i = 0; i < 4; ++i){
+                //auto features = cdbn->prepare_one_output();
 
-                cdbn->activation_probabilities(
-                    training_images[i],
-                    features);
+                //cdbn->activation_probabilities(
+                    //training_images[i],
+                    //features);
 
-                std::cout << features << std::endl;
-                std::cout << etl::sum(features) << std::endl;
+                //std::cout << features << std::endl;
+                //std::cout << etl::sum(features) << std::endl;
                 //std::cout << etl::to_string(features) << std::endl;
-            }
+            //}
 
             if(conf.svm){
                 std::vector<std::vector<double>> training_samples(train_image_names.size());
