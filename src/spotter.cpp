@@ -154,10 +154,11 @@ int command_train(const config& conf){
 
     std::vector<etl::dyn_matrix<weight>> training_images;
 
-    //train_image_names.resize(300);
-    //test_image_names.resize(300);
-
     for(auto& name : train_image_names){
+        if(conf.sub && training_images.size() == 1000){
+            break;
+        }
+
         training_images.emplace_back(mat_to_dyn(conf, dataset.word_images[name]));
     }
 
@@ -368,7 +369,9 @@ int command_train(const config& conf){
                         , dll::momentum
                         , dll::weight_decay<dll::decay_type::L2>
                         , dll::dbn_only
-                        , dll::sparsity<dll::sparsity_method::LEE>
+                        , dll::hidden<dll::unit_type::RELU6>
+                        //, dll::sparsity<dll::sparsity_method::LEE>
+                        , dll::watcher<dll::opencv_rbm_visualizer>
                     >::rbm_t
                     , dll::mp_layer_3d_desc<30,208,28,1,2,2>::layer_t
                     , dll::conv_rbm_desc<
@@ -408,7 +411,9 @@ int command_train(const config& conf){
 
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        cdbn->template layer<0>().learning_rate /= 10;
+        cdbn->template layer<0>().learning_rate /= 100;
+        //cdbn->template layer<0>().pbias_lambda *= 4;
+
         cdbn->template layer<2>().learning_rate /= 10;
         cdbn->template layer<4>().learning_rate /= 10;
         cdbn->template layer<4>().pbias_lambda *= 2;
@@ -420,9 +425,9 @@ int command_train(const config& conf){
 
             dll::visualize_rbm(cdbn->template layer<0>());
         } else {
-            //cdbn->pretrain(training_images, 10);
-            //cdbn->store(file_name);
-            cdbn->load(file_name);
+            cdbn->pretrain(training_images, 10);
+            cdbn->store(file_name);
+            //cdbn->load(file_name);
 
             std::cout << "Evaluate on training set" << std::endl;
             evaluate(cdbn, train_word_names, train_image_names);

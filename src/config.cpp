@@ -20,6 +20,7 @@ void print_usage(){
     std::cout << " -third : Takes third resolution images only" << std::endl;
     std::cout << " -svm : Use a SVM" << std::endl;
     std::cout << " -view : Load the DBN and visualize its weights" << std::endl;
+    std::cout << " -sub : Takes only a subset of the dataset to train" << std::endl;
 }
 
 config parse_args(int argc, char** argv){
@@ -43,6 +44,8 @@ config parse_args(int argc, char** argv){
             conf.svm = true;
         } else if(conf.args[i] == "-view"){
             conf.view = true;
+        } else if(conf.args[i] == "-sub"){
+            conf.sub = true;
         } else {
             break;
         }

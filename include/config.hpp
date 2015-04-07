@@ -21,6 +21,7 @@ struct config {
     bool third = false;
     bool svm = false;
     bool view = false;
+    bool sub = false;
 };
 
 void print_usage();
