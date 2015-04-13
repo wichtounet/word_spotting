@@ -15,6 +15,7 @@ void print_usage(){
     std::cout << " * train" << std::endl;
     std::cout << "Supported options: " << std::endl;
     std::cout << " -1 : Method 1" << std::endl;
+    std::cout << " -2 : Method 2" << std::endl;
     std::cout << " -half : Takes half resolution images only" << std::endl;
     std::cout << " -quarter : Takes quarter resolution images only" << std::endl;
     std::cout << " -third : Takes third resolution images only" << std::endl;
@@ -34,6 +35,8 @@ config parse_args(int argc, char** argv){
     for(; i < conf.args.size(); ++i){
         if(conf.args[i] == "-1"){
             conf.method_1 = true;
+        } else if(conf.args[i] == "-2"){
+            conf.method_2 = true;
         } else if(conf.args[i] == "-half"){
             conf.half = true;
         } else if(conf.args[i] == "-quarter"){
