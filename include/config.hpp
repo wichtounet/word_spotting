@@ -23,6 +23,9 @@ struct config {
     bool svm = false;
     bool view = false;
     bool sub = false;
+
+    std::size_t patch_width = 0;
+    std::size_t patch_stride = 0;
 };
 
 void print_usage();

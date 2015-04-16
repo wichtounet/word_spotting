@@ -16,6 +16,7 @@
 #include "dll/ocv_visualizer.hpp"
 
 #include "etl/print.hpp"
+#include "etl/stop.hpp"
 
 #include "nice_svm.hpp"
 
@@ -55,7 +56,7 @@ std::ostream& operator<<(std::ostream& stream, const std::vector<T>& vec){
 
 namespace {
 
-etl::dyn_matrix<weight> mat_to_dyn(const config& conf, cv::Mat& image){
+etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
     cv::Mat normalized(cv::Size(WIDTH, HEIGHT), CV_8U);
     normalized = cv::Scalar(255);
 
@@ -90,6 +91,169 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, cv::Mat& image){
     }
 
     return training_image;
+}
+
+template<typename Dataset, typename Set, typename DBN>
+void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf, DBN& crbm, std::size_t patches, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
+    std::vector<std::vector<etl::dyn_matrix<weight, 3>>> test_features_a;
+
+    for(std::size_t i = 0; i < test_image_names.size(); ++i){
+        std::vector<etl::dyn_matrix<weight, 3>> vec;
+
+        for(std::size_t p = 0; i < patches; ++p){
+            vec.emplace_back(crbm->prepare_one_output());
+        }
+
+       test_features_a.push_back(std::move(vec));
+    }
+
+    const std::size_t NV = conf.patch_width;
+    const std::size_t stride = conf.patch_stride;
+
+    cpp::default_thread_pool<> pool;
+
+    cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
+        [&](auto& test_image, std::size_t i){
+            auto image = mat_to_dyn(conf, dataset.word_images.at(test_image));
+
+            auto image_reverse = etl::s(etl::transpose(image));
+
+            for(std::size_t p = 0; p < patches; ++p){
+                etl::dyn_matrix<double> patch(NV, NV);
+
+                for(std::size_t y = 0; y < NV; ++y){
+                    for(std::size_t x = 0; x < NV; ++x){
+                        patch(y, x) = image_reverse(y, x + p * stride);
+                    }
+                }
+
+                crbm->activation_probabilities(patch, test_features_a[i][p]);
+            }
+        });
+
+    std::cout << "... done" << std::endl;
+
+    std::cout << "Evaluate performance..." << std::endl;
+
+    std::size_t evaluated = 0;
+
+    std::array<double, MAX_N + 1> tp;
+    std::array<double, MAX_N + 1> fn;
+    std::array<double, MAX_N + 1> maps;
+
+    std::fill(tp.begin(), tp.end(), 0.0);
+    std::fill(fn.begin(), fn.end(), 0.0);
+    std::fill(maps.begin(), maps.end(), 0.0);
+
+    for(auto& keyword : set.keywords){
+        std::string training_image;
+        for(auto& labels : dataset.word_labels){
+            if(keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()){
+                training_image = labels.first;
+                break;
+            }
+        }
+
+        //Make sure that there is a sample in the training set
+        if(training_image.empty()){
+            std::cout << "Skipped " << keyword << " since there are no example in the training set" << std::endl;
+            continue;
+        }
+
+        auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
+            [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
+
+        //Make sure that there is a sample in the test set
+        if(total_positive == 0){
+            std::cout << "Skipped " << keyword << " since there are no example in the test set" << std::endl;
+            continue;
+        }
+
+        ++evaluated;
+
+        auto image = mat_to_dyn(conf, dataset.word_images.at(training_image + ".png"));
+        auto image_reverse = etl::s(etl::tranpose(image));
+
+        std::vector<etl::dyn_matrix<double, 3>> ref_a;
+
+        for(std::size_t i = 0; i < patches; ++i){
+            etl::dyn_matrix<double> patch(NV, NV);
+
+            for(std::size_t y = 0; y < NV; ++y){
+                for(std::size_t x = 0; x < NV; ++x){
+                    patch(y, x) = image_reverse(y, x + i * stride);
+                }
+            }
+
+            ref_a.push_back(crbm->prepare_one_output());
+
+            crbm->activation_probabilities(patch, ref_a.back());
+        }
+
+        std::vector<std::pair<std::string, weight>> diffs_a;
+
+        for(std::size_t t = 0; t < test_image_names.size(); ++t){
+            decltype(auto) test_image = test_image_names[t];
+
+            double diff_a = 0;
+
+            for(std::size_t p = 0; p < patches; ++p){
+                diff_a += std::sqrt(etl::sum((ref_a[p] - test_features_a[t][p]) * (ref_a[p] - test_features_a[t][p])));
+            }
+
+            diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
+        }
+
+        std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
+
+        for(std::size_t n = 1; n <= MAX_N; ++n){
+            int tp_n = 0;
+
+            for(std::size_t i = 0; i < n && i < diffs_a.size(); ++i){
+                if(dataset.word_labels.at(diffs_a[i].first) == keyword){
+                    ++tp_n;
+                }
+            }
+
+            tp[n] += tp_n;
+            fn[n] += total_positive - tp_n;
+
+            double avep = 0.0;
+
+            if(tp_n > 0){
+                for(std::size_t k = 1; k <= n; ++k){
+                    if(dataset.word_labels.at(diffs_a[k-1].first) == keyword){
+                        int tp_nn = 0;
+
+                        for(std::size_t i = 0; i < k && i < diffs_a.size(); ++i){
+                            if(dataset.word_labels.at(diffs_a[i].first) == keyword){
+                                ++tp_nn;
+                            }
+                        }
+
+                        avep += static_cast<double>(tp_nn) / k;
+                    }
+                }
+
+                avep /= tp_n;
+            }
+
+            maps[n] += avep;
+        }
+    }
+
+    std::cout << "... done" << std::endl;
+
+    std::cout << evaluated << " keywords evaluated" << std::endl;
+
+    for(std::size_t n = 1; n <= MAX_N; ++n){
+        std::cout << "TP(" << n << ") = " << tp[n] << std::endl;
+        std::cout << "FP(" << n << ") = " << (n * set.keywords.size() - tp[n]) << std::endl;
+        std::cout << "FN(" << n << ") = " << fn[n] << std::endl;
+        std::cout << "Precision(" << n << ") = " << (tp[n] / (n * set.keywords.size())) << std::endl;
+        std::cout << "Recall(" << n << ") = " << (tp[n] / (tp[n] + fn[n])) << std::endl;
+        std::cout << "MAP(" << n << ") = " << (maps[n] / set.keywords.size()) << std::endl;
+    }
 }
 
 int command_train(const config& conf){
@@ -695,18 +859,21 @@ int command_train(const config& conf){
                             //, dll::sparsity<dll::sparsity_method::LEE>
                         >::rbm_t
                     >
-                    , dll::memory
+                    //, dll::memory
                 >::dbn_t;
 
             auto cdbn = std::make_unique<cdbn_t>();
 
             cdbn->template layer<0>().learning_rate /= 10;
-            //cdbn->template layer<1>().learning_rate /= 10;
+            cdbn->template layer<1>().learning_rate /= 5;
 
             std::cout << cdbn->output_size() << " output features" << std::endl;
 
-            constexpr const std::size_t stride = 5;
+            constexpr const std::size_t stride = NV;
             constexpr const auto patches = ((WIDTH / 3) - NV) / stride + 1;
+
+            conf.patch_width = NV;
+            conf.patch_stride = stride;
 
             //TODO Normally every image should be in the correct matrix dimensions
 
@@ -720,11 +887,7 @@ int command_train(const config& conf){
 
                 auto& image_reverse = training_images_reverse.back();
 
-                for(std::size_t y = 0; y < HEIGHT / 3; ++y){
-                    for(std::size_t x = 0; x < WIDTH / 3; ++x){
-                        image_reverse(y, x) = image(x, y);
-                    }
-                }
+                image_reverse = etl::transpose(image);
             }
 
             std::cout << "... done" << std::endl;
@@ -755,6 +918,12 @@ int command_train(const config& conf){
             cdbn->pretrain(training_patches, 10);
             cdbn->store(file_name);
             //cdbn->load(file_name);
+
+            std::cout << "Evaluate on training set" << std::endl;
+            evaluate_patches(dataset, set, conf, cdbn, patches, train_word_names, train_image_names);
+
+            std::cout << "Evaluate on test set" << std::endl;
+            evaluate_patches(dataset, set, conf, cdbn, patches, train_word_names, test_image_names);
         } else {
             std::cout << "error: Only -third resolution is supported in method 2 for now" << std::endl;
             print_usage();
