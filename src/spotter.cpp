@@ -119,11 +119,11 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
             auto image_reverse = etl::s(etl::transpose(image));
 
             for(std::size_t p = 0; p < patches; ++p){
-                etl::dyn_matrix<double> patch(NV, NV);
+                etl::dyn_matrix<double> patch(etl::dim<0>(image), conf.patch_width);
 
-                for(std::size_t y = 0; y < NV; ++y){
-                    for(std::size_t x = 0; x < NV; ++x){
-                        patch(y, x) = image_reverse(y, x + p * stride);
+                for(std::size_t y = 0; y < etl::dim<0>(image); ++y){
+                    for(std::size_t x = 0; x < conf.patch_width; ++x){
+                        patch(y, x) = image_reverse(y, x + p * conf.patch_stride);
                     }
                 }
 
@@ -172,7 +172,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
         ++evaluated;
 
         auto image = mat_to_dyn(conf, dataset.word_images.at(training_image + ".png"));
-        auto image_reverse = etl::s(etl::tranpose(image));
+        auto image_reverse = etl::s(etl::transpose(image));
 
         std::vector<etl::dyn_matrix<double, 3>> ref_a;
 
@@ -256,7 +256,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
     }
 }
 
-int command_train(const config& conf){
+int command_train(config& conf){
     if(conf.files.size() < 2){
         std::cout << "Train needs the path to the dataset and the cv set to use" << std::endl;
         return -1;
