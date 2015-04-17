@@ -62,19 +62,9 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
 
     image.copyTo(normalized(cv::Rect((WIDTH - image.size().width) / 2, 0, image.size().width, HEIGHT)));
 
-    if(conf.half){
-        cv::Mat scaled_normalized(cv::Size(WIDTH / 2, HEIGHT / 2), CV_8U);
-        cv::resize(normalized, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
-        cv::adaptiveThreshold(scaled_normalized, normalized, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
-    } else if(conf.quarter) {
-        cv::Mat scaled_normalized(cv::Size(WIDTH / 4, HEIGHT / 4), CV_8U);
-        cv::resize(normalized, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
-        cv::adaptiveThreshold(scaled_normalized, normalized, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
-    } else if(conf.third) {
-        cv::Mat scaled_normalized(cv::Size(WIDTH / 3, HEIGHT / 3), CV_8U);
-        cv::resize(normalized, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
-        cv::adaptiveThreshold(scaled_normalized, normalized, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
-    }
+    cv::Mat scaled_normalized(cv::Size(WIDTH / conf.downscale, HEIGHT / conf.downscale), CV_8U);
+    cv::resize(normalized, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
+    cv::adaptiveThreshold(scaled_normalized, normalized, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
 
     etl::dyn_matrix<weight> training_image(normalized.size().width, normalized.size().height);
 
@@ -95,19 +85,24 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
 
 template<typename Dataset, typename Set, typename DBN>
 void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf, DBN& crbm, std::size_t patches, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
+    std::cout << "Prepare the outputs ..." << std::endl;
+
     std::vector<std::vector<etl::dyn_matrix<weight, 3>>> test_features_a;
 
     for(std::size_t i = 0; i < test_image_names.size(); ++i){
         std::vector<etl::dyn_matrix<weight, 3>> vec;
 
-        for(std::size_t p = 0; i < patches; ++p){
+        for(std::size_t p = 0; p < patches; ++p){
             vec.emplace_back(crbm->prepare_one_output());
         }
 
        test_features_a.push_back(std::move(vec));
     }
 
-    const std::size_t NV = conf.patch_width;
+    //Get some sizes
+
+    const std::size_t patch_height = HEIGHT / conf.downscale;
+    const std::size_t patch_width = conf.patch_width;
     const std::size_t stride = conf.patch_stride;
 
     cpp::default_thread_pool<> pool;
@@ -119,10 +114,10 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
             auto image_reverse = etl::s(etl::transpose(image));
 
             for(std::size_t p = 0; p < patches; ++p){
-                etl::dyn_matrix<double> patch(etl::dim<0>(image), conf.patch_width);
+                etl::dyn_matrix<double> patch(patch_height, patch_width);
 
-                for(std::size_t y = 0; y < etl::dim<0>(image); ++y){
-                    for(std::size_t x = 0; x < conf.patch_width; ++x){
+                for(std::size_t y = 0; y < etl::dim<0>(patch); ++y){
+                    for(std::size_t x = 0; x < etl::dim<1>(patch); ++x){
                         patch(y, x) = image_reverse(y, x + p * conf.patch_stride);
                     }
                 }
@@ -177,10 +172,10 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
         std::vector<etl::dyn_matrix<double, 3>> ref_a;
 
         for(std::size_t i = 0; i < patches; ++i){
-            etl::dyn_matrix<double> patch(NV, NV);
+            etl::dyn_matrix<double> patch(patch_height, patch_width);
 
-            for(std::size_t y = 0; y < NV; ++y){
-                for(std::size_t x = 0; x < NV; ++x){
+            for(std::size_t y = 0; y < patch_height; ++y){
+                for(std::size_t x = 0; x < patch_width; ++x){
                     patch(y, x) = image_reverse(y, x + i * stride);
                 }
             }
@@ -869,11 +864,16 @@ int command_train(config& conf){
 
             std::cout << cdbn->output_size() << " output features" << std::endl;
 
-            constexpr const std::size_t stride = NV;
+            constexpr const std::size_t stride = NV / 2;
             constexpr const auto patches = ((WIDTH / 3) - NV) / stride + 1;
+
+            //Pass information to the next passes (evaluation)
 
             conf.patch_width = NV;
             conf.patch_stride = stride;
+
+            const auto patch_width = NV;
+            const auto patch_height = HEIGHT / conf.downscale;
 
             //TODO Normally every image should be in the correct matrix dimensions
 
@@ -883,7 +883,7 @@ int command_train(config& conf){
             training_images_reverse.reserve(training_images.size());
 
             for(auto& image : training_images){
-                training_images_reverse.emplace_back(HEIGHT / 3, WIDTH / 3);
+                training_images_reverse.emplace_back(HEIGHT / conf.downscale, WIDTH / conf.downscale);
 
                 auto& image_reverse = training_images_reverse.back();
 
@@ -899,12 +899,12 @@ int command_train(config& conf){
 
             for(auto& image : training_images_reverse){
                 for(std::size_t i = 0; i < patches; ++i){
-                    training_patches.emplace_back(NV, NV);
+                    training_patches.emplace_back(patch_height, patch_width);
 
                     auto& patch = training_patches.back();
 
-                    for(std::size_t y = 0; y < NV; ++y){
-                        for(std::size_t x = 0; x < NV; ++x){
+                    for(std::size_t y = 0; y < patch_height; ++y){
+                        for(std::size_t x = 0; x < patch_width; ++x){
                             patch(y, x) = image(y, x + i * stride);
                         }
                     }
@@ -948,6 +948,14 @@ int main(int argc, char** argv){
         std::cout << "error: One method must be selected" << std::endl;
         print_usage();
         return -1;
+    }
+
+    if(conf.half){
+        conf.downscale = 2;
+    } else if(conf.third){
+        conf.downscale = 3;
+    } else if(conf.quarter){
+        conf.downscale = 4;
     }
 
     if(conf.command == "train"){
