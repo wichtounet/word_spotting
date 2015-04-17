@@ -284,7 +284,6 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
             crbm->activation_probabilities(patch, ref_a[i]);
 
             //std::cout << etl::to_string(ref_a[i]) << std::endl;
-            std::cout << etl::sum(ref_a[i]) << std::endl;
             feature_sum += etl::sum(ref_a[i]);
         }
 
