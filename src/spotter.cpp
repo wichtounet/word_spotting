@@ -66,13 +66,13 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
     cv::resize(normalized, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
     cv::adaptiveThreshold(scaled_normalized, normalized, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
 
-    etl::dyn_matrix<weight> training_image(normalized.size().width, normalized.size().height);
+    etl::dyn_matrix<weight> training_image(normalized.size().height, normalized.size().width);
 
     for(std::size_t y = 0; y < static_cast<std::size_t>(normalized.size().height); ++y){
         for(std::size_t x = 0; x < static_cast<std::size_t>(normalized.size().width); ++x){
             auto pixel = normalized.at<uint8_t>(cv::Point(x, y));
 
-            training_image(x, y) = pixel == 0 ? 0.0 : 1.0;
+            training_image(y, x) = pixel == 0 ? 0.0 : 1.0;
 
             if(pixel != 0 && pixel != 255){
                 std::cout << "The normalized input image is not binary! pixel:" << static_cast<int>(pixel) << std::endl;
@@ -84,7 +84,7 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
 }
 
 template<typename Dataset, typename Set, typename DBN>
-void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf, DBN& crbm, std::size_t patches, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
+void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf, const DBN& dbn, std::size_t patches, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
     //Get some sizes
 
     const std::size_t patch_height = HEIGHT / conf.downscale;
@@ -99,94 +99,17 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
         std::vector<etl::dyn_matrix<weight, 3>> vec;
 
         for(std::size_t p = 0; p < patches; ++p){
-            vec.emplace_back(crbm->prepare_one_output());
+            vec.emplace_back(dbn.prepare_one_output());
         }
 
        test_features_a.push_back(std::move(vec));
     }
-
-    //std::size_t i = 1;
-
-    //double feature_sum = 0.0;
-
-    //{
-        //auto image = mat_to_dyn(conf, dataset.word_images.at(test_image_names[i]));
-
-        //auto image_reverse = etl::s(etl::transpose(image));
-        //for(std::size_t p = 0; p < patches; ++p){
-            //etl::dyn_matrix<weight> patch(patch_height, patch_width);
-
-            //for(std::size_t y = 0; y < etl::dim<0>(patch); ++y){
-                //for(std::size_t x = 0; x < etl::dim<1>(patch); ++x){
-                    //patch(y, x) = image_reverse(y, x + p * conf.patch_stride);
-                //}
-            //}
-
-            //crbm->activation_probabilities(patch, test_features_a[i][p]);
-
-            //feature_sum += etl::sum(test_features_a[i][p]);
-        //}
-    //}
-
-    //std::cout << feature_sum << std::endl;
-
-    //i = 2;
-    //feature_sum = 0.0;
-
-    //{
-        //auto image = mat_to_dyn(conf, dataset.word_images.at(test_image_names[i]));
-
-        //auto image_reverse = etl::s(etl::transpose(image));
-        //for(std::size_t p = 0; p < patches; ++p){
-            //etl::dyn_matrix<weight> patch(patch_height, patch_width);
-
-            //for(std::size_t y = 0; y < etl::dim<0>(patch); ++y){
-                //for(std::size_t x = 0; x < etl::dim<1>(patch); ++x){
-                    //patch(y, x) = image_reverse(y, x + p * conf.patch_stride);
-                //}
-            //}
-
-            //crbm->activation_probabilities(patch, test_features_a[i][p]);
-
-            //feature_sum += etl::sum(test_features_a[i][p]);
-        //}
-    //}
-
-    //std::cout << feature_sum << std::endl;
-
-    //i = 1;
-    //feature_sum = 0.0;
-
-    //{
-        //auto image = mat_to_dyn(conf, dataset.word_images.at(test_image_names[i]));
-
-        //auto image_reverse = etl::s(etl::transpose(image));
-
-        //for(std::size_t p = 0; p < patches; ++p){
-            //etl::dyn_matrix<weight> patch(patch_height, patch_width);
-
-            //for(std::size_t y = 0; y < etl::dim<0>(patch); ++y){
-                //for(std::size_t x = 0; x < etl::dim<1>(patch); ++x){
-                    //patch(y, x) = image_reverse(y, x + p * conf.patch_stride);
-                //}
-            //}
-
-            //crbm->activation_probabilities(patch, test_features_a[i][p]);
-
-            //feature_sum += etl::sum(test_features_a[i][p]);
-        //}
-    //}
-
-    //std::cout << feature_sum << std::endl;
-
 
     cpp::default_thread_pool<> pool;
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
         [&](auto& test_image, std::size_t i){
             auto image = mat_to_dyn(conf, dataset.word_images.at(test_image));
-
-            auto image_reverse = etl::s(etl::transpose(image));
 
             double inter = 0;
             double feature_sum = 0;
@@ -196,18 +119,18 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
 
                 for(std::size_t y = 0; y < etl::dim<0>(patch); ++y){
                     for(std::size_t x = 0; x < etl::dim<1>(patch); ++x){
-                        patch(y, x) = image_reverse(y, x + p * conf.patch_stride);
+                        patch(y, x) = image(y, x + p * conf.patch_stride);
                     }
                 }
 
                 inter += etl::sum(patch);
 
-                crbm->activation_probabilities(patch, test_features_a[i][p]);
+                dbn.activation_probabilities(patch, test_features_a[i][p]);
 
                 feature_sum += etl::sum(test_features_a[i][p]);
             }
 
-            std::cout << i << ":" << test_image << ":" << inter << ":" << etl::sum(image_reverse) << ":" << feature_sum << std::endl;
+            std::cout << i << ":" << test_image << ":" << inter << ":" << etl::sum(image) << ":" << feature_sum << std::endl;
         });
 
     std::cout << "... done" << std::endl;
@@ -223,12 +146,6 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
     std::fill(tp.begin(), tp.end(), 0.0);
     std::fill(fn.begin(), fn.end(), 0.0);
     std::fill(maps.begin(), maps.end(), 0.0);
-
-    //std::cout << "test_image_names:";
-    //for(auto& v : test_image_names){
-        //std::cout << v << ";";
-    //}
-    //std::cout << std::endl;
 
     for(auto& keyword : set.keywords){
         std::string training_image;
@@ -259,32 +176,31 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
         std::cout << "Selected:" << training_image << std::endl;
 
         auto image = mat_to_dyn(conf, dataset.word_images.at(training_image + ".png"));
-        auto image_reverse = etl::s(etl::transpose(image));
 
         std::vector<etl::dyn_matrix<weight, 3>> ref_a;
 
         for(std::size_t i = 0; i < patches; ++i){
-            ref_a.push_back(crbm->prepare_one_output());
+            ref_a.push_back(dbn.prepare_one_output());
         }
 
         double inter = 0.0;
         double feature_sum = 0.0;
 
-        for(std::size_t i = 0; i < patches; ++i){
+        for(std::size_t p = 0; p < patches; ++p){
             etl::dyn_matrix<weight> patch(patch_height, patch_width);
 
             for(std::size_t y = 0; y < patch_height; ++y){
                 for(std::size_t x = 0; x < patch_width; ++x){
-                    patch(y, x) = image_reverse(y, x + i * stride);
+                    patch(y, x) = image(y, x + p * stride);
                 }
             }
 
             inter += etl::sum(patch);
 
-            crbm->activation_probabilities(patch, ref_a[i]);
+            dbn.activation_probabilities(patch, ref_a[p]);
 
             //std::cout << etl::to_string(ref_a[i]) << std::endl;
-            feature_sum += etl::sum(ref_a[i]);
+            feature_sum += etl::sum(ref_a[p]);
         }
 
         std::vector<std::pair<std::string, weight>> diffs_a;
@@ -295,11 +211,11 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
             double diff_a = 0;
 
             for(std::size_t p = 0; p < patches; ++p){
-                diff_a += std::sqrt(etl::sum((ref_a[p] - test_features_a[t][p]) * (ref_a[p] - test_features_a[t][p])));
+                diff_a += std::sqrt(etl::sum((ref_a[p] - test_features_a[t][p]) >> (ref_a[p] - test_features_a[t][p])));
             }
 
             if(std::string(test_image.begin(), test_image.end() - 4) == training_image){
-                std::cout << "Same :" << t << ":" << diff_a << ":" << etl::sum(image_reverse) << ":" << inter << ":" << feature_sum<< std::endl;
+                std::cout << "Same :" << t << ":" << diff_a << ":" << etl::sum(image) << ":" << inter << ":" << feature_sum<< std::endl;
             }
 
             diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
@@ -430,20 +346,24 @@ int command_train(config& conf){
     if(conf.method_1){
         std::cout << "Use method 1 (holistic)" << std::endl;
 
-        auto evaluate = [&dataset,&set,&conf](auto& crbm, auto& train_word_names, auto& test_image_names){
+        std::cout << "Method 1 is disable for now (needs check matrix dimensions" << std::endl;
+
+        return -1;
+
+        auto evaluate = [&dataset,&set,&conf](auto& dbn, auto& train_word_names, auto& test_image_names){
             std::vector<etl::dyn_matrix<weight, 3>> test_features_a;
 
             for(std::size_t i = 0; i < test_image_names.size(); ++i){
-                test_features_a.emplace_back(crbm->prepare_one_output());
+                test_features_a.emplace_back(dbn->prepare_one_output());
             }
 
             cpp::default_thread_pool<> pool;
 
             cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
-                [&test_features_a, &crbm, &dataset, &conf](auto& test_image, std::size_t i){
+                [&test_features_a, &dbn, &dataset, &conf](auto& test_image, std::size_t i){
                     auto test_v = mat_to_dyn(conf, dataset.word_images[test_image]);
 
-                    crbm->activation_probabilities(test_v, test_features_a[i]);
+                    dbn->activation_probabilities(test_v, test_features_a[i]);
                 });
 
             std::cout << "... done" << std::endl;
@@ -487,16 +407,16 @@ int command_train(config& conf){
                 ++evaluated;
 
                 auto ref_v = mat_to_dyn(conf, dataset.word_images[training_image + ".png"]);
-                auto ref_a = crbm->prepare_one_output();
+                auto ref_a = dbn->prepare_one_output();
 
-                crbm->activation_probabilities(ref_v, ref_a);
+                dbn->activation_probabilities(ref_v, ref_a);
 
                 std::vector<std::pair<std::string, weight>> diffs_a;
 
                 for(std::size_t t = 0; t < test_image_names.size(); ++t){
                     decltype(auto) test_image = test_image_names[t];
 
-                    auto diff_a = std::sqrt(etl::sum((ref_a - test_features_a[t]) * (ref_a - test_features_a[t])));
+                    auto diff_a = std::sqrt(etl::sum((ref_a - test_features_a[t]) >> (ref_a - test_features_a[t])));
                     diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
                 }
 
@@ -981,29 +901,12 @@ int command_train(config& conf){
             const auto patch_width = NV;
             const auto patch_height = HEIGHT / conf.downscale;
 
-            //TODO Normally every image should be in the correct matrix dimensions
-
-            std::cout << "Generate images (reverse) ..." << std::endl;
-
-            std::vector<etl::dyn_matrix<weight>> training_images_reverse;
-            training_images_reverse.reserve(training_images.size());
-
-            for(auto& image : training_images){
-                training_images_reverse.emplace_back(HEIGHT / conf.downscale, WIDTH / conf.downscale);
-
-                auto& image_reverse = training_images_reverse.back();
-
-                image_reverse = etl::transpose(image);
-            }
-
-            std::cout << "... done" << std::endl;
-
             std::vector<etl::dyn_matrix<weight>> training_patches;
             training_patches.reserve(training_images.size() * patches);
 
             std::cout << "Generate patches ..." << std::endl;
 
-            for(auto& image : training_images_reverse){
+            for(auto& image : training_images){
                 for(std::size_t i = 0; i < patches; ++i){
                     training_patches.emplace_back(patch_height, patch_width);
 
@@ -1026,10 +929,10 @@ int command_train(config& conf){
             //cdbn->load(file_name);
 
             std::cout << "Evaluate on training set" << std::endl;
-            evaluate_patches(dataset, set, conf, cdbn, patches, train_word_names, train_image_names);
+            evaluate_patches(dataset, set, conf, *cdbn, patches, train_word_names, train_image_names);
 
             std::cout << "Evaluate on test set" << std::endl;
-            evaluate_patches(dataset, set, conf, cdbn, patches, train_word_names, test_image_names);
+            evaluate_patches(dataset, set, conf, *cdbn, patches, train_word_names, test_image_names);
         } else {
             std::cout << "error: Only -third resolution is supported in method 2 for now" << std::endl;
             print_usage();
