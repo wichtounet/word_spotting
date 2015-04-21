@@ -108,7 +108,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
     cpp::default_thread_pool<> pool;
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
-        [&](auto& test_image, std::size_t i){
+        [&,patch_height,patch_width](auto& test_image, std::size_t i){
             auto image = mat_to_dyn(conf, dataset.word_images.at(test_image));
 
             for(std::size_t p = 0; p < patches; ++p){
