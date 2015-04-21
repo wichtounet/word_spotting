@@ -111,9 +111,6 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
         [&](auto& test_image, std::size_t i){
             auto image = mat_to_dyn(conf, dataset.word_images.at(test_image));
 
-            double inter = 0;
-            double feature_sum = 0;
-
             for(std::size_t p = 0; p < patches; ++p){
                 etl::dyn_matrix<weight> patch(patch_height, patch_width);
 
@@ -123,14 +120,8 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
                     }
                 }
 
-                inter += etl::sum(patch);
-
                 dbn.activation_probabilities(patch, test_features_a[i][p]);
-
-                feature_sum += etl::sum(test_features_a[i][p]);
             }
-
-            std::cout << i << ":" << test_image << ":" << inter << ":" << etl::sum(image) << ":" << feature_sum << std::endl;
         });
 
     std::cout << "... done" << std::endl;
@@ -173,8 +164,6 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
 
         ++evaluated;
 
-        std::cout << "Selected:" << training_image << std::endl;
-
         auto image = mat_to_dyn(conf, dataset.word_images.at(training_image + ".png"));
 
         std::vector<etl::dyn_matrix<weight, 3>> ref_a;
@@ -182,9 +171,6 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
         for(std::size_t i = 0; i < patches; ++i){
             ref_a.push_back(dbn.prepare_one_output());
         }
-
-        double inter = 0.0;
-        double feature_sum = 0.0;
 
         for(std::size_t p = 0; p < patches; ++p){
             etl::dyn_matrix<weight> patch(patch_height, patch_width);
@@ -195,12 +181,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
                 }
             }
 
-            inter += etl::sum(patch);
-
             dbn.activation_probabilities(patch, ref_a[p]);
-
-            //std::cout << etl::to_string(ref_a[i]) << std::endl;
-            feature_sum += etl::sum(ref_a[p]);
         }
 
         std::vector<std::pair<std::string, weight>> diffs_a;
@@ -212,10 +193,6 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
 
             for(std::size_t p = 0; p < patches; ++p){
                 diff_a += std::sqrt(etl::sum((ref_a[p] - test_features_a[t][p]) >> (ref_a[p] - test_features_a[t][p])));
-            }
-
-            if(std::string(test_image.begin(), test_image.end() - 4) == training_image){
-                std::cout << "Same :" << t << ":" << diff_a << ":" << etl::sum(image) << ":" << inter << ":" << feature_sum<< std::endl;
             }
 
             diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
