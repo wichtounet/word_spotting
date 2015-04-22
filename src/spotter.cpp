@@ -818,8 +818,10 @@ int command_train(config& conf){
         std::cout << "Use method 2 (patches)" << std::endl;
 
         if(conf.third){
+            std::cout << "Use a third of the resolution" << std::endl;
+
             static constexpr const std::size_t NF = 17;
-            static constexpr const std::size_t NF2 = 11;
+            static constexpr const std::size_t NF2 = 5;
             //static constexpr const std::size_t NF3 = 3;
 
             static constexpr const std::size_t NV = HEIGHT / 3;
@@ -827,15 +829,15 @@ int command_train(config& conf){
             using cdbn_t =
                 dll::dbn_desc<
                     dll::dbn_layers<
-                        dll::conv_rbm_desc<
+                        dll::conv_rbm_mp_desc<
                             NV, NV, 1                                   //40x40 input image (1 channel)
                             , NV + 1 - NF , NV + 1 - NF                 //Configure the size of the filter
                             , 30                                        //Number of feature maps
-                            //, 2                                       //Probabilistic max pooling (2x2)
+                            , 2                                         //Probabilistic max pooling (2x2)
                             , dll::weight_type<weight>
                             , dll::batch_size<25>
                             , dll::parallel
-                            , dll::verbose
+                            //, dll::verbose
                             , dll::momentum
                             , dll::weight_decay<dll::decay_type::L2>
                             , dll::dbn_only
@@ -843,14 +845,15 @@ int command_train(config& conf){
                             //, dll::sparsity<dll::sparsity_method::LEE>
                             //, dll::watcher<dll::opencv_rbm_visualizer>
                         >::rbm_t
-                        , dll::conv_rbm_desc<
-                            24, 24, 30
-                            , 24 + 1 - NF2 , 24 + 1 - NF2
+                        , dll::conv_rbm_mp_desc<
+                            12, 12, 30
+                            , 12 + 1 - NF2 , 12 + 1 - NF2
                             , 30
+                            , 2
                             , dll::weight_type<weight>
                             , dll::batch_size<25>
                             , dll::parallel
-                            , dll::verbose
+                            //, dll::verbose
                             , dll::momentum
                             , dll::weight_decay<dll::decay_type::L2>
                             , dll::dbn_only
@@ -862,9 +865,10 @@ int command_train(config& conf){
 
             auto cdbn = std::make_unique<cdbn_t>();
 
-            cdbn->template layer<0>().learning_rate /= 10;
-            cdbn->template layer<1>().learning_rate /= 5;
+            //cdbn->template layer<0>().learning_rate /= 10;
+            //cdbn->template layer<1>().learning_rate /= 5;
 
+            cdbn->display();
             std::cout << cdbn->output_size() << " output features" << std::endl;
 
             constexpr const std::size_t stride = NV / 2;
@@ -874,6 +878,9 @@ int command_train(config& conf){
 
             conf.patch_width = NV;
             conf.patch_stride = stride;
+
+            std::cout << "patch_width=" << conf.patch_width << std::endl;
+            std::cout << "patch_stride=" << conf.patch_stride << std::endl;
 
             const auto patch_width = NV;
             const auto patch_height = HEIGHT / conf.downscale;
@@ -901,8 +908,8 @@ int command_train(config& conf){
 
             const std::string file_name("method_2_third.dat");
 
-            //cdbn->pretrain(training_patches, 10);
-            //cdbn->store(file_name);
+            cdbn->pretrain(training_patches, 20);
+            cdbn->store(file_name);
             //cdbn->load(file_name);
 
             std::cout << "Evaluate on training set" << std::endl;
