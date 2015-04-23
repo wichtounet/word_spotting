@@ -18,6 +18,16 @@ endif
 endif
 endif
 
+# Vectorization
+
+CXX_FLAGS += -DETL_VECTORIZE
+
+# Activate BLAS mode on demand
+ifneq (,$(ETL_BLAS))
+CXX_FLAGS += -DETL_BLAS_MODE $(ETL_BLAS_CXX_FLAGS)
+LD_FLAGS += $(ETL_BLAS_LD_FLAGS)
+endif
+
 $(eval $(call auto_folder_compile,src))
 $(eval $(call auto_add_executable,spotter))
 
