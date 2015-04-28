@@ -4,3 +4,5 @@ release_debug
 *.dat
 *.log
 results
+run
+.passwd
