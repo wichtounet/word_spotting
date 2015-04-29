@@ -1157,19 +1157,19 @@ int command_train(config& conf){
             cdbn->display();
             std::cout << cdbn->output_size() << " output features" << std::endl;
 
-            const auto patch_width = third::patch_width;
-            const auto patch_height = third::patch_height;
+            constexpr const auto patch_width = third::patch_width;
+            constexpr const auto patch_height = third::patch_height;
+            constexpr const auto patch_stride = third::patch_stride;
 
-            std::cout << "patch_width=" << conf.patch_width << std::endl;
-            std::cout << "patch_stride=" << conf.patch_stride << std::endl;
+            //Compute the number of patches
+            constexpr const auto patches = (third::width - patch_width) / patch_stride + 1;
 
-            constexpr const std::size_t stride = third::patch_stride;
-            constexpr const auto patches = (third::width - third::patch_width) / stride + 1;
+            std::cout << "patch_width=" << patch_width << std::endl;
+            std::cout << "patch_stride=" << patch_stride << std::endl;
 
             //Pass information to the next passes (evaluation)
-
-            conf.patch_width = third::patch_width;
-            conf.patch_stride = stride;
+            conf.patch_width = patch_width;
+            conf.patch_stride = patch_stride;
 
             std::vector<etl::dyn_matrix<weight>> training_patches;
             training_patches.reserve(training_images.size() * patches);
@@ -1184,7 +1184,7 @@ int command_train(config& conf){
 
                     for(std::size_t y = 0; y < patch_height; ++y){
                         for(std::size_t x = 0; x < patch_width; ++x){
-                            patch(y, x) = image(y, x + i * stride);
+                            patch(y, x) = image(y, x + i * patch_stride);
                         }
                     }
                 }
