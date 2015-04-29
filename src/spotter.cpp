@@ -836,8 +836,7 @@ int command_train(config& conf){
                             , dll::batch_size<25>
                             , dll::parallel
                             , dll::verbose
-                            , dll::momentum
-                            , dll::weight_decay<dll::decay_type::L2>
+                            , dll::momentum , dll::weight_decay<dll::decay_type::L2>
                             , dll::dbn_only
                             , dll::sparsity<dll::sparsity_method::LEE>
                         >::rbm_t
@@ -1102,57 +1101,145 @@ int command_train(config& conf){
             static constexpr const std::size_t NH2_1 = NV2_1 - NF2 + 1;
             static constexpr const std::size_t NH2_2 = NV2_2 - NF2 + 1;
 
+            static constexpr const std::size_t K3 = third::K3;
+            static constexpr const std::size_t C3 = third::C3;
+            static constexpr const std::size_t NF3 = third::NF3;
+            static constexpr const std::size_t NV3_1 = NH2_1 / C2;
+            static constexpr const std::size_t NV3_2 = NH2_2 / C2;
+            static constexpr const std::size_t NH3_1 = NV3_1 - NF3 + 1;
+            static constexpr const std::size_t NH3_2 = NV3_2 - NF3 + 1;
+
+#ifdef CRBM_PMP_2
             using cdbn_t =
                 dll::dbn_desc<
                     dll::dbn_layers<
                         dll::conv_rbm_mp_desc<
-                            NV1_1, NV1_2, 1                             //40x40 input image (1 channel)
-                            , NH1_1 , NH1_2                             //Configure the size of the filter
-                            , K1                                        //Number of feature maps
-                            , C1                                         //Probabilistic max pooling (2x2)
-                            , dll::weight_type<weight>
-                            , dll::batch_size<third::B1>
-                            , dll::parallel
-                            , dll::momentum
-                            , dll::weight_decay<third::DT1>
-                            , dll::dbn_only
-                            , dll::hidden<third::HT1>
-                            , dll::sparsity<third::SM1>
-                        >::rbm_t
+                            NV1_1, NV1_2, 1, NH1_1 , NH1_2, K1, C1
+                            , dll::weight_type<weight>, dll::batch_size<third::B1>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT1>
+                            , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
+                            , dll::dbn_only>::rbm_t
                         , dll::conv_rbm_mp_desc<
-                            NV2_1, NV2_2, K1
-                            , NH2_1 , NH2_2
-                            , K2
-                            , C2
-                            , dll::weight_type<weight>
-                            , dll::batch_size<third::B2>
-                            , dll::parallel
-                            , dll::momentum
-                            , dll::weight_decay<third::DT2>
-                            , dll::dbn_only
-                            , dll::hidden<third::HT1>
-                            , dll::sparsity<third::SM2>
-                        >::rbm_t
+                            NV2_1, NV2_2, K1, NH2_1 , NH2_2, K2, C2
+                            , dll::weight_type<weight>, dll::batch_size<third::B2>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT2>
+                            , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
+                            , dll::dbn_only>::rbm_t
                     >
-                    //, dll::memory
                 >::dbn_t;
+#elif defined(CRBM_PMP_3)
+            using cdbn_t =
+                dll::dbn_desc<
+                    dll::dbn_layers<
+                        dll::conv_rbm_mp_desc<
+                            NV1_1, NV1_2, 1, NH1_1 , NH1_2, K1, C1
+                            , dll::weight_type<weight>, dll::batch_size<third::B1>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT1>
+                            , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
+                            , dll::dbn_only>::rbm_t
+                        , dll::conv_rbm_mp_desc<
+                            NV2_1, NV2_2, K1, NH2_1 , NH2_2, K2, C2
+                            , dll::weight_type<weight>, dll::batch_size<third::B2>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT2>
+                            , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
+                            , dll::dbn_only>::rbm_t
+                        , dll::conv_rbm_mp_desc<
+                            NV3_1, NV3_2, K2, NH3_1 , NH3_2, K3, C3
+                            , dll::weight_type<weight>, dll::batch_size<third::B3>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT3>
+                            , dll::hidden<third::HT3>, dll::sparsity<third::SM3>
+                            , dll::dbn_only>::rbm_t
+                    >
+                >::dbn_t;
+#elif defined(CRBM_MP_2)
+            using cdbn_t =
+                dll::dbn_desc<
+                    dll::dbn_layers<
+                        dll::conv_rbm_desc<
+                            NV1_1, NV1_2, 1, NH1_1 , NH1_2, K1
+                            , dll::weight_type<weight>, dll::batch_size<third::B1>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT1>
+                            , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
+                            , dll::dbn_only>::rbm_t
+                        , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1>::layer_t
+                        , dll::conv_rbm_desc<
+                            NV2_1, NV2_2, K1, NH2_1 , NH2_2, K2
+                            , dll::weight_type<weight>, dll::batch_size<third::B2>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT2>
+                            , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
+                            , dll::dbn_only>::rbm_t
+                        , dll::mp_layer_3d_desc<K2,NH2_1,NH2_1,1,C2,C2>::layer_t
+                    >
+                >::dbn_t;
+#elif defined(CRBM_MP_3)
+            using cdbn_t =
+                dll::dbn_desc<
+                    dll::dbn_layers<
+                        dll::conv_rbm_desc<
+                            NV1_1, NV1_2, 1, NH1_1 , NH1_2, K1
+                            , dll::weight_type<weight>, dll::batch_size<third::B1>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT1>
+                            , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
+                            , dll::dbn_only>::rbm_t
+                        , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1>::layer_t
+                        , dll::conv_rbm_desc<
+                            NV2_1, NV2_2, K1, NH2_1 , NH2_2, K2
+                            , dll::weight_type<weight>, dll::batch_size<third::B2>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT2>
+                            , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
+                            , dll::dbn_only>::rbm_t
+                        , dll::mp_layer_3d_desc<K2,NH2_1,NH2_1,1,C2,C2>::layer_t
+                        , dll::conv_rbm_desc<
+                            NV3_1, NV3_2, K2, NH3_1 , NH3_2, K3
+                            , dll::weight_type<weight>, dll::batch_size<third::B3>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT3>
+                            , dll::hidden<third::HT3>, dll::sparsity<third::SM3>
+                            , dll::dbn_only>::rbm_t
+                        , dll::mp_layer_3d_desc<K3,NH3_1,NH3_1,1,C3,C3>::layer_t
+                    >
+                >::dbn_t;
+#else
+            static_assert(false, "No architecture has been selected");
+#endif
+
+#if defined(CRBM_PMP_2) || defined(CRBM_PMP_3)
+            constexpr const std::size_t L1 = 0;
+            constexpr const std::size_t L2 = 1;
+            constexpr const std::size_t L3 = 2;
+#else
+            constexpr const std::size_t L1 = 0;
+            constexpr const std::size_t L2 = 2;
+            constexpr const std::size_t L3 = 4;
+#endif
 
             auto cdbn = std::make_unique<cdbn_t>();
 
-            third::rate_0(cdbn->template layer<0>().learning_rate);
-            third::rate_1(cdbn->template layer<1>().learning_rate);
+            third::rate_0(cdbn->template layer<L1>().learning_rate);
+            third::rate_1(cdbn->template layer<L2>().learning_rate);
 
-            third::wd_l1_0(cdbn->template layer<0>().l1_weight_cost);
-            third::wd_l1_1(cdbn->template layer<1>().l1_weight_cost);
+            third::momentum_0(cdbn->template layer<L1>().initial_momentum, cdbn->template layer<L1>().final_momentum);
+            third::momentum_1(cdbn->template layer<L2>().initial_momentum, cdbn->template layer<L2>().final_momentum);
 
-            third::wd_l2_0(cdbn->template layer<0>().l2_weight_cost);
-            third::wd_l2_1(cdbn->template layer<1>().l2_weight_cost);
+            third::wd_l1_0(cdbn->template layer<L1>().l1_weight_cost);
+            third::wd_l1_1(cdbn->template layer<L2>().l1_weight_cost);
 
-            third::pbias_0(cdbn->template layer<0>().pbias);
-            third::pbias_1(cdbn->template layer<1>().pbias);
+            third::wd_l2_0(cdbn->template layer<L1>().l2_weight_cost);
+            third::wd_l2_1(cdbn->template layer<L2>().l2_weight_cost);
 
-            third::pbias_lambda_0(cdbn->template layer<0>().pbias_lambda);
-            third::pbias_lambda_1(cdbn->template layer<1>().pbias_lambda);
+            third::pbias_0(cdbn->template layer<L1>().pbias);
+            third::pbias_1(cdbn->template layer<L2>().pbias);
+
+            third::pbias_lambda_0(cdbn->template layer<L1>().pbias_lambda);
+            third::pbias_lambda_1(cdbn->template layer<L2>().pbias_lambda);
+
+#if defined(CRBM_PMP_3) || defined(CRBM_MP_3)
+            third::rate_2(cdbn->template layer<L3>().learning_rate);
+            third::momentum_2(cdbn->template layer<L3>().initial_momentum, cdbn->template layer<L3>().final_momentum);
+            third::wd_l1_2(cdbn->template layer<L3>().l1_weight_cost);
+            third::wd_l2_2(cdbn->template layer<L3>().l2_weight_cost);
+            third::pbias_2(cdbn->template layer<L3>().pbias);
+            third::pbias_lambda_2(cdbn->template layer<L3>().pbias_lambda);
+#endif
 
             cdbn->display();
             std::cout << cdbn->output_size() << " output features" << std::endl;
@@ -1203,6 +1290,15 @@ int command_train(config& conf){
 
             std::cout << "Evaluate on test set" << std::endl;
             evaluate_patches_andreas(dataset, set, conf, *cdbn, patches, train_word_names, test_image_names);
+
+#if !defined(CRBM_PMP_3) && !defined(CRBM_MP_3)
+            //Silence some warnings
+            cpp_unused(K3);
+            cpp_unused(C3);
+            cpp_unused(L3);
+            cpp_unused(NH3_1);
+            cpp_unused(NH3_2);
+#endif
         } else {
             std::cout << "error: Only -third resolution is supported in method 2 for now" << std::endl;
             print_usage();
