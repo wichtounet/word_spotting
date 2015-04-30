@@ -88,6 +88,36 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
     return training_image;
 }
 
+
+template<typename V1, typename V2>
+double dtw_distance(const V1& s, const V2& t){
+    const auto n = s.size();
+    const auto m = t.size();
+
+    constexpr const auto inf = std::numeric_limits<double>::infinity();
+
+    etl::dyn_matrix<double> dtw(n+1, m+1);
+    for(std::size_t i = 1; i <= n; ++i){
+        dtw(i, 0) = inf;
+    }
+    for(std::size_t j = 1; j <= m; ++j){
+        dtw(0, j) = inf;
+    }
+    dtw(0,0) = 0;
+
+    for(std::size_t i = 1; i <= n; ++i){
+        for(std::size_t j = 1; j <= m; ++j){
+            auto cost = std::sqrt(etl::sum((s[i-1] - t[j-1]) >> (s[i-1] - t[j-1])));
+
+            dtw(i, j) = cost + std::min(dtw(i-1, j  ),    // insertion
+                               std::min(dtw(i  , j-1),    // deletion
+                                        dtw(i-1, j-1)));  // match
+        }
+    }
+
+    return dtw(n, m);
+}
+
 template<typename Dataset, typename Set, typename DBN>
 void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const config& conf, const DBN& dbn, std::size_t patches, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
     std::cout << "Select a folder ..." << std::endl;
@@ -243,11 +273,11 @@ void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const conf
         for(std::size_t t = 0; t < test_image_names.size(); ++t){
             decltype(auto) test_image = test_image_names[t];
 
-            double diff_a = 0;
+            double diff_a = dtw_distance(ref_a, test_features_a[t]);
 
-            for(std::size_t p = 0; p < patches; ++p){
-                diff_a += std::sqrt(etl::sum((ref_a[p] - test_features_a[t][p]) >> (ref_a[p] - test_features_a[t][p])));
-            }
+            //for(std::size_t p = 0; p < patches; ++p){
+                //diff_a += std::sqrt(etl::sum((ref_a[p] - test_features_a[t][p]) >> (ref_a[p] - test_features_a[t][p])));
+            //}
 
             diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
         }
