@@ -238,11 +238,10 @@ double dtw_distance(const V1& s, const V2& t){
     return dtw(n, m);
 }
 
-template<typename Dataset, typename Set>
-void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
+std::string select_folder(const std::string& base_folder){
     std::cout << "Select a folder ..." << std::endl;
 
-    mkdir("./dtw_results", 0777);
+    mkdir(base_folder.c_str(), 0777);
 
     std::size_t result_name = 0;
 
@@ -251,12 +250,17 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
     struct stat buffer;
     do {
         ++result_name;
-        result_folder = "./dtw_results/" + std::to_string(result_name);
+        result_folder = base_folder + std::to_string(result_name);
     } while(stat(result_folder.c_str(), &buffer) == 0);
 
     mkdir(result_folder.c_str(), 0777);
 
     std::cout << "... " << result_folder << std::endl;
+}
+
+template<typename Dataset, typename Set>
+void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
+    select_folder("./dtw_results/");
 
     {
         std::cout << "Generate relevance files..." << std::endl;
@@ -439,23 +443,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
 
 template<typename Dataset, typename Set, typename DBN>
 void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
-    std::cout << "Select a folder ..." << std::endl;
-
-    mkdir("./results", 0777);
-
-    std::size_t result_name = 0;
-
-    std::string result_folder;
-
-    struct stat buffer;
-    do {
-        ++result_name;
-        result_folder = "./results/" + std::to_string(result_name);
-    } while(stat(result_folder.c_str(), &buffer) == 0);
-
-    mkdir(result_folder.c_str(), 0777);
-
-    std::cout << "... " << result_folder << std::endl;
+    select_folder("./results/");
 
     //Get some sizes
 
