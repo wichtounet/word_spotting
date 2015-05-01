@@ -34,6 +34,7 @@ using weight = double;
 
 static constexpr const std::size_t WIDTH = 660;
 static constexpr const std::size_t HEIGHT = 120;
+static constexpr const bool generate_graphs = false;
 
 constexpr const std::size_t MAX_N = 25;
 
@@ -355,34 +356,36 @@ void update_stats(std::size_t k, const std::string& result_folder, const Dataset
 
     ap[k] /= ap_updates;
 
-    std::ofstream roc_gp_stream(result_folder + "/" + std::to_string(k) + "_roc.gp");
+    if(generate_graphs){
+        std::ofstream roc_gp_stream(result_folder + "/" + std::to_string(k) + "_roc.gp");
 
-    roc_gp_stream << "set terminal png size 300,300 enhanced" << std::endl;
-    roc_gp_stream << "set output '" << k << "_roc.png'" << std::endl;
-    roc_gp_stream << "set title \"ROC(" << k << ")\"" << std::endl;
-    roc_gp_stream << "set xlabel \"FPR\"" << std::endl;
-    roc_gp_stream << "set ylabel \"TPR\"" << std::endl;
-    roc_gp_stream << "plot [0:1] '" << k << "_roc.dat' with lines title ''" << std::endl;
+        roc_gp_stream << "set terminal png size 300,300 enhanced" << std::endl;
+        roc_gp_stream << "set output '" << k << "_roc.png'" << std::endl;
+        roc_gp_stream << "set title \"ROC(" << k << ")\"" << std::endl;
+        roc_gp_stream << "set xlabel \"FPR\"" << std::endl;
+        roc_gp_stream << "set ylabel \"TPR\"" << std::endl;
+        roc_gp_stream << "plot [0:1] '" << k << "_roc.dat' with lines title ''" << std::endl;
 
-    std::ofstream roc_data_stream(result_folder + "/" + std::to_string(k) + "_roc.dat");
+        std::ofstream roc_data_stream(result_folder + "/" + std::to_string(k) + "_roc.dat");
 
-    for(std::size_t nn = 0; nn < tpr.size(); ++nn){
-        roc_data_stream << fpr[nn] << " " << tpr[nn] << std::endl;
-    }
+        for(std::size_t nn = 0; nn < tpr.size(); ++nn){
+            roc_data_stream << fpr[nn] << " " << tpr[nn] << std::endl;
+        }
 
-    std::ofstream pr_gp_stream(result_folder + "/" + std::to_string(k) + "_pr.gp");
+        std::ofstream pr_gp_stream(result_folder + "/" + std::to_string(k) + "_pr.gp");
 
-    pr_gp_stream << "set terminal png size 300,300 enhanced" << std::endl;
-    pr_gp_stream << "set output '" << k << "_pr.png'" << std::endl;
-    pr_gp_stream << "set title \"PR(" << k << ")\"" << std::endl;
-    pr_gp_stream << "set xlabel \"Recall\"" << std::endl;
-    pr_gp_stream << "set ylabel \"Precision\"" << std::endl;
-    pr_gp_stream << "plot [0:1] '" << k << "_pr.dat' with lines title ''" << std::endl;
+        pr_gp_stream << "set terminal png size 300,300 enhanced" << std::endl;
+        pr_gp_stream << "set output '" << k << "_pr.png'" << std::endl;
+        pr_gp_stream << "set title \"PR(" << k << ")\"" << std::endl;
+        pr_gp_stream << "set xlabel \"Recall\"" << std::endl;
+        pr_gp_stream << "set ylabel \"Precision\"" << std::endl;
+        pr_gp_stream << "plot [0:1] '" << k << "_pr.dat' with lines title ''" << std::endl;
 
-    std::ofstream pr_data_stream(result_folder + "/" + std::to_string(k) + "_pr.dat");
+        std::ofstream pr_data_stream(result_folder + "/" + std::to_string(k) + "_pr.dat");
 
-    for(std::size_t nn = 0; nn < tpr.size(); ++nn){
-        pr_data_stream << precision[nn] << " " << recall[nn] << std::endl;
+        for(std::size_t nn = 0; nn < tpr.size(); ++nn){
+            pr_data_stream << precision[nn] << " " << recall[nn] << std::endl;
+        }
     }
 }
 
@@ -622,8 +625,7 @@ int command_train(config& conf){
             }
 
             training_images.emplace_back(mat_to_dyn(conf, dataset.word_images[name]));
-        }
-
+        } 
         auto evaluate = [&dataset,&set,&conf](auto& dbn, auto& train_word_names, auto& test_image_names){
             std::vector<etl::dyn_matrix<weight, 3>> test_features_a;
 
