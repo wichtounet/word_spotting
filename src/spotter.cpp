@@ -300,11 +300,7 @@ void update_stats(std::size_t k, const std::string& result_folder, const Dataset
     auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
         [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
 
-    //Make sure that there is a sample in the test set
-    if(total_positive == 0){
-        std::cout << "WARNING: Ignored " << keyword << " since there are no example in the test set" << std::endl;
-        return;
-    }
+    cpp_assert(total_positive > 0, "No example for one keyword");
 
     std::vector<std::size_t> tp(diffs_a.size());
     std::vector<std::size_t> fp(diffs_a.size());
@@ -453,7 +449,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
 }
 
 template<typename Dataset, typename Set, typename DBN>
-void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
+void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
     //Get some sizes
 
     const std::size_t patch_height = HEIGHT / conf.downscale;
@@ -677,11 +673,7 @@ int command_train(config& conf){
                 auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
                     [&dataset, &keyword](auto& i){ return dataset.word_labels[{i.begin(), i.end() - 4}] == keyword; });
 
-                //Make sure that there is a sample in the test set
-                if(total_positive == 0){
-                    std::cout << "Skipped " << keyword << " since there are no example in the test set" << std::endl;
-                    continue;
-                }
+                cpp_assert(total_positive > 0, "No example for one keyword");
 
                 ++evaluated;
 
@@ -1312,10 +1304,10 @@ int command_train(config& conf){
             cdbn->load(file_name);
 
             std::cout << "Evaluate on training set" << std::endl;
-            evaluate_patches_andreas(dataset, set, conf, *cdbn, train_word_names, train_image_names);
+            evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names);
 
             std::cout << "Evaluate on test set" << std::endl;
-            evaluate_patches_andreas(dataset, set, conf, *cdbn, train_word_names, test_image_names);
+            evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names);
 
 #if !defined(CRBM_PMP_3) && !defined(CRBM_MP_3)
             //Silence some warnings
