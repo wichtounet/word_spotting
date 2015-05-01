@@ -88,6 +88,37 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
     return training_image;
 }
 
+std::vector<etl::dyn_matrix<weight>> mat_to_patches(const config& conf, const cv::Mat& image){
+    cv::Mat clean_image;
+
+    cv::Mat scaled_normalized(cv::Size(image.size().width / conf.downscale, image.size().height / conf.downscale), CV_8U);
+    cv::resize(image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
+    cv::adaptiveThreshold(scaled_normalized, clean_image, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
+
+    std::vector<etl::dyn_matrix<weight>> patches;
+
+    const auto context = conf.patch_width / 2;
+
+    for(std::size_t i = 0; i < static_cast<std::size_t>(clean_image.size().width); i += conf.patch_stride){
+        patches.emplace_back(static_cast<std::size_t>(clean_image.size().height), static_cast<std::size_t>(conf.patch_width));
+
+        auto& patch = patches.back();
+
+        for(std::size_t y = 0; y < static_cast<std::size_t>(clean_image.size().height); ++y){
+            for(int x = i - context; x < static_cast<int>(i + context); ++x){
+                uint8_t pixel = 1;
+
+                if(x >= 0 && x < clean_image.size().width){
+                    pixel = image.at<uint8_t>(y, x + i * conf.patch_stride);
+                }
+
+                patch(y, x - i + context) = pixel == 0 ? 0.0 : 1.0;
+            }
+        }
+    }
+
+    return patches;
+}
 
 template<typename V1, typename V2>
 double dtw_distance(const V1& s, const V2& t){
@@ -119,7 +150,7 @@ double dtw_distance(const V1& s, const V2& t){
 }
 
 template<typename Dataset, typename Set, typename DBN>
-void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const config& conf, const DBN& dbn, std::size_t patches, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
+void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
     std::cout << "Select a folder ..." << std::endl;
 
     mkdir("./results", 0777);
@@ -142,7 +173,6 @@ void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const conf
 
     const std::size_t patch_height = HEIGHT / conf.downscale;
     const std::size_t patch_width = conf.patch_width;
-    const std::size_t stride = conf.patch_stride;
 
     {
         std::cout << "Generate relevance files..." << std::endl;
@@ -177,34 +207,19 @@ void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const conf
 
     std::cout << "Prepare the outputs ..." << std::endl;
 
-    std::vector<std::vector<etl::dyn_matrix<weight, 3>>> test_features_a;
-
-    for(std::size_t i = 0; i < test_image_names.size(); ++i){
-        std::vector<etl::dyn_matrix<weight, 3>> vec;
-
-        for(std::size_t p = 0; p < patches; ++p){
-            vec.emplace_back(dbn.prepare_one_output());
-        }
-
-       test_features_a.push_back(std::move(vec));
-    }
+    std::vector<std::vector<etl::dyn_matrix<weight, 3>>> test_features_a(test_image_names.size());
 
     cpp::default_thread_pool<> pool;
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
         [&,patch_height,patch_width](auto& test_image, std::size_t i){
-            auto image = mat_to_dyn(conf, dataset.word_images.at(test_image));
+            auto& vec = test_features_a[i];
 
-            for(std::size_t p = 0; p < patches; ++p){
-                etl::dyn_matrix<weight> patch(patch_height, patch_width);
+            auto patches = mat_to_patches(conf, dataset.word_images.at(test_image));
 
-                for(std::size_t y = 0; y < etl::dim<0>(patch); ++y){
-                    for(std::size_t x = 0; x < etl::dim<1>(patch); ++x){
-                        patch(y, x) = image(y, x + p * conf.patch_stride);
-                    }
-                }
-
-                dbn.activation_probabilities(patch, test_features_a[i][p]);
+            for(auto& patch :patches){
+                vec.push_back(dbn.prepare_one_output());
+                dbn.activation_probabilities(patch, vec.back());
             }
         });
 
@@ -248,24 +263,13 @@ void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const conf
 
         ++evaluated;
 
-        auto image = mat_to_dyn(conf, dataset.word_images.at(training_image + ".png"));
+        auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"));
 
         std::vector<etl::dyn_matrix<weight, 3>> ref_a;
 
-        for(std::size_t i = 0; i < patches; ++i){
+        for(auto& patch :patches){
             ref_a.push_back(dbn.prepare_one_output());
-        }
-
-        for(std::size_t p = 0; p < patches; ++p){
-            etl::dyn_matrix<weight> patch(patch_height, patch_width);
-
-            for(std::size_t y = 0; y < patch_height; ++y){
-                for(std::size_t x = 0; x < patch_width; ++x){
-                    patch(y, x) = image(y, x + p * stride);
-                }
-            }
-
-            dbn.activation_probabilities(patch, ref_a[p]);
+            dbn.activation_probabilities(patch, ref_a.back());
         }
 
         std::vector<std::pair<std::string, weight>> diffs_a;
@@ -274,11 +278,6 @@ void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const conf
             decltype(auto) test_image = test_image_names[t];
 
             double diff_a = dtw_distance(ref_a, test_features_a[t]);
-
-            //for(std::size_t p = 0; p < patches; ++p){
-                //diff_a += std::sqrt(etl::sum((ref_a[p] - test_features_a[t][p]) >> (ref_a[p] - test_features_a[t][p])));
-            //}
-
             diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
         }
 
@@ -606,17 +605,17 @@ int command_train(config& conf){
     std::cout << valid_image_names.size() << " validation word images in set" << std::endl;
     std::cout << test_image_names.size() << " test word images in set" << std::endl;
 
-    std::vector<etl::dyn_matrix<weight>> training_images;
+    if(conf.method_1){
+        std::vector<etl::dyn_matrix<weight>> training_images;
 
-    for(auto& name : train_image_names){
-        if(conf.sub && training_images.size() == 1000){
-            break;
+        for(auto& name : train_image_names){
+            if(conf.sub && training_images.size() == 1000){
+                break;
+            }
+
+            training_images.emplace_back(mat_to_dyn(conf, dataset.word_images[name]));
         }
 
-        training_images.emplace_back(mat_to_dyn(conf, dataset.word_images[name]));
-    }
-
-    if(conf.method_1){
         std::cout << "Use method 1 (holistic)" << std::endl;
 
         std::cout << "Method 1 is disable for now (needs check matrix dimensions" << std::endl;
@@ -1110,6 +1109,7 @@ int command_train(config& conf){
             evaluate(cdbn, train_word_names, test_image_names);
         }
     } else if(conf.method_2){
+
         std::cout << "Use method 2 (patches)" << std::endl;
 
         if(conf.third){
@@ -1278,9 +1278,7 @@ int command_train(config& conf){
             constexpr const auto patch_height = third::patch_height;
             constexpr const auto patch_stride = third::patch_stride;
 
-            //Compute the number of patches
-            constexpr const auto patches = (third::width - patch_width) / patch_stride + 1;
-
+            std::cout << "patch_height=" << patch_height << std::endl;
             std::cout << "patch_width=" << patch_width << std::endl;
             std::cout << "patch_stride=" << patch_stride << std::endl;
 
@@ -1289,37 +1287,28 @@ int command_train(config& conf){
             conf.patch_stride = patch_stride;
 
             std::vector<etl::dyn_matrix<weight>> training_patches;
-            training_patches.reserve(training_images.size() * patches);
+            training_patches.reserve(train_image_names.size() * 5);
 
             std::cout << "Generate patches ..." << std::endl;
 
-            for(auto& image : training_images){
-                for(std::size_t i = 0; i < patches; ++i){
-                    training_patches.emplace_back(patch_height, patch_width);
-
-                    auto& patch = training_patches.back();
-
-                    for(std::size_t y = 0; y < patch_height; ++y){
-                        for(std::size_t x = 0; x < patch_width; ++x){
-                            patch(y, x) = image(y, x + i * patch_stride);
-                        }
-                    }
-                }
+            for(auto& name : train_image_names){
+                auto patches = mat_to_patches(conf, dataset.word_images[name]);
+                std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
             }
 
             std::cout << "... done" << std::endl;
 
             const std::string file_name("method_2_third.dat");
 
-            cdbn->pretrain(training_patches, third::epochs);
-            cdbn->store(file_name);
-            //cdbn->load(file_name);
+            //cdbn->pretrain(training_patches, third::epochs);
+            //cdbn->store(file_name);
+            cdbn->load(file_name);
 
             std::cout << "Evaluate on training set" << std::endl;
-            evaluate_patches_andreas(dataset, set, conf, *cdbn, patches, train_word_names, train_image_names);
+            evaluate_patches_andreas(dataset, set, conf, *cdbn, train_word_names, train_image_names);
 
             std::cout << "Evaluate on test set" << std::endl;
-            evaluate_patches_andreas(dataset, set, conf, *cdbn, patches, train_word_names, test_image_names);
+            evaluate_patches_andreas(dataset, set, conf, *cdbn, train_word_names, test_image_names);
 
 #if !defined(CRBM_PMP_3) && !defined(CRBM_MP_3)
             //Silence some warnings
