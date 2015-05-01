@@ -129,13 +129,16 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
 
     std::vector<etl::dyn_vector<weight>> features;
 
-    for(std::size_t i = 0; i < static_cast<std::size_t>(clean_image.size().width); ++i){
+    const auto width = static_cast<std::size_t>(clean_image.size().width);
+    const auto height = static_cast<std::size_t>(clean_image.size().height);
+
+    for(std::size_t i = 0; i < width; ++i){
         features.emplace_back(6);
 
         auto& f = features.back();
 
         double lower = 0.0;
-        for(std::size_t y = 0; y < static_cast<std::size_t>(clean_image.size().height); ++y){
+        for(std::size_t y = 0; y < height; ++y){
             if(clean_image.at<uint8_t>(y, i) == 0){
                 lower = y;
                 break;
@@ -143,7 +146,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         }
 
         double upper = 0.0;
-        for(std::size_t y = clean_image.size().height; y > 0; --y){
+        for(std::size_t y = height; y > 0; --y){
             if(clean_image.at<uint8_t>(y, i) == 0){
                 upper = y;
                 break;
@@ -151,14 +154,14 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         }
 
         std::size_t black = 0;
-        for(std::size_t y = clean_image.size().height; y > 0; --y){
+        for(std::size_t y = 0; y < height; ++y){
             if(clean_image.at<uint8_t>(y, i) == 0){
                 ++black;
             }
         }
 
         std::size_t transitions = 0;
-        for(std::size_t y = 1; y < static_cast<std::size_t>(clean_image.size().height); ++y){
+        for(std::size_t y = 1; y < height; ++y){
             if(clean_image.at<uint8_t>(y-1, i) != clean_image.at<uint8_t>(y, i)){
                 ++transitions;
             }
@@ -166,13 +169,11 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
 
         f[0] = lower;
         f[1] = upper;
-        f[2] = static_cast<double>(black) / clean_image.size().height ;
+        f[2] = static_cast<double>(black) / height;
         f[3] = transitions;
         f[4] = 0.0;
         f[5] = 0.0;
     }
-
-    const auto width = static_cast<std::size_t>(clean_image.size().width);
 
     for(std::size_t i = 0; i < width - 1; ++i){
         auto& f = features[i];
@@ -469,7 +470,7 @@ void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const conf
 
             auto patches = mat_to_patches(conf, dataset.word_images.at(test_image));
 
-            for(auto& patch :patches){
+            for(auto& patch : patches){
                 vec.push_back(dbn.prepare_one_output());
                 dbn.activation_probabilities(patch, vec.back());
             }
