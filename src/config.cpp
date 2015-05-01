@@ -33,7 +33,9 @@ config parse_args(int argc, char** argv){
 
     std::size_t i = 0;
     for(; i < conf.args.size(); ++i){
-        if(conf.args[i] == "-1"){
+        if(conf.args[i] == "-0"){
+            conf.method_0 = true;
+        } else if(conf.args[i] == "-1"){
             conf.method_1 = true;
         } else if(conf.args[i] == "-2"){
             conf.method_2 = true;

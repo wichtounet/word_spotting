@@ -15,6 +15,7 @@ struct config {
     std::vector<std::string> args;
     std::vector<std::string> files;
     std::string command;
+    bool method_0 = false;
     bool method_1 = false;
     bool method_2 = false;
     bool half = false;
