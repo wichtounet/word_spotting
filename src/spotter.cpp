@@ -609,6 +609,11 @@ int command_train(config& conf){
         std::cout << "Evaluate on test set" << std::endl;
         evaluate_dtw(dataset, set, conf, train_word_names, test_image_names);
     } else if(conf.method_1){
+        std::cout << "Use method 1 (holistic)" << std::endl;
+        std::cout << "Method 1 is disabled for now (needs check matrix dimensions" << std::endl;
+
+        return -1;
+
         std::vector<etl::dyn_matrix<weight>> training_images;
 
         for(auto& name : train_image_names){
@@ -618,12 +623,6 @@ int command_train(config& conf){
 
             training_images.emplace_back(mat_to_dyn(conf, dataset.word_images[name]));
         }
-
-        std::cout << "Use method 1 (holistic)" << std::endl;
-
-        std::cout << "Method 1 is disable for now (needs check matrix dimensions" << std::endl;
-
-        return -1;
 
         auto evaluate = [&dataset,&set,&conf](auto& dbn, auto& train_word_names, auto& test_image_names){
             std::vector<etl::dyn_matrix<weight, 3>> test_features_a;
