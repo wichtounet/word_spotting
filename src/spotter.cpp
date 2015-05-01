@@ -256,42 +256,47 @@ std::string select_folder(const std::string& base_folder){
     mkdir(result_folder.c_str(), 0777);
 
     std::cout << "... " << result_folder << std::endl;
+
+    return result_folder;
+}
+
+template<typename Dataset, typename Set>
+void generate_rel_files(const std::string& result_folder, const Dataset& dataset, const Set& set, const std::vector<std::string>& test_image_names){
+    std::cout << "Generate relevance files..." << std::endl;
+
+    std::ofstream global_relevance_stream(result_folder + "/global_rel_file");
+    std::ofstream local_relevance_stream(result_folder + "/local_rel_file");
+
+    for(std::size_t k = 0; k < set.keywords.size(); ++k){
+        auto& keyword = set.keywords[k];
+
+        for(std::size_t t = 0; t < test_image_names.size(); ++t){
+            decltype(auto) test_image = test_image_names[t];
+
+            std::string keyword_str;
+            keyword_str = std::accumulate(keyword.begin(), keyword.end(), keyword_str);
+
+            global_relevance_stream << "cv1 0 " << keyword_str << "_" << test_image;
+            local_relevance_stream << "cv1_" << keyword_str << " 0 " << test_image;
+
+            if(dataset.word_labels.at({test_image.begin(), test_image.end() - 4}) == keyword){
+                global_relevance_stream << " 1" << std::endl;
+                local_relevance_stream << " 1" << std::endl;
+            } else {
+                global_relevance_stream << " 0" << std::endl;
+                local_relevance_stream << " 0" << std::endl;
+            }
+        }
+    }
+
+    std::cout << "... done" << std::endl;
 }
 
 template<typename Dataset, typename Set>
 void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
-    select_folder("./dtw_results/");
+    auto result_folder = select_folder("./dtw_results/");
 
-    {
-        std::cout << "Generate relevance files..." << std::endl;
-
-        std::ofstream global_relevance_stream(result_folder + "/global_rel_file");
-        std::ofstream local_relevance_stream(result_folder + "/local_rel_file");
-
-        for(std::size_t k = 0; k < set.keywords.size(); ++k){
-            auto& keyword = set.keywords[k];
-
-            for(std::size_t t = 0; t < test_image_names.size(); ++t){
-                decltype(auto) test_image = test_image_names[t];
-
-                std::string keyword_str;
-                keyword_str = std::accumulate(keyword.begin(), keyword.end(), keyword_str);
-
-                global_relevance_stream << "cv1 0 " << keyword_str << "_" << test_image;
-                local_relevance_stream << "cv1_" << keyword_str << " 0 " << test_image;
-
-                if(dataset.word_labels.at({test_image.begin(), test_image.end() - 4}) == keyword){
-                    global_relevance_stream << " 1" << std::endl;
-                    local_relevance_stream << " 1" << std::endl;
-                } else {
-                    global_relevance_stream << " 0" << std::endl;
-                    local_relevance_stream << " 0" << std::endl;
-                }
-            }
-        }
-
-        std::cout << "... done" << std::endl;
-    }
+    generate_rel_files(result_folder, dataset, set, test_image_names);
 
     std::cout << "Evaluate performance..." << std::endl;
 
@@ -443,43 +448,14 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
 
 template<typename Dataset, typename Set, typename DBN>
 void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
-    select_folder("./results/");
-
     //Get some sizes
 
     const std::size_t patch_height = HEIGHT / conf.downscale;
     const std::size_t patch_width = conf.patch_width;
 
-    {
-        std::cout << "Generate relevance files..." << std::endl;
+    auto result_folder = select_folder("./results/");
 
-        std::ofstream global_relevance_stream(result_folder + "/global_rel_file");
-        std::ofstream local_relevance_stream(result_folder + "/local_rel_file");
-
-        for(std::size_t k = 0; k < set.keywords.size(); ++k){
-            auto& keyword = set.keywords[k];
-
-            for(std::size_t t = 0; t < test_image_names.size(); ++t){
-                decltype(auto) test_image = test_image_names[t];
-
-                std::string keyword_str;
-                keyword_str = std::accumulate(keyword.begin(), keyword.end(), keyword_str);
-
-                global_relevance_stream << "cv1 0 " << keyword_str << "_" << test_image;
-                local_relevance_stream << "cv1_" << keyword_str << " 0 " << test_image;
-
-                if(dataset.word_labels.at({test_image.begin(), test_image.end() - 4}) == keyword){
-                    global_relevance_stream << " 1" << std::endl;
-                    local_relevance_stream << " 1" << std::endl;
-                } else {
-                    global_relevance_stream << " 0" << std::endl;
-                    local_relevance_stream << " 0" << std::endl;
-                }
-            }
-        }
-
-        std::cout << "... done" << std::endl;
-    }
+    generate_rel_files(result_folder, dataset, set, test_image_names);
 
     std::cout << "Prepare the outputs ..." << std::endl;
 
