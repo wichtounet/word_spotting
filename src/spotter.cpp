@@ -293,6 +293,103 @@ void generate_rel_files(const std::string& result_folder, const Dataset& dataset
     std::cout << "... done" << std::endl;
 }
 
+template<typename Dataset, typename Keyword>
+void update_stats(std::size_t k, const std::string& result_folder, const Dataset& dataset, const Keyword& keyword, std::vector<std::pair<std::string, weight>> diffs_a, std::vector<double>& eer, std::vector<double>& ap, std::ofstream& global_top_stream, std::ofstream& local_top_stream, const std::vector<std::string>& test_image_names){
+    std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
+
+    auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
+        [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
+
+    //Make sure that there is a sample in the test set
+    if(total_positive == 0){
+        std::cout << "WARNING: Ignored " << keyword << " since there are no example in the test set" << std::endl;
+        return;
+    }
+
+    std::vector<std::size_t> tp(diffs_a.size());
+    std::vector<std::size_t> fp(diffs_a.size());
+    std::vector<std::size_t> fn(diffs_a.size());
+    std::vector<double> tpr(diffs_a.size());
+    std::vector<double> fpr(diffs_a.size());
+    std::vector<double> recall(diffs_a.size());
+    std::vector<double> precision(diffs_a.size());
+
+    std::size_t ap_updates = 0;
+
+    for(std::size_t n = 0; n < diffs_a.size(); ++n){
+        std::string keyword_str;
+        keyword_str = std::accumulate(keyword.begin(), keyword.end(), keyword_str);
+
+        global_top_stream << "cv1 Q0 " << keyword_str << "_" << diffs_a[n].first << ".png 0 " << -diffs_a[n].second << " bw" << std::endl;
+        local_top_stream << "cv1_" << keyword_str << " Q0 " << diffs_a[n].first << ".png 0 " << -diffs_a[n].second << " bw" << std::endl;
+
+        std::size_t tp_n = n == 0 ? 0 : tp[n - 1];
+        std::size_t fp_n = n == 0 ? 0 : fp[n - 1];
+        std::size_t fn_n = n == 0 ? total_positive : fn[n - 1];
+
+        if(dataset.word_labels.at(diffs_a[n].first) == keyword){
+            ++tp_n;
+            --fn_n;
+        } else {
+            ++fp_n;
+        }
+
+        tp[n] = tp_n;
+        fp[n] = fp_n;
+        fn[n] = fn_n;
+
+        tpr[n] = static_cast<double>(tp_n) / (tp_n + fn_n);
+        fpr[n] = static_cast<double>(fp_n) / (n + 1);
+
+        recall[n] = tpr[n];
+        precision[n] = static_cast<double>(tp_n) / (tp_n + fp_n);
+
+        if(std::abs(fpr[n] - (1.0 - tpr[n])) < 1e-7){
+            eer[k] = fpr[n];
+        }
+
+        if(n == 0){
+            ++ap_updates;
+            ap[k] += precision[n];
+        } else if(recall[n] != recall[n - 1]){
+            ++ap_updates;
+            ap[k] += precision[n];
+        }
+    }
+
+    ap[k] /= ap_updates;
+
+    std::ofstream roc_gp_stream(result_folder + "/" + std::to_string(k) + "_roc.gp");
+
+    roc_gp_stream << "set terminal png size 300,300 enhanced" << std::endl;
+    roc_gp_stream << "set output '" << k << "_roc.png'" << std::endl;
+    roc_gp_stream << "set title \"ROC(" << k << ")\"" << std::endl;
+    roc_gp_stream << "set xlabel \"FPR\"" << std::endl;
+    roc_gp_stream << "set ylabel \"TPR\"" << std::endl;
+    roc_gp_stream << "plot [0:1] '" << k << "_roc.dat' with lines title ''" << std::endl;
+
+    std::ofstream roc_data_stream(result_folder + "/" + std::to_string(k) + "_roc.dat");
+
+    for(std::size_t nn = 0; nn < tpr.size(); ++nn){
+        roc_data_stream << fpr[nn] << " " << tpr[nn] << std::endl;
+    }
+
+    std::ofstream pr_gp_stream(result_folder + "/" + std::to_string(k) + "_pr.gp");
+
+    pr_gp_stream << "set terminal png size 300,300 enhanced" << std::endl;
+    pr_gp_stream << "set output '" << k << "_pr.png'" << std::endl;
+    pr_gp_stream << "set title \"PR(" << k << ")\"" << std::endl;
+    pr_gp_stream << "set xlabel \"Recall\"" << std::endl;
+    pr_gp_stream << "set ylabel \"Precision\"" << std::endl;
+    pr_gp_stream << "plot [0:1] '" << k << "_pr.dat' with lines title ''" << std::endl;
+
+    std::ofstream pr_data_stream(result_folder + "/" + std::to_string(k) + "_pr.dat");
+
+    for(std::size_t nn = 0; nn < tpr.size(); ++nn){
+        pr_data_stream << precision[nn] << " " << recall[nn] << std::endl;
+    }
+}
+
 template<typename Dataset, typename Set>
 void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
     auto result_folder = select_folder("./dtw_results/");
@@ -326,15 +423,6 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
             continue;
         }
 
-        auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
-            [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
-
-        //Make sure that there is a sample in the test set
-        if(total_positive == 0){
-            std::cout << "Skipped " << keyword << " since there are no example in the test set" << std::endl;
-            continue;
-        }
-
         ++evaluated;
 
         auto ref_a = standard_features(conf, dataset.word_images.at(training_image + ".png"));
@@ -350,90 +438,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
             diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
         }
 
-        std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
-
-        std::vector<std::size_t> tp(diffs_a.size());
-        std::vector<std::size_t> fp(diffs_a.size());
-        std::vector<std::size_t> fn(diffs_a.size());
-        std::vector<double> tpr(diffs_a.size());
-        std::vector<double> fpr(diffs_a.size());
-        std::vector<double> recall(diffs_a.size());
-        std::vector<double> precision(diffs_a.size());
-
-        std::size_t ap_updates = 0;
-
-        for(std::size_t n = 0; n < diffs_a.size(); ++n){
-            std::string keyword_str;
-            keyword_str = std::accumulate(keyword.begin(), keyword.end(), keyword_str);
-
-            global_top_stream << "cv1 Q0 " << keyword_str << "_" << diffs_a[n].first << ".png 0 " << -diffs_a[n].second << " bw" << std::endl;
-            local_top_stream << "cv1_" << keyword_str << " Q0 " << diffs_a[n].first << ".png 0 " << -diffs_a[n].second << " bw" << std::endl;
-
-            std::size_t tp_n = n == 0 ? 0 : tp[n - 1];
-            std::size_t fp_n = n == 0 ? 0 : fp[n - 1];
-            std::size_t fn_n = n == 0 ? total_positive : fn[n - 1];
-
-            if(dataset.word_labels.at(diffs_a[n].first) == keyword){
-                ++tp_n;
-                --fn_n;
-            } else {
-                ++fp_n;
-            }
-
-            tp[n] = tp_n;
-            fp[n] = fp_n;
-            fn[n] = fn_n;
-
-            tpr[n] = static_cast<double>(tp_n) / (tp_n + fn_n);
-            fpr[n] = static_cast<double>(fp_n) / (n + 1);
-
-            recall[n] = tpr[n];
-            precision[n] = static_cast<double>(tp_n) / (tp_n + fp_n);
-
-            if(std::abs(fpr[n] - (1.0 - tpr[n])) < 1e-7){
-                eer[k] = fpr[n];
-            }
-
-            if(n == 0){
-                ++ap_updates;
-                ap[k] += precision[n];
-            } else if(recall[n] != recall[n - 1]){
-                ++ap_updates;
-                ap[k] += precision[n];
-            }
-        }
-
-        ap[k] /= ap_updates;
-
-        std::ofstream roc_gp_stream(result_folder + "/" + std::to_string(k) + "_roc.gp");
-
-        roc_gp_stream << "set terminal png size 300,300 enhanced" << std::endl;
-        roc_gp_stream << "set output '" << k << "_roc.png'" << std::endl;
-        roc_gp_stream << "set title \"ROC(" << k << ")\"" << std::endl;
-        roc_gp_stream << "set xlabel \"FPR\"" << std::endl;
-        roc_gp_stream << "set ylabel \"TPR\"" << std::endl;
-        roc_gp_stream << "plot [0:1] '" << k << "_roc.dat' with lines title ''" << std::endl;
-
-        std::ofstream roc_data_stream(result_folder + "/" + std::to_string(k) + "_roc.dat");
-
-        for(std::size_t nn = 0; nn < tpr.size(); ++nn){
-            roc_data_stream << fpr[nn] << " " << tpr[nn] << std::endl;
-        }
-
-        std::ofstream pr_gp_stream(result_folder + "/" + std::to_string(k) + "_pr.gp");
-
-        pr_gp_stream << "set terminal png size 300,300 enhanced" << std::endl;
-        pr_gp_stream << "set output '" << k << "_pr.png'" << std::endl;
-        pr_gp_stream << "set title \"PR(" << k << ")\"" << std::endl;
-        pr_gp_stream << "set xlabel \"Recall\"" << std::endl;
-        pr_gp_stream << "set ylabel \"Precision\"" << std::endl;
-        pr_gp_stream << "plot [0:1] '" << k << "_pr.dat' with lines title ''" << std::endl;
-
-        std::ofstream pr_data_stream(result_folder + "/" + std::to_string(k) + "_pr.dat");
-
-        for(std::size_t nn = 0; nn < tpr.size(); ++nn){
-            pr_data_stream << precision[nn] << " " << recall[nn] << std::endl;
-        }
+        update_stats(k, result_folder, dataset, keyword, diffs_a, eer, ap, global_top_stream, local_top_stream, test_image_names);
     }
 
     std::cout << "... done" << std::endl;
@@ -505,15 +510,6 @@ void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const conf
             continue;
         }
 
-        auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
-            [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
-
-        //Make sure that there is a sample in the test set
-        if(total_positive == 0){
-            std::cout << "Skipped " << keyword << " since there are no example in the test set" << std::endl;
-            continue;
-        }
-
         ++evaluated;
 
         auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"));
@@ -534,90 +530,7 @@ void evaluate_patches_andreas(const Dataset& dataset, const Set& set, const conf
             diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
         }
 
-        std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
-
-        std::vector<std::size_t> tp(diffs_a.size());
-        std::vector<std::size_t> fp(diffs_a.size());
-        std::vector<std::size_t> fn(diffs_a.size());
-        std::vector<double> tpr(diffs_a.size());
-        std::vector<double> fpr(diffs_a.size());
-        std::vector<double> recall(diffs_a.size());
-        std::vector<double> precision(diffs_a.size());
-
-        std::size_t ap_updates = 0;
-
-        for(std::size_t n = 0; n < diffs_a.size(); ++n){
-            std::string keyword_str;
-            keyword_str = std::accumulate(keyword.begin(), keyword.end(), keyword_str);
-
-            global_top_stream << "cv1 Q0 " << keyword_str << "_" << diffs_a[n].first << ".png 0 " << -diffs_a[n].second << " bw" << std::endl;
-            local_top_stream << "cv1_" << keyword_str << " Q0 " << diffs_a[n].first << ".png 0 " << -diffs_a[n].second << " bw" << std::endl;
-
-            std::size_t tp_n = n == 0 ? 0 : tp[n - 1];
-            std::size_t fp_n = n == 0 ? 0 : fp[n - 1];
-            std::size_t fn_n = n == 0 ? total_positive : fn[n - 1];
-
-            if(dataset.word_labels.at(diffs_a[n].first) == keyword){
-                ++tp_n;
-                --fn_n;
-            } else {
-                ++fp_n;
-            }
-
-            tp[n] = tp_n;
-            fp[n] = fp_n;
-            fn[n] = fn_n;
-
-            tpr[n] = static_cast<double>(tp_n) / (tp_n + fn_n);
-            fpr[n] = static_cast<double>(fp_n) / (n + 1);
-
-            recall[n] = tpr[n];
-            precision[n] = static_cast<double>(tp_n) / (tp_n + fp_n);
-
-            if(std::abs(fpr[n] - (1.0 - tpr[n])) < 1e-7){
-                eer[k] = fpr[n];
-            }
-
-            if(n == 0){
-                ++ap_updates;
-                ap[k] += precision[n];
-            } else if(recall[n] != recall[n - 1]){
-                ++ap_updates;
-                ap[k] += precision[n];
-            }
-        }
-
-        ap[k] /= ap_updates;
-
-        std::ofstream roc_gp_stream(result_folder + "/" + std::to_string(k) + "_roc.gp");
-
-        roc_gp_stream << "set terminal png size 300,300 enhanced" << std::endl;
-        roc_gp_stream << "set output '" << k << "_roc.png'" << std::endl;
-        roc_gp_stream << "set title \"ROC(" << k << ")\"" << std::endl;
-        roc_gp_stream << "set xlabel \"FPR\"" << std::endl;
-        roc_gp_stream << "set ylabel \"TPR\"" << std::endl;
-        roc_gp_stream << "plot [0:1] '" << k << "_roc.dat' with lines title ''" << std::endl;
-
-        std::ofstream roc_data_stream(result_folder + "/" + std::to_string(k) + "_roc.dat");
-
-        for(std::size_t nn = 0; nn < tpr.size(); ++nn){
-            roc_data_stream << fpr[nn] << " " << tpr[nn] << std::endl;
-        }
-
-        std::ofstream pr_gp_stream(result_folder + "/" + std::to_string(k) + "_pr.gp");
-
-        pr_gp_stream << "set terminal png size 300,300 enhanced" << std::endl;
-        pr_gp_stream << "set output '" << k << "_pr.png'" << std::endl;
-        pr_gp_stream << "set title \"PR(" << k << ")\"" << std::endl;
-        pr_gp_stream << "set xlabel \"Recall\"" << std::endl;
-        pr_gp_stream << "set ylabel \"Precision\"" << std::endl;
-        pr_gp_stream << "plot [0:1] '" << k << "_pr.dat' with lines title ''" << std::endl;
-
-        std::ofstream pr_data_stream(result_folder + "/" + std::to_string(k) + "_pr.dat");
-
-        for(std::size_t nn = 0; nn < tpr.size(); ++nn){
-            pr_data_stream << precision[nn] << " " << recall[nn] << std::endl;
-        }
+        update_stats(k, result_folder, dataset, keyword, diffs_a, eer, ap, global_top_stream, local_top_stream, test_image_names);
     }
 
     std::cout << "... done" << std::endl;
