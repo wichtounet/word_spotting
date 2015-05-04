@@ -30,6 +30,9 @@
 //The different configurations
 #include "config_third.hpp"
 
+//#define PRUNE if(keyword_to_string(keyword) != "[O, c, t, o, b, e, r]"){ continue; }
+#define PRUNE
+
 using weight = double;
 
 static constexpr const std::size_t WIDTH = 660;
@@ -46,6 +49,21 @@ static_assert(HEIGHT % 3 == 0, "Height must be divisible by 4");
 
 static_assert(WIDTH % 4 == 0, "Width must be divisible by 4");
 static_assert(HEIGHT % 4 == 0, "Height must be divisible by 4");
+
+template<typename T>
+std::string keyword_to_string(const std::vector<T>& vec){
+    std::string comma = "";
+    std::string result;
+    result += "[";
+    for(auto& v : vec){
+        result += comma;
+        result += v;
+        comma = ", ";
+    }
+    result += "]";
+
+    return result;
+}
 
 template<typename T>
 std::ostream& operator<<(std::ostream& stream, const std::vector<T>& vec){
@@ -121,23 +139,13 @@ std::vector<etl::dyn_matrix<weight>> mat_to_patches(const config& conf, const cv
     return patches;
 }
 
-std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& image){
-    cv::Mat clean_image;
-
-    cv::Mat scaled_normalized(cv::Size(image.size().width / conf.downscale, image.size().height / conf.downscale), CV_8U);
-    cv::resize(image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
-    cv::adaptiveThreshold(scaled_normalized, clean_image, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
-
+std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& clean_image){
     std::vector<etl::dyn_vector<weight>> features;
 
     const auto width = static_cast<std::size_t>(clean_image.size().width);
     const auto height = static_cast<std::size_t>(clean_image.size().height);
 
     for(std::size_t i = 0; i < width; ++i){
-        features.emplace_back(6);
-
-        auto& f = features.back();
-
         double lower = 0.0;
         for(std::size_t y = 0; y < height; ++y){
             if(clean_image.at<uint8_t>(y, i) == 0){
@@ -147,7 +155,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         }
 
         double upper = 0.0;
-        for(std::size_t y = height; y > 0; --y){
+        for(std::size_t y = height - 1; y > 0; --y){
             if(clean_image.at<uint8_t>(y, i) == 0){
                 upper = y;
                 break;
@@ -161,29 +169,51 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
             }
         }
 
+        std::size_t inner_black = 0;
+        for(std::size_t y = lower; y < upper + 1; ++y){
+            if(clean_image.at<uint8_t>(y, i) == 0){
+                ++inner_black;
+            }
+        }
+
         std::size_t transitions = 0;
         for(std::size_t y = 1; y < height; ++y){
-            if(clean_image.at<uint8_t>(y-1, i) != clean_image.at<uint8_t>(y, i)){
+            if(clean_image.at<uint8_t>(y-1, i) == 0 && clean_image.at<uint8_t>(y, i) != 0){
                 ++transitions;
             }
         }
 
-        f[0] = lower;
-        f[1] = upper;
-        f[2] = static_cast<double>(black) / height;
-        f[3] = transitions;
-        f[4] = 0.0;
+        double gravity = 0;
+        double moment = 0;
+        for(std::size_t y = 0; y < height; ++y){
+            auto pixel = clean_image.at<uint8_t>(y, i) == 0 ? 0 : 1;
+            gravity += y * pixel;
+            moment += y * y * pixel;
+        }
+        gravity /= height;
+        moment /= (height * height);
+
+        features.emplace_back(9);
+
+        auto& f = features.back();
+
+        f[0] = black;
+        f[1] = gravity;
+        f[2] = moment;
+        f[3] = lower;
+        f[4] = upper;
         f[5] = 0.0;
+        f[6] = 0.0;
+        f[7] = transitions;
+        f[8] = inner_black;
     }
 
     for(std::size_t i = 0; i < width - 1; ++i){
-        auto& f = features[i];
-
-        f[4] = f[0] - features[i+1][0];
-        f[5] = f[1] - features[i+1][1];
+        features[i][5] = features[i+1][1] - features[i][1];
+        features[i][6] = features[i+1][2] - features[i][2];
     }
 
-    for(std::size_t f = 0; f < 6; ++f){
+    for(std::size_t f = 0; f < features.back().size(); ++f){
         // Compute the mean
         double mean = 0.0;
         for(std::size_t i = 0; i < width; ++i){
@@ -208,6 +238,18 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         }
     }
 
+    //std::cout << std::string(20, '=') << std::endl;
+
+    //for(auto& v : features){
+        //std::cout << etl::to_string(v) << std::endl;
+    //}
+
+    //std::cout << std::string(20, '=') << std::endl;
+
+    //cv::namedWindow("WTF");
+    //cv::imshow("WTF", clean_image);
+    //cv::waitKey(0);
+
     return features;
 }
 
@@ -216,28 +258,108 @@ double dtw_distance(const V1& s, const V2& t){
     const auto n = s.size();
     const auto m = t.size();
 
-    constexpr const auto inf = std::numeric_limits<double>::infinity();
+    auto d = [&s,&t](std::size_t i, std::size_t j){ return std::sqrt(etl::sum((s[i] - t[j]) >> (s[i] - t[j]))); };
 
-    etl::dyn_matrix<double> dtw(n+1, m+1);
-    for(std::size_t i = 1; i <= n; ++i){
-        dtw(i, 0) = inf;
+    etl::dyn_matrix<double> dtw(n, m);
+
+    dtw(0, 0) = d(0, 0);
+
+    for (std::size_t i = 1; i < n; i++) {
+        dtw(i, 0) = d(i, 0) + dtw(i - 1, 0);
     }
-    for(std::size_t j = 1; j <= m; ++j){
-        dtw(0, j) = inf;
+
+    for (std::size_t j = 1; j < m; j++) {
+        dtw(0, j) = d(0, j) + dtw(0, j - 1);
     }
-    dtw(0,0) = 0;
 
-    for(std::size_t i = 1; i <= n; ++i){
-        for(std::size_t j = 1; j <= m; ++j){
-            auto cost = std::sqrt(etl::sum((s[i-1] - t[j-1]) >> (s[i-1] - t[j-1])));
-
-            dtw(i, j) = cost + std::min(dtw(i-1, j  ),    // insertion
-                               std::min(dtw(i  , j-1),    // deletion
-                                        dtw(i-1, j-1)));  // match
+    for (std::size_t i = 1; i < n; i++) {
+        for (std::size_t j = 1; j < m; j++) {
+            dtw(i, j) = d(i, j) + std::min(dtw(i-1, j), std::min(dtw(i-1, j-1), dtw(i, j - 1)));
         }
     }
 
-    return dtw(n, m);
+    std::size_t i = n - 1;
+    std::size_t j = m - 1;
+    std::size_t K = 1;
+
+    while((i + j) > 0){
+        if(i == 0){
+            --j;
+        } else if(j == 0){
+            --i;
+        } else {
+            if(dtw(i-1,j-1) < dtw(i-1,j) && dtw(i-1,j-1) < dtw(i,j-1)){
+                --i;
+                --j;
+            } else if(dtw(i-1,j) < dtw(i,j-1)){
+                --i;
+            } else {
+                --j;
+            }
+        }
+
+        ++K;
+    }
+
+    return dtw(n - 1, m - 1) / K;
+
+    //etl::dyn_matrix<double> dtw(n+1, m+1);
+
+    //dtw(0,0) = d(0, 0);
+
+//for(std::size_t i = 1; i <= n; ++i){
+    //dtw(i, 0) = dtw(i - 1, 0) + d(i - 1, 0);
+//}
+
+//for(std::size_t j = 1; j <= m; ++j){
+    //dtw(0, j) = dtw(0, j - 1) + d(0, j - 1);
+//}
+
+
+
+
+    //for(std::size_t i = 1; i <= n; ++i){
+        //dtw(i, 0) = inf;
+    //}
+    //for(std::size_t j = 1; j <= m; ++j){
+        //dtw(0, j) = inf;
+    //}
+    //dtw(0,0) = 0;
+
+    //for(std::size_t i = 1; i <= n; ++i){
+        //for(std::size_t j = 1; j <= m; ++j){
+            //auto cost = d(i-1, j-1);
+
+            //dtw(i, j) = cost + std::min(dtw(i-1, j  ),    // insertion
+                               //std::min(dtw(i  , j-1),    // deletion
+                                        //dtw(i-1, j-1)));  // match
+        //}
+    //}
+
+    //std::size_t i = n;
+    //std::size_t j = m;
+    //std::size_t size = 0;
+
+    //while(i != 0 && j != 0){
+        //if(i > 0  && j > 0){
+            //if(dtw(i-1,j-1) < dtw(i-1,j) && dtw(i-1,j-1) < dtw(i,j-1)){
+                //--i;
+                //--j;
+            //} else if(dtw(i-1,j) < dtw(i,j-1)){
+                //--i;
+            //} else {
+                //--j;
+            //}
+        //} else if(i > 0){
+            //--i;
+        //} else {
+            //--j;
+        //}
+
+        //++size;
+    //}
+
+    //return dtw(n, m) / size;
 }
 
 std::string select_folder(const std::string& base_folder){
@@ -271,6 +393,8 @@ void generate_rel_files(const std::string& result_folder, const Dataset& dataset
 
     for(std::size_t k = 0; k < set.keywords.size(); ++k){
         auto& keyword = set.keywords[k];
+
+        PRUNE
 
         for(std::size_t t = 0; t < test_image_names.size(); ++t){
             decltype(auto) test_image = test_image_names[t];
@@ -408,6 +532,8 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
     for(std::size_t k = 0; k < set.keywords.size(); ++k){
         auto& keyword = set.keywords[k];
 
+        PRUNE
+
         std::string training_image;
         for(auto& labels : dataset.word_labels){
             if(keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()){
@@ -432,6 +558,16 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
             decltype(auto) test_image = test_image_names[t];
 
             auto test_a = standard_features(conf, dataset.word_images.at(test_image));
+
+            //if(test_image == "276-04-05.png"){
+                //std::cout << std::string(20, '=') << std::endl;
+
+                //for(auto& v : test_a){
+                    //std::cout << etl::to_string(v) << std::endl;
+                //}
+
+                //std::cout << std::string(20, '=') << std::endl;
+            //}
 
             double diff_a = dtw_distance(ref_a, test_a);
             diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
@@ -625,7 +761,7 @@ int command_train(config& conf){
             }
 
             training_images.emplace_back(mat_to_dyn(conf, dataset.word_images[name]));
-        } 
+        }
         auto evaluate = [&dataset,&set,&conf](auto& dbn, auto& train_word_names, auto& test_image_names){
             std::vector<etl::dyn_matrix<weight, 3>> test_features_a;
 
