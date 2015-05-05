@@ -254,9 +254,11 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
 }
 
 template<typename V1, typename V2>
-double dtw_distance(const V1& s, const V2& t){
+double dtw_distance(const V1& s, const V2& t, bool sc_band = true){
     const auto n = s.size();
     const auto m = t.size();
+
+    const std::size_t diff = std::abs(static_cast<long>(m) - static_cast<long>(n));
 
     auto ratio = static_cast<double>(n) / m;
     if(ratio > 2.0 || ratio < 0.5){
@@ -279,6 +281,12 @@ double dtw_distance(const V1& s, const V2& t){
 
     for (std::size_t i = 1; i < n; i++) {
         for (std::size_t j = 1; j < m; j++) {
+            //Sakoe-Chiba constraint
+            if(sc_band && (j < (m * static_cast<double>(i) / n) - 0.1 * m || j > (m * static_cast<double>(i) / n) + 0.1 * m)){
+                dtw(i, j) = 100000.0;
+                continue;
+            }
+
             dtw(i, j) = d(i, j) + std::min(dtw(i-1, j), std::min(dtw(i-1, j-1), dtw(i, j - 1)));
         }
     }
