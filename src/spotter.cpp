@@ -303,64 +303,6 @@ double dtw_distance(const V1& s, const V2& t, bool sc_band = true){
     }
 
     return dtw(n - 1, m - 1) / K;
-
-    //etl::dyn_matrix<double> dtw(n+1, m+1);
-
-    //dtw(0,0) = d(0, 0);
-
-//for(std::size_t i = 1; i <= n; ++i){
-    //dtw(i, 0) = dtw(i - 1, 0) + d(i - 1, 0);
-//}
-
-//for(std::size_t j = 1; j <= m; ++j){
-    //dtw(0, j) = dtw(0, j - 1) + d(0, j - 1);
-//}
-
-
-
-
-    //for(std::size_t i = 1; i <= n; ++i){
-        //dtw(i, 0) = inf;
-    //}
-    //for(std::size_t j = 1; j <= m; ++j){
-        //dtw(0, j) = inf;
-    //}
-    //dtw(0,0) = 0;
-
-    //for(std::size_t i = 1; i <= n; ++i){
-        //for(std::size_t j = 1; j <= m; ++j){
-            //auto cost = d(i-1, j-1);
-
-            //dtw(i, j) = cost + std::min(dtw(i-1, j  ),    // insertion
-                               //std::min(dtw(i  , j-1),    // deletion
-                                        //dtw(i-1, j-1)));  // match
-        //}
-    //}
-
-    //std::size_t i = n;
-    //std::size_t j = m;
-    //std::size_t size = 0;
-
-    //while(i != 0 && j != 0){
-        //if(i > 0  && j > 0){
-            //if(dtw(i-1,j-1) < dtw(i-1,j) && dtw(i-1,j-1) < dtw(i,j-1)){
-                //--i;
-                //--j;
-            //} else if(dtw(i-1,j) < dtw(i,j-1)){
-                //--i;
-            //} else {
-                //--j;
-            //}
-        //} else if(i > 0){
-            //--i;
-        //} else {
-            //--j;
-        //}
-
-        //++size;
-    //}
-
-    //return dtw(n, m) / size;
 }
 
 std::string select_folder(const std::string& base_folder){
