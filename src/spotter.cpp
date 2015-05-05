@@ -141,6 +141,36 @@ std::vector<etl::dyn_matrix<weight>> mat_to_patches(const config& conf, const cv
     return patches;
 }
 
+template<typename Features>
+void local_mean_feature_scaling(std::vector<Features>& features){
+    const auto width = features.size();
+
+    for(std::size_t f = 0; f < features.back().size(); ++f){
+        // Compute the mean
+        double mean = 0.0;
+        for(std::size_t i = 0; i < width; ++i){
+            mean += features[i][f];
+        }
+        mean /= width;
+        //Normalize to zero-mean
+        for(std::size_t i = 0; i < width; ++i){
+            features[i][f] -= mean;
+        }
+        //Compute the variance
+        double std = 0.0;
+        for(std::size_t i = 0; i < width; ++i){
+            std += features[i][f] * features[i][f];
+        }
+        std = std::sqrt(std / width);
+        //Normalize to unit variance
+        if(std != 0.0){
+            for(std::size_t i = 0; i < width; ++i){
+                features[i][f] /= std;
+            }
+        }
+    }
+}
+
 std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& clean_image){
     std::vector<etl::dyn_vector<weight>> features;
 
@@ -234,30 +264,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
 #endif
 
 #ifdef LOCAL_MEAN_SCALING
-    for(std::size_t f = 0; f < features.back().size(); ++f){
-        // Compute the mean
-        double mean = 0.0;
-        for(std::size_t i = 0; i < width; ++i){
-            mean += features[i][f];
-        }
-        mean /= width;
-        //Normalize to zero-mean
-        for(std::size_t i = 0; i < width; ++i){
-            features[i][f] -= mean;
-        }
-        //Compute the variance
-        double std = 0.0;
-        for(std::size_t i = 0; i < width; ++i){
-            std += features[i][f] * features[i][f];
-        }
-        std = std::sqrt(std / width);
-        //Normalize to unit variance
-        if(std != 0.0){
-            for(std::size_t i = 0; i < width; ++i){
-                features[i][f] /= std;
-            }
-        }
-    }
+    local_mean_feature_scaling(features);
 #endif
 
     return features;
@@ -648,6 +655,10 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
                 vec.push_back(dbn.prepare_one_output());
                 dbn.activation_probabilities(patch, vec.back());
             }
+
+#ifdef LOCAL_MEAN_SCALING
+            local_mean_feature_scaling(vec);
+#endif
         });
 
     std::cout << "... done" << std::endl;
@@ -689,6 +700,10 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
             ref_a.push_back(dbn.prepare_one_output());
             dbn.activation_probabilities(patch, ref_a.back());
         }
+
+#ifdef LOCAL_MEAN_SCALING
+        local_mean_feature_scaling(ref_a);
+#endif
 
         std::vector<std::pair<std::string, weight>> diffs_a;
 
