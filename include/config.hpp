@@ -29,6 +29,9 @@ struct config {
     std::size_t downscale = 1;
     std::size_t patch_width = 0;
     std::size_t patch_stride = 0;
+
+    double scale_a[9];
+    double scale_b[9];
 };
 
 void print_usage();
