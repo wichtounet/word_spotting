@@ -186,7 +186,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         double gravity = 0;
         double moment = 0;
         for(std::size_t y = 0; y < height; ++y){
-            auto pixel = clean_image.at<uint8_t>(y, i) == 0 ? 0 : 1;
+            auto pixel = clean_image.at<uint8_t>(y, i) == 0 ? 0.0 : 1.0;
             gravity += y * pixel;
             moment += y * y * pixel;
         }
@@ -257,6 +257,11 @@ template<typename V1, typename V2>
 double dtw_distance(const V1& s, const V2& t){
     const auto n = s.size();
     const auto m = t.size();
+
+    auto ratio = static_cast<double>(n) / m;
+    if(ratio > 2.0 || ratio < 0.5){
+        return 100000.0;
+    }
 
     auto d = [&s,&t](std::size_t i, std::size_t j){ return std::sqrt(etl::sum((s[i] - t[j]) >> (s[i] - t[j]))); };
 
