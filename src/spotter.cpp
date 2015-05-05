@@ -238,18 +238,6 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         }
     }
 
-    //std::cout << std::string(20, '=') << std::endl;
-
-    //for(auto& v : features){
-        //std::cout << etl::to_string(v) << std::endl;
-    //}
-
-    //std::cout << std::string(20, '=') << std::endl;
-
-    //cv::namedWindow("WTF");
-    //cv::imshow("WTF", clean_image);
-    //cv::waitKey(0);
-
     return features;
 }
 
