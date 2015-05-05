@@ -1485,9 +1485,9 @@ int command_train(config& conf){
 
             const std::string file_name("method_2_third.dat");
 
-            //cdbn->pretrain(training_patches, third::epochs);
-            //cdbn->store(file_name);
-            cdbn->load(file_name);
+            cdbn->pretrain(training_patches, third::epochs);
+            cdbn->store(file_name);
+            //cdbn->load(file_name);
 
             std::cout << "Evaluate on training set" << std::endl;
             evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names);
