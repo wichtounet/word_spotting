@@ -542,6 +542,8 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
         test_features.push_back(standard_features(conf, dataset.word_images.at(test_image)));
     }
 
+    cpp::default_thread_pool<> pool;
+
     for(std::size_t k = 0; k < set.keywords.size(); ++k){
         auto& keyword = set.keywords[k];
 
@@ -565,26 +567,15 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
 
         auto ref_a = standard_features(conf, dataset.word_images.at(training_image + ".png"));
 
-        std::vector<std::pair<std::string, weight>> diffs_a;
+        std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
 
-        for(std::size_t t = 0; t < test_image_names.size(); ++t){
-            decltype(auto) test_image = test_image_names[t];
+        cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
+            [&](auto& test_image, std::size_t t){
+                decltype(auto) test_a = test_features[t];
 
-            decltype(auto) test_a = test_features[t];
-
-            //if(test_image == "276-04-05.png"){
-                //std::cout << std::string(20, '=') << std::endl;
-
-                //for(auto& v : test_a){
-                    //std::cout << etl::to_string(v) << std::endl;
-                //}
-
-                //std::cout << std::string(20, '=') << std::endl;
-            //}
-
-            double diff_a = dtw_distance(ref_a, test_a);
-            diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
-        }
+                double diff_a = dtw_distance(ref_a, test_a);
+                diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), diff_a);
+            });
 
         update_stats(k, result_folder, dataset, keyword, diffs_a, eer, ap, global_top_stream, local_top_stream, test_image_names);
     }
