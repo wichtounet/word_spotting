@@ -534,6 +534,14 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
     std::ofstream global_top_stream(result_folder + "/global_top_file");
     std::ofstream local_top_stream(result_folder + "/local_top_file");
 
+    std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
+
+    for(std::size_t t = 0; t < test_image_names.size(); ++t){
+        decltype(auto) test_image = test_image_names[t];
+
+        test_features.push_back(standard_features(conf, dataset.word_images.at(test_image)));
+    }
+
     for(std::size_t k = 0; k < set.keywords.size(); ++k){
         auto& keyword = set.keywords[k];
 
@@ -562,7 +570,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, co
         for(std::size_t t = 0; t < test_image_names.size(); ++t){
             decltype(auto) test_image = test_image_names[t];
 
-            auto test_a = standard_features(conf, dataset.word_images.at(test_image));
+            decltype(auto) test_a = test_features[t];
 
             //if(test_image == "276-04-05.png"){
                 //std::cout << std::string(20, '=') << std::endl;
