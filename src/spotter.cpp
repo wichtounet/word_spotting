@@ -213,6 +213,22 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         features[i][6] = features[i+1][2] - features[i][2];
     }
 
+    //for(std::size_t f = 0; f < features.back().size(); ++f){
+        //double A = features[0][f];
+        //double B = features[0][f];
+
+        //for(std::size_t i = 1; i < width; ++i){
+            //A = std::min(A, features[i][f]);
+            //B = std::max(B, features[i][f]);
+        //}
+
+        //auto scale = [A,B](auto x){ return (x - A) / (B - A); };
+
+        //for(std::size_t i = 0; i < width; ++i){
+            //features[i][f] = scale(features[i][f]);
+        //}
+    //}
+
     for(std::size_t f = 0; f < features.back().size(); ++f){
         // Compute the mean
         double mean = 0.0;
@@ -246,14 +262,12 @@ double dtw_distance(const V1& s, const V2& t, bool sc_band = true){
     const auto n = s.size();
     const auto m = t.size();
 
-    const std::size_t diff = std::abs(static_cast<long>(m) - static_cast<long>(n));
-
     auto ratio = static_cast<double>(n) / m;
     if(ratio > 2.0 || ratio < 0.5){
         return 100000.0;
     }
 
-    auto d = [&s,&t](std::size_t i, std::size_t j){ return std::sqrt(etl::sum((s[i] - t[j]) >> (s[i] - t[j]))); };
+    auto d = [&s,&t](std::size_t i, std::size_t j){ return etl::sum((s[i] - t[j]) >> (s[i] - t[j])); };
 
     etl::dyn_matrix<double> dtw(n, m);
 
