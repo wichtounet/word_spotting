@@ -10,8 +10,11 @@
 
 namespace third {
 
-#define CRBM_PMP_2  //Two layers of CRBM with Probabilistic Max Pooling
-//#define CRBM_PMP_3  //Three layers of CRBM with Probabilistic Max Pooling
+#define CRBM_PMP_1    //One layer of CRBM with Probabilistic Max Pooling (C1)
+//#define CRBM_PMP_2      //Two layers of CRBM with Probabilistic Max Pooling (C1/C2)
+//#define CRBM_PMP_3    //Three layers of CRBM with Probabilistic Max Pooling (C1/C2/C3)
+
+//#define CRBM_MP_1  //One layers of CRBM with Max Pooling after each layer (C1)
 //#define CRBM_MP_2  //Two layers of CRBM with Max Pooling after each layer (C1/C2)
 //#define CRBM_MP_3  //Three layers of CRBM with Max Pooling after each layer (C1/C2/C3)
 
@@ -24,8 +27,8 @@ constexpr const std::size_t patch_width = 20;
 constexpr const std::size_t epochs = 10;
 constexpr const std::size_t patch_stride = 10;
 
-constexpr const std::size_t NF1 = 9;
-constexpr const std::size_t K1 = 40;
+constexpr const std::size_t NF1 = 7;
+constexpr const std::size_t K1 = 24;
 constexpr const std::size_t C1 = 2;
 constexpr const std::size_t B1 = 25;
 constexpr const dll::unit_type HT1 = dll::unit_type::BINARY;
@@ -48,7 +51,7 @@ constexpr const dll::unit_type HT3 = dll::unit_type::BINARY;
 constexpr const dll::decay_type DT3 = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM3 = dll::sparsity_method::NONE;
 
-const auto rate_0 = [](double& value){ value = 1.0 * value; };
+const auto rate_0 = [](double& value){ value = 0.5 * value; };
 const auto rate_1 = [](double& value){ value = 1.0 * value; };
 const auto rate_2 = [](double& value){ value = 1.0 * value; };
 
@@ -64,11 +67,11 @@ const auto wd_l2_0 = [](double& value){ value = 1.0 * value; };
 const auto wd_l2_1 = [](double& value){ value = 1.0 * value; };
 const auto wd_l2_2 = [](double& value){ value = 1.0 * value; };
 
-const auto pbias_0 = [](double& value){ value = 2.0 * value; };
-const auto pbias_1 = [](double& value){ value = 2.0 * value; };
-const auto pbias_2 = [](double& value){ value = 2.0 * value; };
+const auto pbias_0 = [](double& value){ value = 1.0 * value; };
+const auto pbias_1 = [](double& value){ value = 1.0 * value; };
+const auto pbias_2 = [](double& value){ value = 1.0 * value; };
 
-const auto pbias_lambda_0 = [](double& value){ value = 1.0 * value; };
+const auto pbias_lambda_0 = [](double& value){ value = 3.0 * value; };
 const auto pbias_lambda_1 = [](double& value){ value = 1.0 * value; };
 const auto pbias_lambda_2 = [](double& value){ value = 1.0 * value; };
 

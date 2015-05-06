@@ -30,6 +30,22 @@
 //The different configurations
 #include "config_third.hpp"
 
+#if defined(CRBM_PMP_1) || defined(CRBM_MP_1)
+#define LEVELS 1
+#endif
+
+#if defined(CRBM_PMP_2) || defined(CRBM_MP_2)
+#define LEVELS 2
+#endif
+
+#if defined(CRBM_PMP_3) || defined(CRBM_MP_3)
+#define LEVELS 3
+#endif
+
+#ifndef LEVELS
+static_assert(false, "Invalid configuration");
+#endif
+
 //#define PRUNE if(keyword_to_string(keyword) != "[O, c, t, o, b, e, r]"){ continue; }
 #define PRUNE
 
@@ -1324,7 +1340,19 @@ int command_train(config& conf){
             static constexpr const std::size_t NH3_1 = NV3_1 - NF3 + 1;
             static constexpr const std::size_t NH3_2 = NV3_2 - NF3 + 1;
 
-#ifdef CRBM_PMP_2
+#if defined(CRBM_PMP_1)
+            using cdbn_t =
+                dll::dbn_desc<
+                    dll::dbn_layers<
+                        dll::conv_rbm_mp_desc<
+                            NV1_1, NV1_2, 1, NH1_1 , NH1_2, K1, C1
+                            , dll::weight_type<weight>, dll::batch_size<third::B1>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT1>
+                            , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
+                            , dll::dbn_only>::rbm_t
+                    >
+                >::dbn_t;
+#elif defined(CRBM_PMP_2)
             using cdbn_t =
                 dll::dbn_desc<
                     dll::dbn_layers<
@@ -1364,6 +1392,19 @@ int command_train(config& conf){
                             , dll::parallel, dll::momentum, dll::weight_decay<third::DT3>
                             , dll::hidden<third::HT3>, dll::sparsity<third::SM3>
                             , dll::dbn_only>::rbm_t
+                    >
+                >::dbn_t;
+#elif defined(CRBM_MP_1)
+            using cdbn_t =
+                dll::dbn_desc<
+                    dll::dbn_layers<
+                        dll::conv_rbm_desc<
+                            NV1_1, NV1_2, 1, NH1_1 , NH1_2, K1
+                            , dll::weight_type<weight>, dll::batch_size<third::B1>
+                            , dll::parallel, dll::momentum, dll::weight_decay<third::DT1>
+                            , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
+                            , dll::dbn_only>::rbm_t
+                        , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1>::layer_t
                     >
                 >::dbn_t;
 #elif defined(CRBM_MP_2)
@@ -1417,7 +1458,8 @@ int command_train(config& conf){
             static_assert(false, "No architecture has been selected");
 #endif
 
-#if defined(CRBM_PMP_2) || defined(CRBM_PMP_3)
+#if defined(CRBM_PMP_1) || defined(CRBM_PMP_2) || defined(CRBM_PMP_3)
+            //Probabilistic max poolin models have less layers
             constexpr const std::size_t L1 = 0;
             constexpr const std::size_t L2 = 1;
             constexpr const std::size_t L3 = 2;
@@ -1429,25 +1471,26 @@ int command_train(config& conf){
 
             auto cdbn = std::make_unique<cdbn_t>();
 
+            // Level 1
             third::rate_0(cdbn->template layer<L1>().learning_rate);
-            third::rate_1(cdbn->template layer<L2>().learning_rate);
-
             third::momentum_0(cdbn->template layer<L1>().initial_momentum, cdbn->template layer<L1>().final_momentum);
-            third::momentum_1(cdbn->template layer<L2>().initial_momentum, cdbn->template layer<L2>().final_momentum);
-
             third::wd_l1_0(cdbn->template layer<L1>().l1_weight_cost);
-            third::wd_l1_1(cdbn->template layer<L2>().l1_weight_cost);
-
             third::wd_l2_0(cdbn->template layer<L1>().l2_weight_cost);
-            third::wd_l2_1(cdbn->template layer<L2>().l2_weight_cost);
-
             third::pbias_0(cdbn->template layer<L1>().pbias);
-            third::pbias_1(cdbn->template layer<L2>().pbias);
-
             third::pbias_lambda_0(cdbn->template layer<L1>().pbias_lambda);
-            third::pbias_lambda_1(cdbn->template layer<L2>().pbias_lambda);
 
-#if defined(CRBM_PMP_3) || defined(CRBM_MP_3)
+#if LEVELS >= 2
+            //Level 2
+            third::rate_1(cdbn->template layer<L2>().learning_rate);
+            third::momentum_1(cdbn->template layer<L2>().initial_momentum, cdbn->template layer<L2>().final_momentum);
+            third::wd_l1_1(cdbn->template layer<L2>().l1_weight_cost);
+            third::wd_l2_1(cdbn->template layer<L2>().l2_weight_cost);
+            third::pbias_1(cdbn->template layer<L2>().pbias);
+            third::pbias_lambda_1(cdbn->template layer<L2>().pbias_lambda);
+#endif
+
+#if LEVELS >= 3
+            //Level 3
             third::rate_2(cdbn->template layer<L3>().learning_rate);
             third::momentum_2(cdbn->template layer<L3>().initial_momentum, cdbn->template layer<L3>().final_momentum);
             third::wd_l1_2(cdbn->template layer<L3>().l1_weight_cost);
@@ -1495,7 +1538,16 @@ int command_train(config& conf){
             std::cout << "Evaluate on test set" << std::endl;
             evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names);
 
-#if !defined(CRBM_PMP_3) && !defined(CRBM_MP_3)
+#if LEVELS < 2
+            //Silence some warnings
+            cpp_unused(K2);
+            cpp_unused(C2);
+            cpp_unused(L2);
+            cpp_unused(NH2_1);
+            cpp_unused(NH2_2);
+#endif
+
+#if LEVELS < 3
             //Silence some warnings
             cpp_unused(K3);
             cpp_unused(C3);
