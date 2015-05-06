@@ -24,7 +24,7 @@ constexpr const std::size_t width = 220;        //Should not be changed
 constexpr const std::size_t patch_height = 40;  //Should not be changed
 constexpr const std::size_t patch_width = 20;
 
-constexpr const std::size_t epochs = 25;
+constexpr const std::size_t epochs = 50;
 constexpr const std::size_t patch_stride = 10;
 
 constexpr const std::size_t NF1 = 9;
@@ -51,8 +51,8 @@ constexpr const dll::unit_type HT3 = dll::unit_type::BINARY;
 constexpr const dll::decay_type DT3 = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM3 = dll::sparsity_method::NONE;
 
-const auto rate_0 = [](double& value){ value = 0.5 * value; };
-const auto rate_1 = [](double& value){ value = 0.5 * value; };
+const auto rate_0 = [](double& value){ value = 0.25 * value; };
+const auto rate_1 = [](double& value){ value = 0.25 * value; };
 const auto rate_2 = [](double& value){ value = 1.0 * value; };
 
 const auto momentum_0 = [](double& ini, double& fin){ ini = 0.88; fin = 0.88;};
