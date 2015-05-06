@@ -10,8 +10,8 @@
 
 namespace third {
 
-#define CRBM_PMP_1    //One layer of CRBM with Probabilistic Max Pooling (C1)
-//#define CRBM_PMP_2      //Two layers of CRBM with Probabilistic Max Pooling (C1/C2)
+//#define CRBM_PMP_1    //One layer of CRBM with Probabilistic Max Pooling (C1)
+#define CRBM_PMP_2      //Two layers of CRBM with Probabilistic Max Pooling (C1/C2)
 //#define CRBM_PMP_3    //Three layers of CRBM with Probabilistic Max Pooling (C1/C2/C3)
 
 //#define CRBM_MP_1  //One layers of CRBM with Max Pooling after each layer (C1)
@@ -24,10 +24,10 @@ constexpr const std::size_t width = 220;        //Should not be changed
 constexpr const std::size_t patch_height = 40;  //Should not be changed
 constexpr const std::size_t patch_width = 20;
 
-constexpr const std::size_t epochs = 10;
+constexpr const std::size_t epochs = 25;
 constexpr const std::size_t patch_stride = 10;
 
-constexpr const std::size_t NF1 = 7;
+constexpr const std::size_t NF1 = 9;
 constexpr const std::size_t K1 = 24;
 constexpr const std::size_t C1 = 2;
 constexpr const std::size_t B1 = 25;
@@ -36,7 +36,7 @@ constexpr const dll::decay_type DT1 = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM1 = dll::sparsity_method::LEE;
 
 constexpr const std::size_t NF2 = 3;
-constexpr const std::size_t K2 = 40;
+constexpr const std::size_t K2 = 24;
 constexpr const std::size_t C2 = 2;
 constexpr const std::size_t B2 = 25;
 constexpr const dll::unit_type HT2 = dll::unit_type::BINARY;
@@ -52,7 +52,7 @@ constexpr const dll::decay_type DT3 = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM3 = dll::sparsity_method::NONE;
 
 const auto rate_0 = [](double& value){ value = 0.5 * value; };
-const auto rate_1 = [](double& value){ value = 1.0 * value; };
+const auto rate_1 = [](double& value){ value = 0.5 * value; };
 const auto rate_2 = [](double& value){ value = 1.0 * value; };
 
 const auto momentum_0 = [](double& ini, double& fin){ ini = 0.88; fin = 0.88;};
@@ -71,8 +71,8 @@ const auto pbias_0 = [](double& value){ value = 1.0 * value; };
 const auto pbias_1 = [](double& value){ value = 1.0 * value; };
 const auto pbias_2 = [](double& value){ value = 1.0 * value; };
 
-const auto pbias_lambda_0 = [](double& value){ value = 3.0 * value; };
-const auto pbias_lambda_1 = [](double& value){ value = 1.0 * value; };
+const auto pbias_lambda_0 = [](double& value){ value = 2.0 * value; };
+const auto pbias_lambda_1 = [](double& value){ value = 2.0 * value; };
 const auto pbias_lambda_2 = [](double& value){ value = 1.0 * value; };
 
 } // end of namespace third
