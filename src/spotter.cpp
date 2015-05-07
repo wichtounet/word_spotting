@@ -721,12 +721,24 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
         local_mean_feature_scaling(ref_a);
 #endif
 
+        auto ref_size = dataset.word_images.at(training_image + ".png").size().width;
+
         std::vector<std::pair<std::string, weight>> diffs_a;
 
         for(std::size_t t = 0; t < test_image_names.size(); ++t){
             decltype(auto) test_image = test_image_names[t];
 
-            double diff_a = dtw_distance(ref_a, test_features_a[t]);
+            auto t_size = dataset.word_images.at(test_image).size().width;
+
+            double diff_a;
+
+            auto ratio = static_cast<double>(ref_size) / t_size;
+            if(ratio > 2.0 || ratio < 0.5){
+                diff_a = 100000000.0;
+            } else {
+                diff_a = dtw_distance(ref_a, test_features_a[t]);
+            }
+
             diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
         }
 
