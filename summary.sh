@@ -1,12 +1,12 @@
 #!/bin/bash
 
-machines=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25)
+machines=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25 160.98.22.8 160.98.22.9)
 
 stamp=$1
 
-if [ ! -f run/${stamp} ]; then
+if [ ! -d run/${stamp} ]; then
     echo "Invalid stamp"
-    return 1
+    exit
 fi
 
 cd run
