@@ -187,7 +187,7 @@ void local_mean_feature_scaling(std::vector<Features>& features){
     }
 }
 
-std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& clean_image){
+std::vector<etl::dyn_vector<weight>> standard_features(const cv::Mat& clean_image){
     std::vector<etl::dyn_vector<weight>> features;
 
     const auto width = static_cast<std::size_t>(clean_image.size().width);
@@ -500,7 +500,7 @@ void update_stats(std::size_t k, const std::string& result_folder, const Dataset
 }
 
 template<typename Dataset, typename Set>
-void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
+void evaluate_dtw(const Dataset& dataset, const Set& set, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
     auto result_folder = select_folder("./dtw_results/");
 
     generate_rel_files(result_folder, dataset, set, test_image_names);
@@ -520,7 +520,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
     for(std::size_t t = 0; t < test_image_names.size(); ++t){
         decltype(auto) test_image = test_image_names[t];
 
-        test_features.push_back(standard_features(conf, dataset.word_images.at(test_image)));
+        test_features.push_back(standard_features(dataset.word_images.at(test_image)));
     }
 
 #ifdef GLOBAL_MEAN_SCALING
@@ -585,6 +585,8 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
             }
         }
     }
+#else
+    cpp_unused(training);
 #endif
 
     cpp::default_thread_pool<> pool;
@@ -610,7 +612,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
 
         ++evaluated;
 
-        auto ref_a = standard_features(conf, dataset.word_images.at(training_image + ".png"));
+        auto ref_a = standard_features(dataset.word_images.at(training_image + ".png"));
 
 #if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
         for(std::size_t i = 0; i < ref_a.size(); ++i){
@@ -820,10 +822,10 @@ int command_train(config& conf){
         std::cout << "Use method 0 (Standard Features + DTW)" << std::endl;
 
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_dtw(dataset, set, conf, train_word_names, train_image_names, true);
+        evaluate_dtw(dataset, set, train_word_names, train_image_names, true);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_dtw(dataset, set, conf, train_word_names, test_image_names, false);
+        evaluate_dtw(dataset, set, train_word_names, test_image_names, false);
     } else if(conf.method_1){
         std::cout << "Use method 1 (holistic)" << std::endl;
         std::cout << "Method 1 is disabled for now (needs check matrix dimensions" << std::endl;
