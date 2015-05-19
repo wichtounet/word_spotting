@@ -23,9 +23,15 @@ endif
 CXX_FLAGS += -DETL_VECTORIZE
 
 # Activate BLAS mode on demand
-ifneq (,$(ETL_BLAS))
-CXX_FLAGS += -DETL_BLAS_MODE $(ETL_BLAS_CXX_FLAGS)
-LD_FLAGS += $(ETL_BLAS_LD_FLAGS)
+ifneq (,$(SPOTTER_MKL))
+CXX_FLAGS += -DETL_MKL_MODE $(shell pkg-config --cflags cblas)
+LD_FLAGS += $(shell pkg-config --libs cblas)
+CXX_FLAGS += -Wno-tautological-compare
+else
+ifneq (,$(SPOTTER_BLAS))
+CXX_FLAGS += -DETL_BLAS_MODE $(shell pkg-config --cflags cblas)
+LD_FLAGS += $(shell pkg-config --libs cblas)
+endif
 endif
 
 $(eval $(call auto_folder_compile,src))
