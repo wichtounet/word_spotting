@@ -1419,7 +1419,7 @@ int command_train(config& conf){
                             , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
                             , dll::dbn_only>::rbm_t
                         , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1>::layer_t
-                    >
+                    >, dll::memory, dll::parallel
                 >::dbn_t;
 #elif defined(CRBM_MP_2)
             using cdbn_t =
@@ -1438,8 +1438,8 @@ int command_train(config& conf){
                             , dll::parallel, dll::momentum, dll::weight_decay<third::DT2>
                             , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
                             , dll::dbn_only>::rbm_t
-                        , dll::mp_layer_3d_desc<K2,NH2_1,NH2_1,1,C2,C2>::layer_t
-                    >
+                        , dll::mp_layer_3d_desc<K2,NH2_1,NH2_2,1,C2,C2>::layer_t
+                    >, dll::memory, dll::parallel
                 >::dbn_t;
 #elif defined(CRBM_MP_3)
             using cdbn_t =
