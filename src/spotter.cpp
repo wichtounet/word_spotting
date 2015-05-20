@@ -49,7 +49,7 @@ static_assert(false, "Invalid configuration");
 //#define PRUNE if(keyword_to_string(keyword) != "[O, c, t, o, b, e, r]"){ continue; }
 #define PRUNE
 
-#define LOCAL_MEAN_SCALING
+#define LOCAL_LINEAR_SCALING
 
 using weight = double;
 
@@ -506,8 +506,64 @@ void update_stats(std::size_t k, const std::string& result_folder, const Dataset
     }
 }
 
+template<typename Features>
+auto global_mean_scaling(Features& features, config& conf, bool training){
+    if(training){
+        for(std::size_t f = 0; f < features.back().back().size(); ++f){
+            // Compute the mean
+            double mean = 0.0;
+            double count = 0;
+            for(std::size_t t = 0; t < features.size(); ++t){
+                for(std::size_t i = 0; i < features[t].size(); ++i){
+                    mean += features[t][i][f];
+                    ++count;
+                }
+            }
+            mean /= count;
+
+            //Compute the variance
+            double std = 0.0;
+            count = 0.0;
+            for(std::size_t t = 0; t < features.size(); ++t){
+                for(std::size_t i = 0; i < features[t].size(); ++i){
+                    std += (features[t][i][f] - mean) * (features[t][i][f] - mean);
+                    ++count;
+                }
+            }
+            std = std::sqrt(std / count);
+
+            conf.scale_a[f] = mean;
+            conf.scale_b[f] = std;
+        }
+    }
+
+    return [](double x, double mean, double std) -> double { return std == 0.0 ? x - mean : (x - mean) / std; };
+}
+
+template<typename Features>
+auto global_linear_scaling(Features& features, config& conf, bool training){
+    if(training){
+        for(std::size_t f = 0; f < features.back().back().size(); ++f){
+            double A = features[0][0][f];
+            double B = features[0][0][f];
+
+            for(std::size_t t = 0; t < features.size(); ++t){
+                for(std::size_t i = 0; i < features[t].size(); ++i){
+                    A = std::min(A, features[t][i][f]);
+                    B = std::max(B, features[t][i][f]);
+                }
+            }
+
+            conf.scale_a[f] = A;
+            conf.scale_b[f] = B;
+        }
+    }
+
+    return [](double x, double A, double B) -> double { return (x - A) / (B - A); };
+}
+
 template<typename Dataset, typename Set>
-void evaluate_dtw(const Dataset& dataset, const Set& set, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
+void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
     auto result_folder = select_folder("./dtw_results/");
 
     generate_rel_files(result_folder, dataset, set, test_image_names);
@@ -531,57 +587,11 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const std::vector<std:
     }
 
 #ifdef GLOBAL_MEAN_SCALING
-    if(training){
-        for(std::size_t f = 0; f < test_features.back().back().size(); ++f){
-            // Compute the mean
-            double mean = 0.0;
-            double count = 0;
-            for(std::size_t t = 0; t < test_features.size(); ++t){
-                for(std::size_t i = 0; i < test_features[t].size(); ++i){
-                    mean += test_features[t][i][f];
-                    ++count;
-                }
-            }
-            mean /= count;
-
-            //Compute the variance
-            double std = 0.0;
-            count = 0.0;
-            for(std::size_t t = 0; t < test_features.size(); ++t){
-                for(std::size_t i = 0; i < test_features[t].size(); ++i){
-                    std += (test_features[t][i][f] - mean) * (test_features[t][i][f] - mean);
-                    ++count;
-                }
-            }
-            std = std::sqrt(std / count);
-
-            conf.scale_a[f] = mean;
-            conf.scale_b[f] = std;
-        }
-    }
-
-    auto scale = [](double x, double mean, double std) -> double { return std == 0.0 ? x - mean : (x - mean) / std; };
+    auto scale = global_mean_scaling(test_features, conf, training);
 #endif
 
 #ifdef GLOBAL_LINEAR_SCALING
-    if(training){
-        for(std::size_t f = 0; f < test_features.back().back().size(); ++f){
-            double A = test_features[0][0][f];
-            double B = test_features[0][0][f];
-
-            for(std::size_t t = 0; t < test_features.size(); ++t){
-                for(std::size_t i = 0; i < test_features[t].size(); ++i){
-                    A = std::min(A, test_features[t][i][f]);
-                    B = std::max(B, test_features[t][i][f]);
-                }
-            }
-
-            conf.scale_a[f] = A;
-            conf.scale_b[f] = B;
-        }
-    }
-
-    auto scale = [](double x, double A, double B) -> double { return (x - A) / (B - A); };
+    auto scale = global_linear_scaling(test_features, conf, training);
 #endif
 
 #if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
@@ -594,6 +604,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const std::vector<std:
     }
 #else
     cpp_unused(training);
+    cpp_unused(conf);
 #endif
 
     cpp::default_thread_pool<> pool;
@@ -654,7 +665,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const std::vector<std:
 }
 
 template<typename Dataset, typename Set, typename DBN>
-void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names){
+void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
     //Get some sizes
 
     const std::size_t patch_height = HEIGHT / conf.downscale;
@@ -689,6 +700,27 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
             local_mean_feature_scaling(vec);
 #endif
         });
+
+#ifdef GLOBAL_MEAN_SCALING
+    auto scale = global_mean_scaling(test_features_a, conf, training);
+#endif
+
+#ifdef GLOBAL_LINEAR_SCALING
+    auto scale = global_linear_scaling(test_features_a, conf, training);
+#endif
+
+#if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
+    for(std::size_t t = 0; t < test_features_a.size(); ++t){
+        for(std::size_t i = 0; i < test_features_a[t].size(); ++i){
+            for(std::size_t f = 0; f < test_features_a.back().back().size(); ++f){
+                test_features_a[t][i][f] = scale(test_features_a[t][i][f], conf.scale_a[f], conf.scale_b[f]);
+            }
+        }
+    }
+#else
+    cpp_unused(training);
+    cpp_unused(conf);
+#endif
 
     std::cout << "... done" << std::endl;
 
@@ -736,6 +768,14 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
 
 #ifdef LOCAL_MEAN_SCALING
         local_mean_feature_scaling(ref_a);
+#endif
+
+#if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
+        for(std::size_t i = 0; i < ref_a.size(); ++i){
+            for(std::size_t f = 0; f < ref_a[i].size(); ++f){
+                ref_a[i][f] = scale(ref_a[i][f], conf.scale_a[f], conf.scale_b[f]);
+            }
+        }
 #endif
 
         auto ref_size = dataset.word_images.at(training_image + ".png").size().width;
@@ -837,10 +877,10 @@ int command_train(config& conf){
         std::cout << "Use method 0 (Standard Features + DTW)" << std::endl;
 
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_dtw(dataset, set, train_word_names, train_image_names, true);
+        evaluate_dtw(dataset, set, conf, train_word_names, train_image_names, true);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_dtw(dataset, set, train_word_names, test_image_names, false);
+        evaluate_dtw(dataset, set, conf, train_word_names, test_image_names, false);
     } else if(conf.method_1){
         std::cout << "Use method 1 (holistic)" << std::endl;
         std::cout << "Method 1 is disabled for now (needs check matrix dimensions" << std::endl;
@@ -1562,10 +1602,10 @@ int command_train(config& conf){
             cdbn->load(file_name);
 
             std::cout << "Evaluate on training set" << std::endl;
-            evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names);
+            evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true);
 
             std::cout << "Evaluate on test set" << std::endl;
-            evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names);
+            evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false);
 
 #if LEVELS < 2
             //Silence some warnings

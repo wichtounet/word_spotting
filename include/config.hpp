@@ -30,8 +30,15 @@ struct config {
     std::size_t patch_width = 0;
     std::size_t patch_stride = 0;
 
-    double scale_a[9];
-    double scale_b[9];
+    std::vector<double> scale_a;
+    std::vector<double> scale_b;
+
+    config() : scale_a(4096), scale_b(4096) {}
+
+    config(const config& config) = default;
+    config(config&& config) = default;
+    config& operator=(const config& config) = default;
+    config& operator=(config&& config) = default;
 };
 
 void print_usage();
