@@ -158,6 +158,27 @@ std::vector<etl::dyn_matrix<weight>> mat_to_patches(const config& conf, const cv
 }
 
 template<typename Features>
+void local_linear_feature_scaling(std::vector<Features>& features){
+    const auto width = features.size();
+
+    for(std::size_t f = 0; f < features.back().size(); ++f){
+        double A = features[0][f];
+        double B = features[0][f];
+
+        for(std::size_t i = 1; i < width; ++i){
+            A = std::min(A, features[i][f]);
+            B = std::max(B, features[i][f]);
+        }
+
+        auto scale = [A,B](auto x){ return (x - A) / (B - A); };
+
+        for(std::size_t i = 0; i < width; ++i){
+            features[i][f] = scale(features[i][f]);
+        }
+    }
+}
+
+template<typename Features>
 void local_mean_feature_scaling(std::vector<Features>& features){
     const auto width = features.size();
 
@@ -262,21 +283,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const cv::Mat& clean_imag
     }
 
 #ifdef LOCAL_LINEAR_SCALING
-    for(std::size_t f = 0; f < features.back().size(); ++f){
-        double A = features[0][f];
-        double B = features[0][f];
-
-        for(std::size_t i = 1; i < width; ++i){
-            A = std::min(A, features[i][f]);
-            B = std::max(B, features[i][f]);
-        }
-
-        auto scale = [A,B](auto x){ return (x - A) / (B - A); };
-
-        for(std::size_t i = 0; i < width; ++i){
-            features[i][f] = scale(features[i][f]);
-        }
-    }
+    local_linear_feature_scaling(features);
 #endif
 
 #ifdef LOCAL_MEAN_SCALING
@@ -674,6 +681,10 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
                 dbn.activation_probabilities(patch, vec.back());
             }
 
+#ifdef LOCAL_LINEAR_SCALING
+            local_linear_feature_scaling(vec);
+#endif
+
 #ifdef LOCAL_MEAN_SCALING
             local_mean_feature_scaling(vec);
 #endif
@@ -718,6 +729,10 @@ void evaluate_patches(const Dataset& dataset, const Set& set, const config& conf
             ref_a.push_back(dbn.prepare_one_output());
             dbn.activation_probabilities(patch, ref_a.back());
         }
+
+#ifdef LOCAL_LINEAR_SCALING
+        local_linear_feature_scaling(ref_a);
+#endif
 
 #ifdef LOCAL_MEAN_SCALING
         local_mean_feature_scaling(ref_a);
@@ -1542,9 +1557,9 @@ int command_train(config& conf){
 
             const std::string file_name("method_2_third.dat");
 
-            cdbn->pretrain(training_patches, third::epochs);
-            cdbn->store(file_name);
-            //cdbn->load(file_name);
+            //cdbn->pretrain(training_patches, third::epochs);
+            //cdbn->store(file_name);
+            cdbn->load(file_name);
 
             std::cout << "Evaluate on training set" << std::endl;
             evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names);
