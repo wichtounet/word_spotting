@@ -5,6 +5,8 @@ default: release
 include make-utils/flags.mk
 include make-utils/cpp-utils.mk
 
+CXX_FLAGS += -pedantic
+
 CXX_FLAGS += -Idll/etl/include -Idll/etl/lib/include -Idll/nice_svm/include -Idll/include
 LD_FLAGS  += -pthread -lopencv_core -lopencv_imgproc -lopencv_highgui -lsvm
 
