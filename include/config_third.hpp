@@ -24,8 +24,8 @@ constexpr const std::size_t width = 220;        //Should not be changed
 constexpr const std::size_t patch_height = 40;  //Should not be changed
 constexpr const std::size_t patch_width = 20;
 
-constexpr const std::size_t epochs = 1;
-constexpr const std::size_t patch_stride = 3;
+constexpr const std::size_t epochs = 50;
+constexpr const std::size_t patch_stride = 2;
 
 constexpr const std::size_t NF1 = 9;
 constexpr const std::size_t K1 = 24;
