@@ -11,6 +11,11 @@
 #include <vector>
 #include <string>
 
+#include "etl/etl.hpp"
+
+#include "config.hpp"
+#include "washington.hpp"
+
 template<typename T>
 std::ostream& operator<<(std::ostream& stream, const std::vector<T>& vec){
     std::string comma = "";
@@ -38,5 +43,7 @@ std::string keyword_to_string(const std::vector<T>& vec){
 
     return result;
 }
+etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image);
+std::vector<etl::dyn_matrix<weight>> mat_to_patches(const config& conf, const cv::Mat& image);
 
 #endif
