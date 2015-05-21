@@ -8,7 +8,7 @@
 #include <iostream>
 #include <fstream>
 
-#include <sys/stat.h>
+#include "cpp_utils/parallel.hpp"
 
 #include "dll/conv_rbm.hpp"
 #include "dll/conv_rbm_mp.hpp"
@@ -22,20 +22,15 @@
 
 #include "nice_svm.hpp"
 
-#include "cpp_utils/parallel.hpp"
-
-static constexpr const bool generate_graphs = false;
-using weight = double;
-
 #include "config.hpp"
-#include "reports.hpp"
-#include "standard.hpp" //Method 0
-
-#define LOCAL_MEAN_SCALING
-#include "scaling.hpp"      //Scaling functions
-
+#include "utils.hpp"
 #include "washington.hpp" //Dataset handling
 #include "dtw.hpp"        //Dynamic time warping
+#include "reports.hpp"    //Reports generation utilities
+#include "scaling.hpp"      //Scaling functions
+
+//Include methods
+#include "standard.hpp"  //Method 0
 
 //The different configurations
 #include "config_third.hpp"
@@ -56,47 +51,6 @@ using weight = double;
 static_assert(false, "Invalid configuration");
 #endif
 
-static constexpr const std::size_t WIDTH = 660;
-static constexpr const std::size_t HEIGHT = 120;
-
-constexpr const std::size_t MAX_N = 25;
-
-static_assert(WIDTH % 2 == 0, "Width must be divisible by 2");
-static_assert(HEIGHT % 2 == 0, "Height must be divisible by 2");
-
-static_assert(WIDTH % 3 == 0, "Width must be divisible by 4");
-static_assert(HEIGHT % 3 == 0, "Height must be divisible by 4");
-
-static_assert(WIDTH % 4 == 0, "Width must be divisible by 4");
-static_assert(HEIGHT % 4 == 0, "Height must be divisible by 4");
-
-template<typename T>
-std::string keyword_to_string(const std::vector<T>& vec){
-    std::string comma = "";
-    std::string result;
-    result += "[";
-    for(auto& v : vec){
-        result += comma;
-        result += v;
-        comma = ", ";
-    }
-    result += "]";
-
-    return result;
-}
-
-template<typename T>
-std::ostream& operator<<(std::ostream& stream, const std::vector<T>& vec){
-    std::string comma = "";
-    stream << "[";
-    for(auto& v : vec){
-        stream << comma << v;
-        comma = ", ";
-    }
-    stream << "]";
-
-    return stream;
-}
 
 namespace {
 

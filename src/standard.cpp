@@ -12,10 +12,9 @@
 
 #include "cpp_utils/parallel.hpp"
 
-static constexpr const bool generate_graphs = false;
-using weight = double; //TODO Should probably be declared globally
-
+#include "config.hpp"
 #include "standard.hpp"
+#include "utils.hpp"
 #include "reports.hpp"
 #include "dtw.hpp"        //Dynamic time warping
 
@@ -23,20 +22,6 @@ using weight = double; //TODO Should probably be declared globally
 #include "scaling.hpp"      //Scaling functions
 
 namespace {
-
-//TODO Move
-template<typename T>
-std::ostream& operator<<(std::ostream& stream, const std::vector<T>& vec){
-    std::string comma = "";
-    stream << "[";
-    for(auto& v : vec){
-        stream << comma << v;
-        comma = ", ";
-    }
-    stream << "]";
-
-    return stream;
-}
 
 std::vector<etl::dyn_vector<weight>> standard_features(const cv::Mat& clean_image){
     std::vector<etl::dyn_vector<weight>> features;

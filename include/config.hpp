@@ -11,6 +11,15 @@
 #include <vector>
 #include <string>
 
+static constexpr const std::size_t WIDTH = 660;
+static constexpr const std::size_t HEIGHT = 120;
+
+static constexpr const bool generate_graphs = false;
+
+constexpr const std::size_t MAX_N = 25;
+
+using weight = double;
+
 struct config {
     std::vector<std::string> args;
     std::vector<std::string> files;
@@ -44,5 +53,16 @@ struct config {
 void print_usage();
 
 config parse_args(int argc, char** argv);
+
+#define LOCAL_MEAN_SCALING
+
+static_assert(WIDTH % 2 == 0, "Width must be divisible by 2");
+static_assert(HEIGHT % 2 == 0, "Height must be divisible by 2");
+
+static_assert(WIDTH % 3 == 0, "Width must be divisible by 4");
+static_assert(HEIGHT % 3 == 0, "Height must be divisible by 4");
+
+static_assert(WIDTH % 4 == 0, "Width must be divisible by 4");
+static_assert(HEIGHT % 4 == 0, "Height must be divisible by 4");
 
 #endif
