@@ -32,6 +32,7 @@
 
 //The different configurations
 #include "config_third.hpp"
+#include "config_half.hpp"
 
 #if defined(THIRD_CRBM_PMP_1) || defined(THIRD_CRBM_MP_1)
 #define THIRD_LEVELS 1
@@ -45,7 +46,19 @@
 #define THIRD_LEVELS 3
 #endif
 
-#ifndef THIRD_LEVELS
+#if defined(HALF_CRBM_PMP_1) || defined(HALF_CRBM_MP_1)
+#define HALF_LEVELS 1
+#endif
+
+#if defined(HALF_CRBM_PMP_2) || defined(HALF_CRBM_MP_2)
+#define HALF_LEVELS 2
+#endif
+
+#if defined(HALF_CRBM_PMP_3) || defined(HALF_CRBM_MP_3)
+#define HALF_LEVELS 3
+#endif
+
+#if !defined(HALF_LEVELS) || !defined(THIRD_LEVELS)
 static_assert(false, "Invalid configuration");
 #endif
 
