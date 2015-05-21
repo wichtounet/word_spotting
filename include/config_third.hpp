@@ -10,13 +10,13 @@
 
 namespace third {
 
-//#define CRBM_PMP_1    //One layer of CRBM with Probabilistic Max Pooling (C1)
-#define CRBM_PMP_2      //Two layers of CRBM with Probabilistic Max Pooling (C1/C2)
-//#define CRBM_PMP_3    //Three layers of CRBM with Probabilistic Max Pooling (C1/C2/C3)
+//#define THIRD_CRBM_PMP_1    //One layer of CRBM with Probabilistic Max Pooling (C1)
+#define THIRD_CRBM_PMP_2      //Two layers of CRBM with Probabilistic Max Pooling (C1/C2)
+//#define THIRD_CRBM_PMP_3    //Three layers of CRBM with Probabilistic Max Pooling (C1/C2/C3)
 
-//#define CRBM_MP_1  //One layers of CRBM with Max Pooling after each layer (C1)
-//#define CRBM_MP_2  //Two layers of CRBM with Max Pooling after each layer (C1/C2)
-//#define CRBM_MP_3  //Three layers of CRBM with Max Pooling after each layer (C1/C2/C3)
+//#define THIRD_CRBM_MP_1  //One layers of CRBM with Max Pooling after each layer (C1)
+//#define THIRD_CRBM_MP_2  //Two layers of CRBM with Max Pooling after each layer (C1/C2)
+//#define THIRD_CRBM_MP_3  //Three layers of CRBM with Max Pooling after each layer (C1/C2/C3)
 
 constexpr const std::size_t height = 40;        //Should not be changed
 constexpr const std::size_t width = 220;        //Should not be changed
