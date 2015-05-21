@@ -5,8 +5,8 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
-#ifndef WORD_DTW_HPP
-#define WORD_DTW_HPP
+#ifndef WORD_SPOTTER_DTW_HPP
+#define WORD_SPOTTER_DTW_HPP
 
 template<typename V1, typename V2>
 double dtw_distance(const V1& s, const V2& t, bool sc_band = true){
