@@ -25,7 +25,7 @@ constexpr const std::size_t patch_height = 60;  //Should not be changed
 constexpr const std::size_t patch_width = 20;
 
 constexpr const std::size_t epochs = 50;
-constexpr const std::size_t patch_stride = 2;
+constexpr const std::size_t patch_stride = 3;
 
 constexpr const std::size_t NF1 = 9;
 constexpr const std::size_t K1 = 24;
@@ -67,8 +67,8 @@ const auto wd_l2_0 = [](double& value){ value = 1.0 * value; };
 const auto wd_l2_1 = [](double& value){ value = 1.0 * value; };
 const auto wd_l2_2 = [](double& value){ value = 1.0 * value; };
 
-const auto pbias_0 = [](double& value){ value = 1.0 * value; };
-const auto pbias_1 = [](double& value){ value = 1.0 * value; };
+const auto pbias_0 = [](double& value){ value = 0.5 * value; };
+const auto pbias_1 = [](double& value){ value = 0.5 * value; };
 const auto pbias_2 = [](double& value){ value = 1.0 * value; };
 
 const auto pbias_lambda_0 = [](double& value){ value = 2.0 * value; };
