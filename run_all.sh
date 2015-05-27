@@ -1,15 +1,20 @@
 #!/bin/bash
 
 if [ "$1" == "third" ]; then
-    config_file="config_half.hpp"
+    mode="third"
+    option="-third"
 elif [ "$1" == "half" ]; then
-    config_file="config_half.hpp"
+    mode="half"
+    option="-half"
 elif [ "$1" == "full" ]; then
-    config_file="config_full.hpp"
+    mode="full"
+    option=""
 else
     echo "The first parameter must be one of [full,half,third]"
     exit 1
 fi
+
+config_file="config_${mode}.hpp"
 
 machines=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25 160.98.22.8 160.98.22.9)
 user=wicht
@@ -27,6 +32,7 @@ new_stamp=$((stamp+1))
 echo "$new_stamp" > stamp
 
 echo "Stamp: $stamp"
+echo "Mode: $mode"
 
 mkdir -p "$stamp"
 
@@ -55,9 +61,9 @@ wait
 for machine in ${!machines[@]}; do
     (
     echo "Start execution on ${machines[machine]}"
-    sshpass -p "$password" ssh ${user}@${machines[machine]} 'cd ~/dev/word_spotting; rm -rf results/*; ./release_debug/bin/spotter -2 -third train ~/datasets/washington cv3 > grid.log ;'
+    sshpass -p "$password" ssh ${user}@${machines[machine]} "cd ~/dev/word_spotting; rm -rf results/*; ./release_debug/bin/spotter -2 ${option} train ~/datasets/washington cv3 > grid.log ;"
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/grid.log ${stamp}/${machine}.log
-    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/method_2_third.dat ${stamp}/${machine}.dat
+    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/method_2_${mode}.dat ${stamp}/${machine}.dat
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/1/global_rel_file ${stamp}/${machine}_train_global_rel_file
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/1/global_top_file ${stamp}/${machine}_train_global_top_file
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/1/local_rel_file ${stamp}/${machine}_train_local_rel_file
