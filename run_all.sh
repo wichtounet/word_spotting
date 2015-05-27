@@ -1,5 +1,16 @@
 #!/bin/bash
 
+if [ "$1" == "third" ]; then
+    config_file="config_half.hpp"
+elif [ "$1" == "half" ]; then
+    config_file="config_half.hpp"
+elif [ "$1" == "full" ]; then
+    config_file="config_full.hpp"
+else
+    echo "The first parameter must be one of [full,half,third]"
+    exit 1
+fi
+
 machines=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25 160.98.22.8 160.98.22.9)
 user=wicht
 password=`cat .passwd`
@@ -23,7 +34,7 @@ mkdir -p "$stamp"
 
 for machine in ${!machines[@]}; do
     echo "//This file will be put in ${machines[machine]}" > config_${machine}.hpp
-    cat ../include/config_third.hpp >> config_${machine}.hpp
+    cat ../include/${config_file} >> config_${machine}.hpp
     vim config_${machine}.hpp
     cp config_${machine}.hpp ${stamp}/${machine}_config.hpp
 done
@@ -32,7 +43,7 @@ done
 
 for machine in ${!machines[@]}; do
     (
-    sshpass -p "$password" scp config_${machine}.hpp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/include/config_third.hpp
+    sshpass -p "$password" scp config_${machine}.hpp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/include/${config_file}
     sshpass -p "$password" ssh ${user}@${machines[machine]} 'cd /home/wicht/dev/word_spotting; CXX=g++-4.9 LD=g++-4.9 make release_debug;'
     ) &
 done
