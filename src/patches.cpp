@@ -77,6 +77,66 @@ static_assert(false, "Invalid configuration");
 
 namespace {
 
+struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<weight>> {
+    config& conf;
+    const washington_dataset& dataset;
+    const std::vector<std::string>& image_names;
+
+    std::size_t current_image = 0;
+    std::vector<etl::dyn_matrix<weight>> patches;
+    std::size_t current_patch = 0;
+
+    patch_iterator(config& conf, const washington_dataset& dataset, const std::vector<std::string>& image_names, std::size_t i = 0)
+            : conf(conf), dataset(dataset), image_names(image_names), current_image(i) {
+        if(current_image < image_names.size()){
+            patches = mat_to_patches(conf, dataset.word_images.at(image_names[current_image]));
+        }
+    }
+
+    patch_iterator(const patch_iterator& rhs) = default;
+    patch_iterator& operator=(const patch_iterator& rhs) = default;
+
+    bool operator==(const patch_iterator& rhs){
+        if(current_image == image_names.size() && current_image == rhs.current_image){
+            return true;
+        } else {
+            return current_image == rhs.current_image && current_patch == rhs.current_patch;
+        }
+    }
+
+    bool operator!=(const patch_iterator& rhs){
+        return !(*this == rhs);
+    }
+    etl::dyn_matrix<weight>& operator*(){
+        return patches[current_patch];
+    }
+
+    etl::dyn_matrix<weight>* operator->(){
+        return &patches[current_patch];
+    }
+
+    patch_iterator operator++(){
+        if(current_patch == patches.size() - 1){
+            ++current_image;
+            current_patch = 0;
+
+            if(current_image < image_names.size()){
+                patches = mat_to_patches(conf, dataset.word_images.at(image_names[current_image]));
+            }
+        } else {
+            ++current_patch;
+        }
+
+        return *this;
+    }
+
+    patch_iterator operator++(int){
+        patch_iterator it = *this;
+        ++(*this);
+        return it;
+    }
+};
+
 template<typename Dataset, typename Set, typename DBN>
 void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
     //Get some sizes
@@ -918,23 +978,19 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
         conf.patch_width = patch_width;
         conf.patch_stride = patch_stride;
 
-        std::vector<etl::dyn_matrix<weight>> training_patches;
-        training_patches.reserve(train_image_names.size() * 5);
+        //1. Pretraining
+        {
+            patch_iterator it(conf, dataset, train_image_names);
+            patch_iterator end(conf, dataset, train_image_names, train_image_names.size());
 
-        std::cout << "Generate patches ..." << std::endl;
+            const std::string file_name("method_2_full.dat");
 
-        for(auto& name : train_image_names){
-            auto patches = mat_to_patches(conf, dataset.word_images.at(name));
-            std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
+            cdbn->pretrain(it, end, 1);
+            cdbn->store(file_name);
+            //cdbn->load(file_name);
         }
 
-        std::cout << "... done" << std::endl;
-
-        const std::string file_name("method_2_full.dat");
-
-        cdbn->pretrain(training_patches, full::epochs);
-        cdbn->store(file_name);
-        //cdbn->load(file_name);
+        //2. Evaluation
 
         std::cout << "Evaluate on training set" << std::endl;
         evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true);
