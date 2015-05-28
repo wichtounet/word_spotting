@@ -492,23 +492,25 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
         conf.patch_width = patch_width;
         conf.patch_stride = patch_stride;
 
-        std::vector<etl::dyn_matrix<weight>> training_patches;
-        training_patches.reserve(train_image_names.size() * 5);
+        {
+            std::vector<etl::dyn_matrix<weight>> training_patches;
+            training_patches.reserve(train_image_names.size() * 5);
 
-        std::cout << "Generate patches ..." << std::endl;
+            std::cout << "Generate patches ..." << std::endl;
 
-        for(auto& name : train_image_names){
-            auto patches = mat_to_patches(conf, dataset.word_images.at(name));
-            std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
+            for(auto& name : train_image_names){
+                auto patches = mat_to_patches(conf, dataset.word_images.at(name));
+                std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
+            }
+
+            std::cout << "... done" << std::endl;
+
+            const std::string file_name("method_2_half.dat");
+
+            cdbn->pretrain(training_patches, 1);
+            cdbn->store(file_name);
+            //cdbn->load(file_name);
         }
-
-        std::cout << "... done" << std::endl;
-
-        const std::string file_name("method_2_half.dat");
-
-        cdbn->pretrain(training_patches, half::epochs);
-        cdbn->store(file_name);
-        //cdbn->load(file_name);
 
         std::cout << "Evaluate on training set" << std::endl;
         evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true);
@@ -750,7 +752,7 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
 
             const std::string file_name("method_2_third.dat");
 
-            cdbn->pretrain(training_patches, 1);
+            cdbn->pretrain(training_patches, third::epochs);
             cdbn->store(file_name);
             //cdbn->load(file_name);
         }
