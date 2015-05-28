@@ -37,19 +37,22 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
     return training_image;
 }
 
-std::vector<etl::dyn_matrix<weight>> mat_to_patches(const config& conf, const cv::Mat& image){
+std::vector<etl::dyn_matrix<weight, 3>> mat_to_patches(const config& conf, const cv::Mat& image){
     cv::Mat clean_image;
 
     cv::Mat scaled_normalized(cv::Size(image.size().width / conf.downscale, image.size().height / conf.downscale), CV_8U);
     cv::resize(image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
     cv::adaptiveThreshold(scaled_normalized, clean_image, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
 
-    std::vector<etl::dyn_matrix<weight>> patches;
+    std::vector<etl::dyn_matrix<weight, 3>> patches;
 
     const auto context = conf.patch_width / 2;
 
     for(std::size_t i = 0; i < static_cast<std::size_t>(clean_image.size().width); i += conf.patch_stride){
-        patches.emplace_back(static_cast<std::size_t>(clean_image.size().height), static_cast<std::size_t>(conf.patch_width));
+        patches.emplace_back(
+            static_cast<std::size_t>(1),
+            static_cast<std::size_t>(clean_image.size().height),
+            static_cast<std::size_t>(conf.patch_width));
 
         auto& patch = patches.back();
 
@@ -61,7 +64,7 @@ std::vector<etl::dyn_matrix<weight>> mat_to_patches(const config& conf, const cv
                     pixel = image.at<uint8_t>(y, x + i * conf.patch_stride);
                 }
 
-                patch(y, x - i + context) = pixel == 0 ? 0.0 : 1.0;
+                patch(0, y, x - i + context) = pixel == 0 ? 0.0 : 1.0;
             }
         }
     }

@@ -77,13 +77,13 @@ static_assert(false, "Invalid configuration");
 
 namespace {
 
-struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<weight>> {
+struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<weight, 3>> {
     config& conf;
     const washington_dataset& dataset;
     const std::vector<std::string>& image_names;
 
     std::size_t current_image = 0;
-    std::vector<etl::dyn_matrix<weight>> patches;
+    std::vector<etl::dyn_matrix<weight, 3>> patches;
     std::size_t current_patch = 0;
 
     patch_iterator(config& conf, const washington_dataset& dataset, const std::vector<std::string>& image_names, std::size_t i = 0)
@@ -107,11 +107,11 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<w
     bool operator!=(const patch_iterator& rhs){
         return !(*this == rhs);
     }
-    etl::dyn_matrix<weight>& operator*(){
+    etl::dyn_matrix<weight, 3>& operator*(){
         return patches[current_patch];
     }
 
-    etl::dyn_matrix<weight>* operator->(){
+    etl::dyn_matrix<weight, 3>* operator->(){
         return &patches[current_patch];
     }
 
@@ -493,7 +493,7 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
         conf.patch_stride = patch_stride;
 
         {
-            std::vector<etl::dyn_matrix<weight>> training_patches;
+            std::vector<etl::dyn_matrix<weight, 3>> training_patches;
             training_patches.reserve(train_image_names.size() * 5);
 
             std::cout << "Generate patches ..." << std::endl;
@@ -738,7 +738,7 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
 
         //Train the DBN
         {
-            std::vector<etl::dyn_matrix<weight>> training_patches;
+            std::vector<etl::dyn_matrix<weight, 3>> training_patches;
             training_patches.reserve(train_image_names.size() * 5);
 
             std::cout << "Generate patches ..." << std::endl;
