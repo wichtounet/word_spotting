@@ -507,7 +507,7 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
 
             const std::string file_name("method_2_half.dat");
 
-            cdbn->pretrain(training_patches, 1);
+            cdbn->pretrain(training_patches, half::epochs);
             cdbn->store(file_name);
             //cdbn->load(file_name);
         }
@@ -990,7 +990,7 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
 
             const std::string file_name("method_2_full.dat");
 
-            cdbn->pretrain(it, end, 1);
+            cdbn->pretrain(it, end, full::epochs);
             cdbn->store(file_name);
             //cdbn->load(file_name);
         }
