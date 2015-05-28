@@ -770,7 +770,9 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
                         , dll::parallel, dll::momentum, dll::weight_decay<full::DT2>
                         , dll::hidden<full::HT2>, dll::sparsity<full::SM2>
                         , dll::dbn_only>::rbm_t
-                >
+                >,
+                dll::memory,
+                dll::parallel
             >::dbn_t;
 #elif defined(FULL_CRBM_PMP_3)
         using cdbn_t =
