@@ -35,15 +35,15 @@
 #include "config_half.hpp"
 #include "config_full.hpp"
 
-#if defined(THIRD_CRBM_PMP_1) || defined(THIRD_CRBM_MP_1)
+#if defined(THIRD_CRBM_PMP_1) || defined(THIRD_CRBM_MP_1) || defined(THIRD_RBM_1)
 #define THIRD_LEVELS 1
 #endif
 
-#if defined(THIRD_CRBM_PMP_2) || defined(THIRD_CRBM_MP_2)
+#if defined(THIRD_CRBM_PMP_2) || defined(THIRD_CRBM_MP_2) || defined(THIRD_RBM_2)
 #define THIRD_LEVELS 2
 #endif
 
-#if defined(THIRD_CRBM_PMP_3) || defined(THIRD_CRBM_MP_3)
+#if defined(THIRD_CRBM_PMP_3) || defined(THIRD_CRBM_MP_3) || defined(THIRD_RBM_3)
 #define THIRD_LEVELS 3
 #endif
 
@@ -150,7 +150,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
     std::cout << "Prepare the outputs ..." << std::endl;
 
-    std::vector<std::vector<etl::dyn_matrix<weight, 3>>> test_features_a(test_image_names.size());
+    std::vector<std::vector<typename DBN::output_t>> test_features_a(test_image_names.size());
 
     cpp::default_thread_pool<> pool;
 
@@ -228,7 +228,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
         auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"));
 
-        std::vector<etl::dyn_matrix<weight, 3>> ref_a;
+        std::vector<typename DBN::output_t> ref_a;
 
         for(auto& patch :patches){
             ref_a.push_back(dbn.prepare_one_output());
@@ -676,19 +676,73 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
                     , dll::mp_layer_3d_desc<K3,NH3_1,NH3_1,1,C3,C3>::layer_t
                 >
             >::dbn_t;
+#elif defined(THIRD_RBM_1)
+        using cdbn_t =
+            dll::dbn_desc<
+                dll::dbn_layers<
+                    dll::rbm_desc<
+                        NV1_1 * NV1_2 * 1, NF1
+                        , dll::weight_type<weight>, dll::batch_size<third::B1>
+                        , dll::momentum, dll::weight_decay<third::DT1>
+                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
+                        , dll::dbn_only>::rbm_t
+                >
+            >::dbn_t;
+#elif defined(THIRD_RBM_2)
+        using cdbn_t =
+            dll::dbn_desc<
+                dll::dbn_layers<
+                    dll::rbm_desc<
+                        NV1_1 * NV1_2 * 1, NF1
+                        , dll::weight_type<weight>, dll::batch_size<third::B1>
+                        , dll::momentum, dll::weight_decay<third::DT1>
+                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
+                        , dll::dbn_only>::rbm_t
+                    , dll::rbm_desc<
+                        NF1, NF2
+                        , dll::weight_type<weight>, dll::batch_size<third::B2>
+                        , dll::momentum, dll::weight_decay<third::DT2>
+                        , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
+                        , dll::dbn_only>::rbm_t
+                >
+            >::dbn_t;
+#elif defined(THIRD_RBM_3)
+        using cdbn_t =
+            dll::dbn_desc<
+                dll::dbn_layers<
+                    dll::rbm_desc<
+                        NV1_1 * NV1_2 * 1, NF1
+                        , dll::weight_type<weight>, dll::batch_size<third::B1>
+                        , dll::parallel, dll::momentum, dll::weight_decay<third::DT1>
+                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
+                        , dll::dbn_only>::rbm_t
+                    , dll::rbm_desc<
+                        NF1, NF2
+                        , dll::weight_type<weight>, dll::batch_size<third::B2>
+                        , dll::parallel, dll::momentum, dll::weight_decay<third::DT2>
+                        , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
+                        , dll::dbn_only>::rbm_t
+                    , dll::rbm_desc<
+                        NF2, NF3
+                        , dll::weight_type<weight>, dll::batch_size<third::B3>
+                        , dll::parallel, dll::momentum, dll::weight_decay<third::DT3>
+                        , dll::hidden<third::HT3>, dll::sparsity<third::SM3>
+                        , dll::dbn_only>::rbm_t
+                >
+            >::dbn_t;
 #else
         static_assert(false, "No architecture has been selected");
 #endif
 
-#if defined(THIRD_CRBM_PMP_1) || defined(THIRD_CRBM_PMP_2) || defined(THIRD_CRBM_PMP_3)
-        //Probabilistic max poolin models have less layers
-        constexpr const std::size_t L1 = 0;
-        constexpr const std::size_t L2 = 1;
-        constexpr const std::size_t L3 = 2;
-#else
+#if defined(THIRD_CRBM_MP_1) || defined(THIRD_CRBM_MP_2) || defined(THIRD_CRBM_MP_3)
+        //Max pooling layers models have less layers
         constexpr const std::size_t L1 = 0;
         constexpr const std::size_t L2 = 2;
         constexpr const std::size_t L3 = 4;
+#else
+        constexpr const std::size_t L1 = 0;
+        constexpr const std::size_t L2 = 1;
+        constexpr const std::size_t L3 = 2;
 #endif
 
         auto cdbn = std::make_unique<cdbn_t>();
@@ -700,6 +754,7 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
         third::wd_l2_0(cdbn->template layer<L1>().l2_weight_cost);
         third::pbias_0(cdbn->template layer<L1>().pbias);
         third::pbias_lambda_0(cdbn->template layer<L1>().pbias_lambda);
+        third::sparsity_target_0(cdbn->template layer<L1>().sparsity_target);
 
 #if THIRD_LEVELS >= 2
         //Level 2
@@ -709,6 +764,7 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
         third::wd_l2_1(cdbn->template layer<L2>().l2_weight_cost);
         third::pbias_1(cdbn->template layer<L2>().pbias);
         third::pbias_lambda_1(cdbn->template layer<L2>().pbias_lambda);
+        third::sparsity_target_1(cdbn->template layer<L1>().sparsity_target);
 #endif
 
 #if THIRD_LEVELS >= 3
@@ -719,6 +775,7 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
         third::wd_l2_2(cdbn->template layer<L3>().l2_weight_cost);
         third::pbias_2(cdbn->template layer<L3>().pbias);
         third::pbias_lambda_2(cdbn->template layer<L3>().pbias_lambda);
+        third::sparsity_target_2(cdbn->template layer<L1>().sparsity_target);
 #endif
 
         cdbn->display();
@@ -762,6 +819,13 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
 
         std::cout << "Evaluate on test set" << std::endl;
         evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false);
+
+#if defined(THIRD_RBM_1) || defined(THIRD_RBM_2) || defined(THIRD_RBM_3)
+        //Silence some warnings
+        cpp_unused(K1);
+        cpp_unused(K2);
+        cpp_unused(K3);
+#endif
 
 #if THIRD_LEVELS < 2
         //Silence some warnings
