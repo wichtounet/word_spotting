@@ -18,17 +18,17 @@ namespace half {
 //#define HALF_CRBM_MP_2  //Two layers of CRBM with Max Pooling after each layer (C1/C2)
 //#define HALF_CRBM_MP_3  //Three layers of CRBM with Max Pooling after each layer (C1/C2/C3)
 
-constexpr const std::size_t height = 60;        //Should not be changed
-constexpr const std::size_t width = 330;        //Should not be changed
+constexpr const std::size_t height = 60;            //Should not be changed
+constexpr const std::size_t width = 330;            //Should not be changed
 
-constexpr const std::size_t patch_height = 60;  //Should not be changed
+constexpr const std::size_t patch_height = height;  //Should not be changed
 constexpr const std::size_t patch_width = 20;
 
 constexpr const std::size_t epochs = 50;
 constexpr const std::size_t patch_stride = 3;
 
 constexpr const std::size_t NF1 = 9;
-constexpr const std::size_t K1 = 24;
+constexpr const std::size_t K1 = 12;
 constexpr const std::size_t C1 = 2;
 constexpr const std::size_t B1 = 25;
 constexpr const dll::unit_type HT1 = dll::unit_type::BINARY;
@@ -36,7 +36,7 @@ constexpr const dll::decay_type DT1 = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM1 = dll::sparsity_method::LEE;
 
 constexpr const std::size_t NF2 = 3;
-constexpr const std::size_t K2 = 24;
+constexpr const std::size_t K2 = 12;
 constexpr const std::size_t C2 = 2;
 constexpr const std::size_t B2 = 25;
 constexpr const dll::unit_type HT2 = dll::unit_type::BINARY;
