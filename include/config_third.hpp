@@ -37,7 +37,7 @@ constexpr const dll::unit_type HT1 = dll::unit_type::BINARY;
 constexpr const dll::decay_type DT1 = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM1 = dll::sparsity_method::LEE;
 
-constexpr const std::size_t NF2 = 11;
+constexpr const std::size_t NF2 = 3;
 constexpr const std::size_t K2 = 8;
 constexpr const std::size_t C2 = 2;
 constexpr const std::size_t B2 = 32;
