@@ -29,7 +29,7 @@ CXX_FLAGS += -DETL_MKL_MODE $(shell pkg-config --cflags mkl-threads)
 LD_FLAGS += $(shell pkg-config --libs mkl-threads)
 CXX_FLAGS += -Wno-tautological-compare
 else
-ifneq (,$(SPOTTER_MKL_THREADS))
+ifneq (,$(SPOTTER_MKL))
 CXX_FLAGS += -DETL_MKL_MODE $(shell pkg-config --cflags mkl)
 LD_FLAGS += $(shell pkg-config --libs mkl)
 CXX_FLAGS += -Wno-tautological-compare
