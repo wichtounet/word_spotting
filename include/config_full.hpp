@@ -28,7 +28,7 @@ constexpr const std::size_t epochs = 50;
 constexpr const std::size_t patch_stride = 2;
 
 constexpr const std::size_t NF1 = 9;
-constexpr const std::size_t K1 = 24;
+constexpr const std::size_t K1 = 4;
 constexpr const std::size_t C1 = 2;
 constexpr const std::size_t B1 = 25;
 constexpr const dll::unit_type HT1 = dll::unit_type::BINARY;
@@ -36,7 +36,7 @@ constexpr const dll::decay_type DT1 = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM1 = dll::sparsity_method::LEE;
 
 constexpr const std::size_t NF2 = 3;
-constexpr const std::size_t K2 = 24;
+constexpr const std::size_t K2 = 4;
 constexpr const std::size_t C2 = 2;
 constexpr const std::size_t B2 = 25;
 constexpr const dll::unit_type HT2 = dll::unit_type::BINARY;
