@@ -9,7 +9,7 @@
 #define WORD_SPOTTER_DTW_HPP
 
 template<typename V1, typename V2>
-double dtw_distance(const V1& s, const V2& t, bool sc_band = true){
+double dtw_distance(const V1& s, const V2& t, bool sc_band = true, double band = 0.1){
     const auto n = s.size();
     const auto m = t.size();
 
@@ -35,7 +35,7 @@ double dtw_distance(const V1& s, const V2& t, bool sc_band = true){
     for (std::size_t i = 1; i < n; i++) {
         for (std::size_t j = 1; j < m; j++) {
             //Sakoe-Chiba constraint
-            if(sc_band && (j < (m * static_cast<double>(i) / n) - 0.1 * m || j > (m * static_cast<double>(i) / n) + 0.1 * m)){
+            if(sc_band && (j < (m * static_cast<double>(i) / n) - band * m || j > (m * static_cast<double>(i) / n) + band * m)){
                 dtw(i, j) = 100000.0;
                 continue;
             }
