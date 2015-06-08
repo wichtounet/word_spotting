@@ -229,11 +229,16 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
         auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"));
 
         std::vector<typename DBN::output_t> ref_a;
+        ref_a.reserve(patches.size());
 
-        for(auto& patch :patches){
+        for(std::size_t i = 0; i < patches.size(); ++i){
             ref_a.push_back(dbn.prepare_one_output());
-            dbn.activation_probabilities(patch, ref_a.back());
         }
+
+        cpp::parallel_foreach_i(pool, patches.begin(), patches.end(),
+            [&dbn,&ref_a](auto& patch, std::size_t i){
+                dbn.activation_probabilities(patch, ref_a[i]);
+            });
 
 #ifdef LOCAL_LINEAR_SCALING
         local_linear_feature_scaling(ref_a);
