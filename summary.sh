@@ -22,6 +22,11 @@ for machine in ${!machines[@]}; do
         echo "    L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_train_local_eval | /usr/bin/zgrep all | cut -f3`
         echo "    L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_train_local_eval | /usr/bin/zgrep all | cut -f3`
     fi
+    echo "  Valid results"
+    echo "    G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_valid_global_eval | /usr/bin/zgrep all | cut -f3`
+    echo "    G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_valid_global_eval | /usr/bin/zgrep all | cut -f3`
+    echo "    L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_valid_local_eval | /usr/bin/zgrep all | cut -f3`
+    echo "    L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_valid_local_eval | /usr/bin/zgrep all | cut -f3`
     echo "  Test results"
     echo "    G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_test_global_eval | /usr/bin/zgrep all | cut -f3`
     echo "    G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_test_global_eval | /usr/bin/zgrep all | cut -f3`

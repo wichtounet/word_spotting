@@ -71,12 +71,18 @@ for machine in ${!machines[@]}; do
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/1/global_top_file ${stamp}/${machine}_train_global_top_file
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/1/local_rel_file ${stamp}/${machine}_train_local_rel_file
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/1/local_top_file ${stamp}/${machine}_train_local_top_file
-    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/2/global_rel_file ${stamp}/${machine}_test_global_rel_file
-    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/2/global_top_file ${stamp}/${machine}_test_global_top_file
-    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/2/local_rel_file ${stamp}/${machine}_test_local_rel_file
-    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/2/local_top_file ${stamp}/${machine}_test_local_top_file
+    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/2/global_rel_file ${stamp}/${machine}_valid_global_rel_file
+    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/2/global_top_file ${stamp}/${machine}_valid_global_top_file
+    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/2/local_rel_file ${stamp}/${machine}_valid_local_rel_file
+    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/2/local_top_file ${stamp}/${machine}_valid_local_top_file
+    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/3/global_rel_file ${stamp}/${machine}_test_global_rel_file
+    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/3/global_top_file ${stamp}/${machine}_test_global_top_file
+    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/3/local_rel_file ${stamp}/${machine}_test_local_rel_file
+    sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/3/local_top_file ${stamp}/${machine}_test_local_top_file
     ~/dev/trec_eval/trec_eval -q ${stamp}/${machine}_train_global_rel_file ${stamp}/${machine}_train_global_top_file > ${stamp}/${machine}_train_global_eval
     ~/dev/trec_eval/trec_eval -q ${stamp}/${machine}_train_local_rel_file ${stamp}/${machine}_train_local_top_file > ${stamp}/${machine}_train_local_eval
+    ~/dev/trec_eval/trec_eval -q ${stamp}/${machine}_valid_global_rel_file ${stamp}/${machine}_valid_global_top_file > ${stamp}/${machine}_valid_global_eval
+    ~/dev/trec_eval/trec_eval -q ${stamp}/${machine}_valid_local_rel_file ${stamp}/${machine}_valid_local_top_file > ${stamp}/${machine}_valid_local_eval
     ~/dev/trec_eval/trec_eval -q ${stamp}/${machine}_test_global_rel_file ${stamp}/${machine}_test_global_top_file > ${stamp}/${machine}_test_global_eval
     ~/dev/trec_eval/trec_eval -q ${stamp}/${machine}_test_local_rel_file ${stamp}/${machine}_test_local_top_file > ${stamp}/${machine}_test_local_eval
     echo "Execution finished on machine $machine (${machines[machine]})"
@@ -85,6 +91,11 @@ for machine in ${!machines[@]}; do
     echo "  G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_train_global_eval | /usr/bin/zgrep all | cut -f3`
     echo "  L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_train_local_eval | /usr/bin/zgrep all | cut -f3`
     echo "  L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_train_local_eval | /usr/bin/zgrep all | cut -f3`
+    echo "Valid results"
+    echo "  G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_valid_global_eval | /usr/bin/zgrep all | cut -f3`
+    echo "  G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_valid_global_eval | /usr/bin/zgrep all | cut -f3`
+    echo "  L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_valid_local_eval | /usr/bin/zgrep all | cut -f3`
+    echo "  L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_valid_local_eval | /usr/bin/zgrep all | cut -f3`
     echo "Test results"
     echo "  G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_test_global_eval | /usr/bin/zgrep all | cut -f3`
     echo "  G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_test_global_eval | /usr/bin/zgrep all | cut -f3`
@@ -107,6 +118,11 @@ for machine in ${!machines[@]}; do
     echo "    G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_train_global_eval | /usr/bin/zgrep all | cut -f3`
     echo "    L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_train_local_eval | /usr/bin/zgrep all | cut -f3`
     echo "    L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_train_local_eval | /usr/bin/zgrep all | cut -f3`
+    echo "  Valid results"
+    echo "    G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_valid_global_eval | /usr/bin/zgrep all | cut -f3`
+    echo "    G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_valid_global_eval | /usr/bin/zgrep all | cut -f3`
+    echo "    L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_valid_local_eval | /usr/bin/zgrep all | cut -f3`
+    echo "    L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_valid_local_eval | /usr/bin/zgrep all | cut -f3`
     echo "  Test results"
     echo "    G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_test_global_eval | /usr/bin/zgrep all | cut -f3`
     echo "    G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_test_global_eval | /usr/bin/zgrep all | cut -f3`
