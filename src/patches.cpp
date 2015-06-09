@@ -137,22 +137,21 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<w
     }
 };
 
-template<typename Dataset, typename Set, typename DBN>
-void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
-    //Get some sizes
+struct parameters {
+    double sc_band;
+};
 
+template<typename Dataset, typename DBN>
+std::vector<std::vector<typename DBN::output_t>> prepare_outputs(
+        cpp::default_thread_pool<>& pool, const Dataset& dataset, const DBN& dbn, config& conf,
+        const std::vector<std::string>& test_image_names, bool training){
+    //Get some sizes
     const std::size_t patch_height = HEIGHT / conf.downscale;
     const std::size_t patch_width = conf.patch_width;
 
-    auto result_folder = select_folder("./results/");
-
-    generate_rel_files(result_folder, dataset, set, test_image_names);
-
-    std::cout << "Prepare the outputs ..." << std::endl;
-
     std::vector<std::vector<typename DBN::output_t>> test_features_a(test_image_names.size());
 
-    cpp::default_thread_pool<> pool;
+    std::cout << "Prepare the outputs ..." << std::endl;
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
         [&,patch_height,patch_width](auto& test_image, std::size_t i){
@@ -196,6 +195,20 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 #endif
 
     std::cout << "... done" << std::endl;
+
+    return test_features_a;
+}
+
+template<typename Dataset, typename Set, typename DBN>
+void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
+
+    auto result_folder = select_folder("./results/");
+
+    generate_rel_files(result_folder, dataset, set, test_image_names);
+
+    cpp::default_thread_pool<> pool;
+
+    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, training);
 
     std::cout << "Evaluate performance..." << std::endl;
 
