@@ -77,16 +77,18 @@ static_assert(false, "Invalid configuration");
 
 namespace {
 
+using thread_pool = cpp::default_thread_pool<>;
+
 struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<weight, 3>> {
     config& conf;
     const washington_dataset& dataset;
-    const std::vector<std::string>& image_names;
+    names image_names;
 
     std::size_t current_image = 0;
     std::vector<etl::dyn_matrix<weight, 3>> patches;
     std::size_t current_patch = 0;
 
-    patch_iterator(config& conf, const washington_dataset& dataset, const std::vector<std::string>& image_names, std::size_t i = 0)
+    patch_iterator(config& conf, const washington_dataset& dataset, names image_names, std::size_t i = 0)
             : conf(conf), dataset(dataset), image_names(image_names), current_image(i) {
         if(current_image < image_names.size()){
             patches = mat_to_patches(conf, dataset.word_images.at(image_names[current_image]), true);
@@ -143,8 +145,8 @@ struct parameters {
 
 template<typename Dataset, typename DBN>
 std::vector<std::vector<typename DBN::output_t>> prepare_outputs(
-        cpp::default_thread_pool<>& pool, const Dataset& dataset, const DBN& dbn, config& conf,
-        const std::vector<std::string>& test_image_names, bool training){
+        thread_pool& pool, const Dataset& dataset, const DBN& dbn, config& conf,
+        names test_image_names, bool training){
     //Get some sizes
     const std::size_t patch_height = HEIGHT / conf.downscale;
     const std::size_t patch_width = conf.patch_width;
@@ -200,12 +202,11 @@ std::vector<std::vector<typename DBN::output_t>> prepare_outputs(
 }
 
 template<typename Dataset>
-std::vector<std::string> select_training_images(
-        const Dataset& dataset, const std::vector<std::string>& keyword, const std::vector<std::string>& names){
+std::vector<std::string> select_training_images(const Dataset& dataset, names keyword, names train_names){
     std::vector<std::string> training_images;
 
     for(auto& labels : dataset.word_labels){
-        if(keyword == labels.second && std::find(names.begin(), names.end(), labels.first) != names.end()){
+        if(keyword == labels.second && std::find(train_names.begin(), train_names.end(), labels.first) != train_names.end()){
             training_images.push_back(labels.first);
         }
     }
@@ -215,8 +216,8 @@ std::vector<std::string> select_training_images(
 
 template<typename Dataset, typename DBN>
 std::vector<std::vector<typename DBN::output_t>> compute_reference(
-        cpp::default_thread_pool<>& pool, const Dataset& dataset, const DBN& dbn,
-        const config& conf, const std::vector<std::string>& training_images){
+        thread_pool& pool, const Dataset& dataset, const DBN& dbn,
+        const config& conf, names training_images){
     std::vector<std::vector<typename DBN::output_t>> ref_a(training_images.size());
 
     cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(),
@@ -260,8 +261,8 @@ std::vector<std::vector<typename DBN::output_t>> compute_reference(
 
 template<typename Dataset, typename Ref, typename Features>
 std::vector<std::pair<std::string, weight>> compute_distances(
-        cpp::default_thread_pool<>& pool, const Dataset& dataset, Features& test_features_a, Ref& ref_a,
-        const std::vector<std::string>& training_images, const std::vector<std::string>& test_image_names, parameters parameters){
+        thread_pool& pool, const Dataset& dataset, Features& test_features_a, Ref& ref_a,
+        names training_images, names test_image_names, parameters parameters){
     std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
@@ -291,8 +292,8 @@ std::vector<std::pair<std::string, weight>> compute_distances(
 }
 
 template<typename Dataset, typename Set, typename DBN>
-void evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training, parameters parameters){
-    cpp::default_thread_pool<> pool;
+void evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters){
+    thread_pool pool;
 
     // 1. Select a folder
 
@@ -350,8 +351,8 @@ void evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf
 }
 
 template<typename Dataset, typename Set, typename DBN>
-void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training, parameters parameters){
-    cpp::default_thread_pool<> pool;
+void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters){
+    thread_pool pool;
 
     // 1. Select a folder
 
