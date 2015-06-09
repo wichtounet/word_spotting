@@ -790,10 +790,10 @@ void patches_method(
         cdbn->display();
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        constexpr const auto patch_width = half::patch_width;
-        constexpr const auto patch_height = half::patch_height;
-        constexpr const auto train_stride = half::train_stride;
-        constexpr const auto test_stride = half::test_stride;
+        constexpr const auto patch_width = third::patch_width;
+        constexpr const auto patch_height = third::patch_height;
+        constexpr const auto train_stride = third::train_stride;
+        constexpr const auto test_stride = third::test_stride;
 
         std::cout << "patch_height=" << patch_height << std::endl;
         std::cout << "patch_width=" << patch_width << std::endl;
@@ -1047,10 +1047,10 @@ void patches_method(
         cdbn->display();
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        constexpr const auto patch_width = half::patch_width;
-        constexpr const auto patch_height = half::patch_height;
-        constexpr const auto train_stride = half::train_stride;
-        constexpr const auto test_stride = half::test_stride;
+        constexpr const auto patch_width = full::patch_width;
+        constexpr const auto patch_height = full::patch_height;
+        constexpr const auto train_stride = full::train_stride;
+        constexpr const auto test_stride = full::test_stride;
 
         std::cout << "patch_height=" << patch_height << std::endl;
         std::cout << "patch_width=" << patch_width << std::endl;
