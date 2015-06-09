@@ -231,12 +231,6 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
             }
         }
 
-        //Make sure that there is a sample in the training set
-        if(training_image.empty()){
-            std::cout << "Skipped " << keyword << " since there are no example in the training set" << std::endl;
-            continue;
-        }
-
         ++evaluated;
 
         auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"), false);
