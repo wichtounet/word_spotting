@@ -338,7 +338,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
     std::cout << "... done" << std::endl;
 
-    // 5. Fianlize the results
+    // 5. Finalize the results
 
     std::cout << set.keywords.size() << " keywords evaluated" << std::endl;
 
