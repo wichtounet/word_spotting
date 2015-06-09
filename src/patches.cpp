@@ -212,8 +212,6 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
     std::cout << "Evaluate performance..." << std::endl;
 
-    std::size_t evaluated = 0;
-
     std::vector<double> eer(set.keywords.size());
     std::vector<double> ap(set.keywords.size());
 
@@ -230,8 +228,6 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
                 break;
             }
         }
-
-        ++evaluated;
 
         auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"), false);
 
@@ -288,7 +284,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
     std::cout << "... done" << std::endl;
 
-    std::cout << evaluated << " keywords evaluated" << std::endl;
+    std::cout << set.keywords.size() << " keywords evaluated" << std::endl;
 
     double mean_eer = std::accumulate(eer.begin(), eer.end(), 0.0) / eer.size();
     double mean_ap = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
