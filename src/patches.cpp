@@ -292,6 +292,48 @@ std::vector<std::pair<std::string, weight>> compute_distances(
 }
 
 template<typename Dataset, typename Set, typename DBN>
+void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters& param){
+    std::vector<double> sc_band_values;
+
+    for(double sc = 0.005; sc < 0.03; sc += 0.001){
+        sc_band_values.push_back(sc);
+    }
+
+    for(double sc = 0.030; sc < 0.2; sc += 0.005){
+        sc_band_values.push_back(sc);
+    }
+
+    for(double sc = 0.2; sc <= 0.9; sc += 0.05){
+        sc_band_values.push_back(sc);
+    }
+
+    std::cout << sc_band_values.size() << " Sikoe-Chiba bands to evaluate" << std::endl;
+
+    double best_mean_ap = 0.0;
+
+    parameters best_param;
+
+    for(auto sc : sc_band_values){
+        parameters current_param;
+        current_param.sc_band = sc;
+
+        double mean_ap = evaluate_patches_param(dataset, set, conf, dbn, train_word_names, test_image_names, current_param);
+
+        std::cout << "sc:" << sc << " map: " << mean_ap << std::endl;
+
+        if(mean_ap > best_mean_ap){
+            best_param = current_param;
+            best_mean_ap = mean_ap;
+        }
+    }
+
+    std::cout << "Selected as the best parameters" << std::endl;
+    std::cout << "\tsc_band: " << best_param.sc_band << std::endl;
+
+    param = best_param;
+}
+
+template<typename Dataset, typename Set, typename DBN>
 double evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters){
     thread_pool pool;
 
@@ -300,8 +342,6 @@ double evaluate_patches_param(const Dataset& dataset, const Set& set, config& co
     auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, false);
 
     // 2. Evaluate the performances
-
-    std::cout << "Evaluate performance..." << std::endl;
 
     std::vector<double> ap(set.keywords.size());
 
@@ -324,8 +364,6 @@ double evaluate_patches_param(const Dataset& dataset, const Set& set, config& co
 
         update_stats_light(k, dataset, keyword, diffs_a, ap, test_image_names);
     }
-
-    std::cout << "... done" << std::endl;
 
     double mean_ap = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
 
@@ -1188,6 +1226,9 @@ void patches_method(
 
         std::cout << "Evaluate on training set" << std::endl;
         evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
+
+        std::cout << "Optimize parameters" << std::endl;
+        optimize_parameters(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
 
         std::cout << "Evaluate on validation set" << std::endl;
         evaluate_patches(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params);
