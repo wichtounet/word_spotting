@@ -261,7 +261,7 @@ std::vector<std::vector<typename DBN::output_t>> compute_reference(
 template<typename Dataset, typename Ref, typename Features>
 std::vector<std::pair<std::string, weight>> compute_distances(
         cpp::default_thread_pool<>& pool, const Dataset& dataset, Features& test_features_a, Ref& ref_a,
-        const std::vector<std::string>& training_images, const std::vector<std::string>& test_image_names){
+        const std::vector<std::string>& training_images, const std::vector<std::string>& test_image_names, parameters parameters){
     std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
@@ -278,7 +278,7 @@ std::vector<std::pair<std::string, weight>> compute_distances(
                 if(ratio > 2.0 || ratio < 0.5){
                     diff_a = 100000000.0;
                 } else {
-                    diff_a = dtw_distance(ref_a[i], test_features_a[t], true, 0.018);
+                    diff_a = dtw_distance(ref_a[i], test_features_a[t], true, parameters.sc_band);
                 }
 
                 best_diff_a = std::min(best_diff_a, diff_a);
@@ -291,7 +291,7 @@ std::vector<std::pair<std::string, weight>> compute_distances(
 }
 
 template<typename Dataset, typename Set, typename DBN>
-void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
+void evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training, parameters parameters){
     cpp::default_thread_pool<> pool;
 
     // 1. Select a folder
@@ -329,7 +329,66 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
         // c) Compute the distances
 
-        auto diffs_a = compute_distances(pool, dataset, test_features_a, ref_a, training_images, test_image_names);
+        auto diffs_a = compute_distances(pool, dataset, test_features_a, ref_a, training_images, test_image_names, parameters);
+
+        // d) Update the local stats
+
+        update_stats(k, result_folder, dataset, keyword, diffs_a, eer, ap, global_top_stream, local_top_stream, test_image_names);
+    }
+
+    std::cout << "... done" << std::endl;
+
+    // 5. Finalize the results
+
+    std::cout << set.keywords.size() << " keywords evaluated" << std::endl;
+
+    double mean_eer = std::accumulate(eer.begin(), eer.end(), 0.0) / eer.size();
+    double mean_ap = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
+
+    std::cout << "Mean EER: " << mean_eer << std::endl;
+    std::cout << "Mean AP: " << mean_ap << std::endl;
+}
+
+template<typename Dataset, typename Set, typename DBN>
+void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training, parameters parameters){
+    cpp::default_thread_pool<> pool;
+
+    // 1. Select a folder
+
+    auto result_folder = select_folder("./results/");
+
+    // 2. Generate the rel files
+
+    generate_rel_files(result_folder, dataset, set, test_image_names);
+
+    // 3. Prepare all the outputs
+
+    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, training);
+
+    // 4. Evaluate the performances
+
+    std::cout << "Evaluate performance..." << std::endl;
+
+    std::vector<double> eer(set.keywords.size());
+    std::vector<double> ap(set.keywords.size());
+
+    std::ofstream global_top_stream(result_folder + "/global_top_file");
+    std::ofstream local_top_stream(result_folder + "/local_top_file");
+
+    for(std::size_t k = 0; k < set.keywords.size(); ++k){
+        auto& keyword = set.keywords[k];
+
+        // a) Select the training images
+
+        auto training_images = select_training_images(dataset, keyword, train_word_names);
+
+        // b) Compute the reference features
+
+        auto ref_a = compute_reference(pool, dataset, dbn, conf, training_images);
+
+        // c) Compute the distances
+
+        auto diffs_a = compute_distances(pool, dataset, test_features_a, ref_a, training_images, test_image_names, parameters);
 
         // d) Update the local stats
 
@@ -580,11 +639,14 @@ void patches_method(
             //cdbn->load(file_name);
         }
 
+        parameters params;
+        params.sc_band = 0.1;
+
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true);
+        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false);
+        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
 
 #if HALF_LEVELS < 2
         //Silence some warnings
@@ -885,11 +947,14 @@ void patches_method(
             //cdbn->load(file_name);
         }
 
+        parameters params;
+        params.sc_band = 0.1;
+
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true);
+        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false);
+        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
 
 #if defined(THIRD_RBM_1) || defined(THIRD_RBM_2) || defined(THIRD_RBM_3)
         //Silence some warnings
@@ -1135,14 +1200,17 @@ void patches_method(
 
         //2. Evaluation
 
+        parameters params;
+        params.sc_band = 0.1;
+
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true);
+        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
 
         std::cout << "Evaluate on validation set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false);
+        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false);
+        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
 
 #if FULL_LEVELS < 2
         //Silence some warnings
