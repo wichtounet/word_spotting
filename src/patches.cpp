@@ -292,30 +292,18 @@ std::vector<std::pair<std::string, weight>> compute_distances(
 }
 
 template<typename Dataset, typename Set, typename DBN>
-void evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters){
+double evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters){
     thread_pool pool;
 
-    // 1. Select a folder
+    // 1. Prepare all the outputs
 
-    auto result_folder = select_folder("./results/");
+    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, false);
 
-    // 2. Generate the rel files
-
-    generate_rel_files(result_folder, dataset, set, test_image_names);
-
-    // 3. Prepare all the outputs
-
-    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, training);
-
-    // 4. Evaluate the performances
+    // 2. Evaluate the performances
 
     std::cout << "Evaluate performance..." << std::endl;
 
-    std::vector<double> eer(set.keywords.size());
     std::vector<double> ap(set.keywords.size());
-
-    std::ofstream global_top_stream(result_folder + "/global_top_file");
-    std::ofstream local_top_stream(result_folder + "/local_top_file");
 
     for(std::size_t k = 0; k < set.keywords.size(); ++k){
         auto& keyword = set.keywords[k];
@@ -334,20 +322,14 @@ void evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf
 
         // d) Update the local stats
 
-        update_stats(k, result_folder, dataset, keyword, diffs_a, eer, ap, global_top_stream, local_top_stream, test_image_names);
+        update_stats_light(k, dataset, keyword, diffs_a, ap, test_image_names);
     }
 
     std::cout << "... done" << std::endl;
 
-    // 5. Finalize the results
-
-    std::cout << set.keywords.size() << " keywords evaluated" << std::endl;
-
-    double mean_eer = std::accumulate(eer.begin(), eer.end(), 0.0) / eer.size();
     double mean_ap = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
 
-    std::cout << "Mean EER: " << mean_eer << std::endl;
-    std::cout << "Mean AP: " << mean_ap << std::endl;
+    return mean_ap;
 }
 
 template<typename Dataset, typename Set, typename DBN>

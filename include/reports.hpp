@@ -35,4 +35,12 @@ void update_stats(
     std::ofstream& global_top_stream, std::ofstream& local_top_stream,
     const std::vector<std::string>& test_image_names);
 
+void update_stats_light(
+    std::size_t k,
+    const washington_dataset& dataset,
+    const std::vector<std::string>& keyword,
+    std::vector<std::pair<std::string, weight>> diffs_a,
+    std::vector<double>& ap,
+    const std::vector<std::string>& test_image_names);
+
 #endif

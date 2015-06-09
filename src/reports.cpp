@@ -140,6 +140,44 @@ void update_stats(std::size_t k, const std::string& result_folder, const washing
     }
 }
 
+void update_stats_light(std::size_t k, const washington_dataset& dataset, const std::vector<std::string>& keyword, std::vector<std::pair<std::string, weight>> diffs_a, std::vector<double>& ap, const std::vector<std::string>& test_image_names){
+    std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
+
+    auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
+        [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
+
+    cpp_assert(total_positive > 0, "No example for one keyword");
+
+    std::vector<double> recall(diffs_a.size());
+
+    std::size_t tp_n = 0;
+    std::size_t fp_n = 0;
+    std::size_t fn_n = total_positive;
+
+    std::size_t ap_updates = 0;
+
+    for(std::size_t n = 0; n < diffs_a.size(); ++n){
+        if(dataset.word_labels.at(diffs_a[n].first) == keyword){
+            ++tp_n;
+            --fn_n;
+        } else {
+            ++fp_n;
+        }
+
+        recall[n] = static_cast<double>(tp_n) / (tp_n + fn_n);
+
+        if(n == 0){
+            ++ap_updates;
+            ap[k] += static_cast<double>(tp_n) / (tp_n + fp_n);
+        } else if(recall[n] != recall[n - 1]){
+            ++ap_updates;
+            ap[k] += static_cast<double>(tp_n) / (tp_n + fp_n);
+        }
+    }
+
+    ap[k] /= ap_updates;
+}
+
 std::string select_folder(const std::string& base_folder){
     std::cout << "Select a folder ..." << std::endl;
 
