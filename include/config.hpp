@@ -37,7 +37,8 @@ struct config {
     //The following values are set during execution
     std::size_t downscale = 1;
     std::size_t patch_width = 0;
-    std::size_t patch_stride = 0;
+    std::size_t train_stride = 0;
+    std::size_t test_stride = 0;
 
     std::vector<double> scale_a;
     std::vector<double> scale_b;

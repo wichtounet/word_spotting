@@ -89,7 +89,7 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<w
     patch_iterator(config& conf, const washington_dataset& dataset, const std::vector<std::string>& image_names, std::size_t i = 0)
             : conf(conf), dataset(dataset), image_names(image_names), current_image(i) {
         if(current_image < image_names.size()){
-            patches = mat_to_patches(conf, dataset.word_images.at(image_names[current_image]));
+            patches = mat_to_patches(conf, dataset.word_images.at(image_names[current_image]), true);
         }
     }
 
@@ -121,7 +121,7 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<w
             current_patch = 0;
 
             if(current_image < image_names.size()){
-                patches = mat_to_patches(conf, dataset.word_images.at(image_names[current_image]));
+                patches = mat_to_patches(conf, dataset.word_images.at(image_names[current_image]), true);
             }
         } else {
             ++current_patch;
@@ -158,7 +158,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
         [&,patch_height,patch_width](auto& test_image, std::size_t i){
             auto& vec = test_features_a[i];
 
-            auto patches = mat_to_patches(conf, dataset.word_images.at(test_image));
+            auto patches = mat_to_patches(conf, dataset.word_images.at(test_image), false);
 
             for(auto& patch : patches){
                 vec.push_back(dbn.prepare_one_output());
@@ -226,7 +226,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
         ++evaluated;
 
-        auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"));
+        auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"), false);
 
         std::vector<typename DBN::output_t> ref_a;
         ref_a.reserve(patches.size());
@@ -488,15 +488,18 @@ void patches_method(
 
         constexpr const auto patch_width = half::patch_width;
         constexpr const auto patch_height = half::patch_height;
-        constexpr const auto patch_stride = half::patch_stride;
+        constexpr const auto train_stride = half::train_stride;
+        constexpr const auto test_stride = half::test_stride;
 
         std::cout << "patch_height=" << patch_height << std::endl;
         std::cout << "patch_width=" << patch_width << std::endl;
-        std::cout << "patch_stride=" << patch_stride << std::endl;
+        std::cout << "train_stride=" << train_stride << std::endl;
+        std::cout << "test_stride=" << test_stride << std::endl;
 
         //Pass information to the next passes (evaluation)
         conf.patch_width = patch_width;
-        conf.patch_stride = patch_stride;
+        conf.train_stride = train_stride;
+        conf.test_stride = test_stride;
 
         {
             std::vector<etl::dyn_matrix<weight, 3>> training_patches;
@@ -505,7 +508,7 @@ void patches_method(
             std::cout << "Generate patches ..." << std::endl;
 
             for(auto& name : train_image_names){
-                auto patches = mat_to_patches(conf, dataset.word_images.at(name));
+                auto patches = mat_to_patches(conf, dataset.word_images.at(name), true);
                 std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
             }
 
@@ -787,17 +790,20 @@ void patches_method(
         cdbn->display();
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        constexpr const auto patch_width = third::patch_width;
-        constexpr const auto patch_height = third::patch_height;
-        constexpr const auto patch_stride = third::patch_stride;
+        constexpr const auto patch_width = half::patch_width;
+        constexpr const auto patch_height = half::patch_height;
+        constexpr const auto train_stride = half::train_stride;
+        constexpr const auto test_stride = half::test_stride;
 
         std::cout << "patch_height=" << patch_height << std::endl;
         std::cout << "patch_width=" << patch_width << std::endl;
-        std::cout << "patch_stride=" << patch_stride << std::endl;
+        std::cout << "train_stride=" << train_stride << std::endl;
+        std::cout << "test_stride=" << test_stride << std::endl;
 
         //Pass information to the next passes (evaluation)
         conf.patch_width = patch_width;
-        conf.patch_stride = patch_stride;
+        conf.train_stride = train_stride;
+        conf.test_stride = test_stride;
 
         //Train the DBN
         {
@@ -807,7 +813,7 @@ void patches_method(
             std::cout << "Generate patches ..." << std::endl;
 
             for(auto& name : train_image_names){
-                auto patches = mat_to_patches(conf, dataset.word_images.at(name));
+                auto patches = mat_to_patches(conf, dataset.word_images.at(name), true);
                 std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
             }
 
@@ -1041,17 +1047,20 @@ void patches_method(
         cdbn->display();
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        constexpr const auto patch_width = full::patch_width;
-        constexpr const auto patch_height = full::patch_height;
-        constexpr const auto patch_stride = full::patch_stride;
+        constexpr const auto patch_width = half::patch_width;
+        constexpr const auto patch_height = half::patch_height;
+        constexpr const auto train_stride = half::train_stride;
+        constexpr const auto test_stride = half::test_stride;
 
         std::cout << "patch_height=" << patch_height << std::endl;
         std::cout << "patch_width=" << patch_width << std::endl;
-        std::cout << "patch_stride=" << patch_stride << std::endl;
+        std::cout << "train_stride=" << train_stride << std::endl;
+        std::cout << "test_stride=" << test_stride << std::endl;
 
         //Pass information to the next passes (evaluation)
         conf.patch_width = patch_width;
-        conf.patch_stride = patch_stride;
+        conf.train_stride = train_stride;
+        conf.test_stride = test_stride;
 
         //1. Pretraining
         {

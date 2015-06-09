@@ -43,7 +43,8 @@ std::string keyword_to_string(const std::vector<T>& vec){
 
     return result;
 }
+
 etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image);
-std::vector<etl::dyn_matrix<weight, 3>> mat_to_patches(const config& conf, const cv::Mat& image);
+std::vector<etl::dyn_matrix<weight, 3>> mat_to_patches(const config& conf, const cv::Mat& image, bool train);
 
 #endif
