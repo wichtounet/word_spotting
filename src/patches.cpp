@@ -199,6 +199,19 @@ std::vector<std::vector<typename DBN::output_t>> prepare_outputs(
     return test_features_a;
 }
 
+template<typename Dataset>
+std::vector<std::string> select_training_images(const Dataset& dataset, const std::vector<std::string>& keyword, const std::vector<std::string>& names){
+    std::vector<std::string> training_images;
+
+    for(auto& labels : dataset.word_labels){
+        if(keyword == labels.second && std::find(names.begin(), names.end(), labels.first) != names.end()){
+            training_images.push_back(labels.first);
+        }
+    }
+
+    return training_images;
+}
+
 template<typename Dataset, typename Set, typename DBN>
 void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
 
@@ -221,45 +234,39 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
     for(std::size_t k = 0; k < set.keywords.size(); ++k){
         auto& keyword = set.keywords[k];
 
-        std::string training_image;
-        for(auto& labels : dataset.word_labels){
-            if(keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()){
-                training_image = labels.first;
-                break;
-            }
-        }
+        std::vector<std::string> training_images = select_training_images(dataset, keyword, train_word_names);
 
-        auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"), false);
+        //Compute the reference features
 
-        std::vector<typename DBN::output_t> ref_a;
-        ref_a.reserve(patches.size());
+        std::vector<std::vector<typename DBN::output_t>> ref_a(training_images.size());
 
-        for(std::size_t i = 0; i < patches.size(); ++i){
-            ref_a.push_back(dbn.prepare_one_output());
-        }
+        cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(),
+            [&](auto& training_image, std::size_t e){
+                auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"), false);
 
-        cpp::parallel_foreach_i(pool, patches.begin(), patches.end(),
-            [&dbn,&ref_a](auto& patch, std::size_t i){
-                dbn.activation_probabilities(patch, ref_a[i]);
-            });
+                ref_a[e].reserve(patches.size());
+
+                for(std::size_t i = 0; i < patches.size(); ++i){
+                    ref_a[e].push_back(dbn.prepare_one_output());
+                    dbn.activation_probabilities(patches[i], ref_a[e][i]);
+                }
 
 #ifdef LOCAL_LINEAR_SCALING
-        local_linear_feature_scaling(ref_a);
+                local_linear_feature_scaling(ref_a[e]);
 #endif
 
 #ifdef LOCAL_MEAN_SCALING
-        local_mean_feature_scaling(ref_a);
+                local_mean_feature_scaling(ref_a[e]);
 #endif
 
 #if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
-        for(std::size_t i = 0; i < ref_a.size(); ++i){
-            for(std::size_t f = 0; f < ref_a[i].size(); ++f){
-                ref_a[i][f] = scale(ref_a[i][f], conf.scale_a[f], conf.scale_b[f]);
-            }
-        }
+                for(std::size_t i = 0; i < ref_a.size(); ++i){
+                    for(std::size_t f = 0; f < ref_a[i].size(); ++f){
+                        ref_a[e][i][f] = scale(ref_a[i][f], conf.scale_a[f], conf.scale_b[f]);
+                    }
+                }
 #endif
-
-        auto ref_size = dataset.word_images.at(training_image + ".png").size().width;
+            });
 
         std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
 
@@ -267,16 +274,23 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
             [&](auto& test_image, std::size_t t){
                 auto t_size = dataset.word_images.at(test_image).size().width;
 
-                double diff_a;
+                double best_diff_a = 100000000.0;
 
-                auto ratio = static_cast<double>(ref_size) / t_size;
-                if(ratio > 2.0 || ratio < 0.5){
-                    diff_a = 100000000.0;
-                } else {
-                    diff_a = dtw_distance(ref_a, test_features_a[t], true, 0.018);
+                for(std::size_t i = 0; i < ref_a.size(); ++i){
+                    auto ref_size = dataset.word_images.at(training_images[i] + ".png").size().width;
+
+                    double diff_a;
+                    auto ratio = static_cast<double>(ref_size) / t_size;
+                    if(ratio > 2.0 || ratio < 0.5){
+                        diff_a = 100000000.0;
+                    } else {
+                        diff_a = dtw_distance(ref_a[i], test_features_a[t], true, 0.018);
+                    }
+
+                    best_diff_a = std::min(best_diff_a, diff_a);
                 }
 
-                diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), diff_a);
+                diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
             });
 
         update_stats(k, result_folder, dataset, keyword, diffs_a, eer, ap, global_top_stream, local_top_stream, test_image_names);
