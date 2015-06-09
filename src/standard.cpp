@@ -211,11 +211,16 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
 
 } //end of anonymous namespace
 
-void standard_method(const washington_dataset& dataset, const washington_dataset_set& set, config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& train_image_names, const std::vector<std::string>& test_image_names){
+void standard_method(
+        const washington_dataset& dataset, const washington_dataset_set& set, config& conf,
+        names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
     std::cout << "Use method 0 (Standard Features + DTW)" << std::endl;
 
     std::cout << "Evaluate on training set" << std::endl;
     evaluate_dtw(dataset, set, conf, train_word_names, train_image_names, true);
+
+    std::cout << "Evaluate on validation set" << std::endl;
+    evaluate_dtw(dataset, set, conf, train_word_names, valid_image_names, true);
 
     std::cout << "Evaluate on test set" << std::endl;
     evaluate_dtw(dataset, set, conf, train_word_names, test_image_names, false);

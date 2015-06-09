@@ -11,6 +11,8 @@
 #include "config.hpp"
 #include "washington.hpp"
 
-void patches_method(const washington_dataset& dataset, const washington_dataset_set& set, config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& train_image_names, const std::vector<std::string>& test_image_names);
+void patches_method(const washington_dataset& dataset, const washington_dataset_set& set, config& conf,
+    names train_word_names,
+    names train_image_names, names valid_image_names, names test_image_names);
 
 #endif

@@ -270,7 +270,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
                 if(ratio > 2.0 || ratio < 0.5){
                     diff_a = 100000000.0;
                 } else {
-                    diff_a = dtw_distance(ref_a, test_features_a[t]);
+                    diff_a = dtw_distance(ref_a, test_features_a[t], true, 0.018);
                 }
 
                 diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), diff_a);
@@ -292,7 +292,9 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
 } // end of anonymous namespace
 
-void patches_method(const washington_dataset& dataset, const washington_dataset_set& set, config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& train_image_names, const std::vector<std::string>& test_image_names){
+void patches_method(
+        const washington_dataset& dataset, const washington_dataset_set& set, config& conf,
+        names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
     std::cout << "Use method 2 (patches)" << std::endl;
 
     if(conf.half){
@@ -1058,15 +1060,18 @@ void patches_method(const washington_dataset& dataset, const washington_dataset_
 
             const std::string file_name("method_2_full.dat");
 
-            cdbn->pretrain(it, end, full::epochs);
-            cdbn->store(file_name);
-            //cdbn->load(file_name);
+            //cdbn->pretrain(it, end, full::epochs);
+            //cdbn->store(file_name);
+            cdbn->load(file_name);
         }
 
         //2. Evaluation
 
         std::cout << "Evaluate on training set" << std::endl;
         evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true);
+
+        std::cout << "Evaluate on validation set" << std::endl;
+        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false);
 
         std::cout << "Evaluate on test set" << std::endl;
         evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false);

@@ -78,11 +78,11 @@ int command_train(config& conf){
     std::cout << test_image_names.size() << " test word images in set" << std::endl;
 
     if(conf.method_0){
-        standard_method(dataset, set, conf, train_word_names, train_image_names, test_image_names);
+        standard_method(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
     } else if(conf.method_1){
-        holistic_method(dataset, set, conf, train_word_names, train_image_names, test_image_names);
+        holistic_method(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
     } else if(conf.method_2){
-        patches_method(dataset, set, conf, train_word_names, train_image_names, test_image_names);
+        patches_method(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
     }
 
     return 0;

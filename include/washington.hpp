@@ -33,4 +33,6 @@ struct washington_dataset {
 
 washington_dataset read_dataset(const std::string& path);
 
+using names = const std::vector<std::string>&;
+
 #endif
