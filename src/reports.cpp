@@ -15,14 +15,16 @@
 #include "config.hpp"
 #include "reports.hpp"
 
-void generate_rel_files(const std::string& result_folder, const washington_dataset& dataset, const washington_dataset_set& set, const std::vector<std::string>& test_image_names){
+void generate_rel_files(
+            const std::string& result_folder, const washington_dataset& dataset,
+            const std::vector<std::string>& test_image_names, const std::vector<std::vector<std::string>>& keywords){
     std::cout << "Generate relevance files..." << std::endl;
 
     std::ofstream global_relevance_stream(result_folder + "/global_rel_file");
     std::ofstream local_relevance_stream(result_folder + "/local_rel_file");
 
-    for(std::size_t k = 0; k < set.keywords.size(); ++k){
-        auto& keyword = set.keywords[k];
+    for(std::size_t k = 0; k < keywords.size(); ++k){
+        auto& keyword = keywords[k];
 
         for(std::size_t t = 0; t < test_image_names.size(); ++t){
             decltype(auto) test_image = test_image_names[t];

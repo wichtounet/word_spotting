@@ -22,8 +22,9 @@ std::string select_folder(const std::string& base_folder);
 
 void generate_rel_files(
     const std::string& result_folder,
-    const washington_dataset& dataset, const washington_dataset_set& set,
-    const std::vector<std::string>& test_image_names);
+    const washington_dataset& dataset,
+    const std::vector<std::string>& test_image_names,
+    const std::vector<std::vector<std::string>>& keywords);
 
 void update_stats(
     std::size_t k,

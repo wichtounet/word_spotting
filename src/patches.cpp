@@ -333,9 +333,44 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
     param = best_param;
 }
 
+template<typename Dataset, typename Set>
+std::vector<std::vector<std::string>> select_keywords(const Dataset& dataset, const Set& set, names train_word_names, names test_image_names){
+    std::vector<std::vector<std::string>> keywords;
+
+    for(std::size_t k = 0; k < set.keywords.size(); ++k){
+        auto& keyword = set.keywords[k];
+
+        bool found = false;
+
+        for(auto& labels : dataset.word_labels){
+            if(keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()){
+                found = true;
+                break;
+            }
+        }
+
+        if(found){
+            auto total_test = std::count_if(test_image_names.begin(), test_image_names.end(),
+                [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
+
+            if(total_test > 0){
+                keywords.push_back(keyword);
+            }
+        }
+    }
+
+    std::cout << "Selected " << keywords.size() << " keyword out of " << set.keywords.size() << std::endl;
+
+    return keywords;
+}
+
 template<typename Dataset, typename Set, typename DBN>
 double evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters){
     thread_pool pool;
+
+    // 0. Select the keywords
+
+    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
 
     // 1. Prepare all the outputs
 
@@ -343,10 +378,10 @@ double evaluate_patches_param(const Dataset& dataset, const Set& set, config& co
 
     // 2. Evaluate the performances
 
-    std::vector<double> ap(set.keywords.size());
+    std::vector<double> ap(keywords.size());
 
-    for(std::size_t k = 0; k < set.keywords.size(); ++k){
-        auto& keyword = set.keywords[k];
+    for(std::size_t k = 0; k < keywords.size(); ++k){
+        auto& keyword = keywords[k];
 
         // a) Select the training images
 
@@ -374,13 +409,17 @@ template<typename Dataset, typename Set, typename DBN>
 void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters){
     thread_pool pool;
 
+    // 0. Select the keywords
+
+    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+
     // 1. Select a folder
 
     auto result_folder = select_folder("./results/");
 
     // 2. Generate the rel files
 
-    generate_rel_files(result_folder, dataset, set, test_image_names);
+    generate_rel_files(result_folder, dataset, test_image_names, keywords);
 
     // 3. Prepare all the outputs
 
@@ -390,14 +429,14 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
     std::cout << "Evaluate performance..." << std::endl;
 
-    std::vector<double> eer(set.keywords.size());
-    std::vector<double> ap(set.keywords.size());
+    std::vector<double> eer(keywords.size());
+    std::vector<double> ap(keywords.size());
 
     std::ofstream global_top_stream(result_folder + "/global_top_file");
     std::ofstream local_top_stream(result_folder + "/local_top_file");
 
-    for(std::size_t k = 0; k < set.keywords.size(); ++k){
-        auto& keyword = set.keywords[k];
+    for(std::size_t k = 0; k < keywords.size(); ++k){
+        auto& keyword = keywords[k];
 
         // a) Select the training images
 
@@ -420,7 +459,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
     // 5. Finalize the results
 
-    std::cout << set.keywords.size() << " keywords evaluated" << std::endl;
+    std::cout << keywords.size() << " keywords evaluated" << std::endl;
 
     double mean_eer = std::accumulate(eer.begin(), eer.end(), 0.0) / eer.size();
     double mean_ap = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();

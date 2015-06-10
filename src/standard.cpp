@@ -113,7 +113,9 @@ template<typename Dataset, typename Set>
 void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
     auto result_folder = select_folder("./dtw_results/");
 
-    generate_rel_files(result_folder, dataset, set, test_image_names);
+    //TODO keywords should be selected correctly
+
+    generate_rel_files(result_folder, dataset, test_image_names, set.keywords);
 
     std::cout << "Evaluate performance..." << std::endl;
 
