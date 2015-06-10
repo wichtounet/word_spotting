@@ -1214,9 +1214,9 @@ void patches_method(
 
             const std::string file_name("method_2_full.dat");
 
-            //cdbn->pretrain(it, end, full::epochs);
-            //cdbn->store(file_name);
-            cdbn->load(file_name);
+            cdbn->pretrain(it, end, full::epochs);
+            cdbn->store(file_name);
+            //cdbn->load(file_name);
         }
 
         //2. Evaluation
