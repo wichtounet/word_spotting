@@ -22,6 +22,8 @@ machines=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25 160.9
 user=wicht
 password=`cat .passwd`
 
+grep=/usr/bin/zgrep
+
 mkdir -p run
 cd run
 
@@ -87,20 +89,20 @@ for machine in ${!machines[@]}; do
     ~/dev/trec_eval/trec_eval -q ${stamp}/${machine}_test_local_rel_file ${stamp}/${machine}_test_local_top_file > ${stamp}/${machine}_test_local_eval
     echo "Execution finished on machine $machine (${machines[machine]})"
     echo "Train results"
-    echo "  G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_train_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "  G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_train_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "  L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_train_local_eval | /usr/bin/zgrep all | cut -f3`
-    echo "  L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_train_local_eval | /usr/bin/zgrep all | cut -f3`
+    echo "  G-MAP " `${grep} map ${stamp}/${machine}_train_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "  G-RP " `${grep} R-prec ${stamp}/${machine}_train_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "  L-MAP " `${grep} map ${stamp}/${machine}_train_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "  L-RP " `${grep} R-prec ${stamp}/${machine}_train_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
     echo "Valid results"
-    echo "  G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_valid_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "  G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_valid_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "  L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_valid_local_eval | /usr/bin/zgrep all | cut -f3`
-    echo "  L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_valid_local_eval | /usr/bin/zgrep all | cut -f3`
+    echo "  G-MAP " `${grep} map ${stamp}/${machine}_valid_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "  G-RP " `${grep} R-prec ${stamp}/${machine}_valid_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "  L-MAP " `${grep} map ${stamp}/${machine}_valid_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "  L-RP " `${grep} R-prec ${stamp}/${machine}_valid_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
     echo "Test results"
-    echo "  G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_test_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "  G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_test_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "  L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_test_local_eval | /usr/bin/zgrep all | cut -f3`
-    echo "  L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_test_local_eval | /usr/bin/zgrep all | cut -f3`
+    echo "  G-MAP " `${grep} map ${stamp}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "  G-RP " `${grep} R-prec ${stamp}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "  L-MAP " `${grep} map ${stamp}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "  L-RP " `${grep} R-prec ${stamp}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
     ) &
 done
 
@@ -114,18 +116,18 @@ echo "Final summary:"
 for machine in ${!machines[@]}; do
     echo "Machine $machine (${machines[machine]})"
     echo "  Train results"
-    echo "    G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_train_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "    G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_train_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "    L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_train_local_eval | /usr/bin/zgrep all | cut -f3`
-    echo "    L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_train_local_eval | /usr/bin/zgrep all | cut -f3`
+    echo "    G-MAP " `${grep} map ${stamp}/${machine}_train_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "    G-RP " `${grep} R-prec ${stamp}/${machine}_train_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "    L-MAP " `${grep} map ${stamp}/${machine}_train_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "    L-RP " `${grep} R-prec ${stamp}/${machine}_train_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
     echo "  Valid results"
-    echo "    G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_valid_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "    G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_valid_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "    L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_valid_local_eval | /usr/bin/zgrep all | cut -f3`
-    echo "    L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_valid_local_eval | /usr/bin/zgrep all | cut -f3`
+    echo "    G-MAP " `${grep} map ${stamp}/${machine}_valid_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "    G-RP " `${grep} R-prec ${stamp}/${machine}_valid_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "    L-MAP " `${grep} map ${stamp}/${machine}_valid_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "    L-RP " `${grep} R-prec ${stamp}/${machine}_valid_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
     echo "  Test results"
-    echo "    G-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_test_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "    G-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_test_global_eval | /usr/bin/zgrep all | cut -f3`
-    echo "    L-MAP " `/usr/bin/zgrep map ${stamp}/${machine}_test_local_eval | /usr/bin/zgrep all | cut -f3`
-    echo "    L-RP " `/usr/bin/zgrep R-prec ${stamp}/${machine}_test_local_eval | /usr/bin/zgrep all | cut -f3`
+    echo "    G-MAP " `${grep} map ${stamp}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "    G-RP " `${grep} R-prec ${stamp}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "    L-MAP " `${grep} map ${stamp}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    echo "    L-RP " `${grep} R-prec ${stamp}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
 done
