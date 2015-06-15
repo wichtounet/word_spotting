@@ -38,11 +38,15 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
 }
 
 std::vector<etl::dyn_matrix<weight, 3>> mat_to_patches(const config& conf, const cv::Mat& image, bool train){
-    cv::Mat clean_image;
+    cv::Mat buffer_image;
 
-    cv::Mat scaled_normalized(cv::Size(image.size().width / conf.downscale, image.size().height / conf.downscale), CV_8U);
-    cv::resize(image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
-    cv::adaptiveThreshold(scaled_normalized, clean_image, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
+    if(conf.downscale > 1){
+        cv::Mat scaled_normalized(cv::Size(image.size().width / conf.downscale, image.size().height / conf.downscale), CV_8U);
+        cv::resize(image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
+        cv::adaptiveThreshold(scaled_normalized, buffer_image, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
+    }
+
+    const cv::Mat& clean_image = conf.downscale > 1 ? buffer_image : image;
 
     std::vector<etl::dyn_matrix<weight, 3>> patches;
 
