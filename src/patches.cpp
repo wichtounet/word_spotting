@@ -145,7 +145,7 @@ struct parameters {
     double sc_band;
 };
 
-template<typename Dataset, typename DBN>
+template<bool D_P, typename Dataset, typename DBN>
 std::vector<std::vector<typename DBN::output_t>> prepare_outputs(
         thread_pool& pool, const Dataset& dataset, const DBN& dbn, config& conf,
         names test_image_names, bool training){
@@ -161,9 +161,18 @@ std::vector<std::vector<typename DBN::output_t>> prepare_outputs(
         [&,patch_height,patch_width](auto& test_image, std::size_t i){
             auto& vec = test_features_a[i];
 
-            //Get features from DBN
-            auto image = mat_for_patches(conf, dataset.word_images.at(test_image));
-            dbn.activation_probabilities(image, vec);
+            cpp::static_if<D_P>([&](auto f){
+                //Get features from DBN
+                auto image = mat_for_patches(conf, dataset.word_images.at(test_image));
+                f(dbn).activation_probabilities(image, vec);
+            }).else_([&](auto f){
+                auto patches = mat_to_patches(conf, dataset.word_images.at(test_image), training);
+
+                for(auto& patch : patches){
+                    vec.push_back(dbn.prepare_one_output());
+                    f(dbn).activation_probabilities(patch, vec.back());
+                }
+            });
 
 #ifdef LOCAL_LINEAR_SCALING
             local_linear_feature_scaling(vec);
@@ -213,7 +222,7 @@ std::vector<std::string> select_training_images(const Dataset& dataset, names ke
     return training_images;
 }
 
-template<typename Dataset, typename DBN>
+template<bool D_P, typename Dataset, typename DBN>
 std::vector<std::vector<typename DBN::output_t>> compute_reference(
         thread_pool& pool, const Dataset& dataset, const DBN& dbn,
         const config& conf, names training_images){
@@ -221,9 +230,20 @@ std::vector<std::vector<typename DBN::output_t>> compute_reference(
 
     cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(),
         [&](auto& training_image, std::size_t e){
-            //Compute the features
-            auto image = mat_for_patches(conf, dataset.word_images.at(training_image + ".png"));
-            dbn.activation_probabilities(image, ref_a[e]);
+            cpp::static_if<D_P>([&](auto f){
+                //Compute the features
+                auto image = mat_for_patches(conf, dataset.word_images.at(training_image + ".png"));
+                f(dbn).activation_probabilities(image, ref_a[e]);
+            }).else_([&](auto f){
+                auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"), false);
+
+                ref_a[e].reserve(patches.size());
+
+                for(std::size_t i = 0; i < patches.size(); ++i){
+                    ref_a[e].push_back(dbn.prepare_one_output());
+                    f(dbn).activation_probabilities(patches[i], ref_a[e][i]);
+                }
+            });
 
 #ifdef LOCAL_LINEAR_SCALING
             local_linear_feature_scaling(ref_a[e]);
@@ -316,7 +336,7 @@ std::vector<std::vector<std::string>> select_keywords(const Dataset& dataset, co
     return keywords;
 }
 
-template<typename TF, typename KV, typename Dataset, typename DBN>
+template<bool D_P, typename TF, typename KV, typename Dataset, typename DBN>
 double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywords, const Dataset& dataset, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters){
     // 2. Evaluate the performances
 
@@ -331,7 +351,7 @@ double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywor
 
         // b) Compute the reference features
 
-        auto ref_a = compute_reference(pool, dataset, dbn, conf, training_images);
+        auto ref_a = compute_reference<D_P>(pool, dataset, dbn, conf, training_images);
 
         // c) Compute the distances
 
@@ -347,7 +367,7 @@ double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywor
     return mean_ap;
 }
 
-template<typename Dataset, typename Set, typename DBN>
+template<bool D_P, typename Dataset, typename Set, typename DBN>
 void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters& param){
     std::vector<double> sc_band_values;
 
@@ -373,7 +393,7 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
 
     // 1. Prepare all the outputs
 
-    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, false);
+    auto test_features_a = prepare_outputs<D_P>(pool, dataset, dbn, conf, test_image_names, false);
 
     double best_mean_ap = 0.0;
 
@@ -384,7 +404,7 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
         parameters current_param;
         current_param.sc_band = sc;
 
-        double mean_ap = evaluate_patches_param(
+        double mean_ap = evaluate_patches_param<D_P>(
             pool, test_features_a, keywords, dataset, conf, dbn, train_word_names, test_image_names, current_param);
 
         std::cout << "(" << i++ << "/" << sc_band_values.size() << ") sc:" << sc << " map: " << mean_ap << std::endl;
@@ -402,7 +422,7 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
 }
 
 
-template<typename Dataset, typename Set, typename DBN>
+template<bool D_P, typename Dataset, typename Set, typename DBN>
 void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters){
     thread_pool pool;
 
@@ -420,7 +440,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
     // 3. Prepare all the outputs
 
-    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, training);
+    auto test_features_a = prepare_outputs<D_P>(pool, dataset, dbn, conf, test_image_names, training);
 
     // 4. Evaluate the performances
 
@@ -441,7 +461,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
         // b) Compute the reference features
 
-        auto ref_a = compute_reference(pool, dataset, dbn, conf, training_images);
+        auto ref_a = compute_reference<D_P>(pool, dataset, dbn, conf, training_images);
 
         // c) Compute the distances
 
@@ -700,10 +720,10 @@ void patches_method(
         params.sc_band = 0.1;
 
         std::cout << "Evaluate on training set" << std::endl;
-        //TODO evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
+        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
 
         std::cout << "Evaluate on test set" << std::endl;
-        //TODO evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
+        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
 
 #if HALF_LEVELS < 2
         //Silence some warnings
@@ -1005,13 +1025,13 @@ void patches_method(
         }
 
         parameters params;
-        params.sc_band = 0.1;
+        params.sc_band = 0.02;
 
         std::cout << "Evaluate on training set" << std::endl;
-        //TODO evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
+        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
 
         std::cout << "Evaluate on test set" << std::endl;
-        //TODO evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
+        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
 
 #if defined(THIRD_RBM_1) || defined(THIRD_RBM_2) || defined(THIRD_RBM_3)
         //Silence some warnings
@@ -1285,16 +1305,16 @@ void patches_method(
         params.sc_band = 0.1;
 
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
+        evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
 
         std::cout << "Optimize parameters" << std::endl;
-        optimize_parameters(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        optimize_parameters<true>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
 
         std::cout << "Evaluate on validation set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params);
+        evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
+        evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
 
 #if FULL_LEVELS < 2
         //Silence some warnings
