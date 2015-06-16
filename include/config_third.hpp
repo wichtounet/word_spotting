@@ -9,11 +9,11 @@
 namespace third {
 
 //#define THIRD_RBM_1       //One layer of RBM
-#define THIRD_RBM_2       //Two layers of RBM
+//#define THIRD_RBM_2       //Two layers of RBM
 //#define THIRD_RBM_3       //Three layers of RBM
 
 //#define THIRD_CRBM_PMP_1    //One layer of CRBM with Probabilistic Max Pooling (C1)
-//#define THIRD_CRBM_PMP_2      //Two layers of CRBM with Probabilistic Max Pooling (C1/C2)
+#define THIRD_CRBM_PMP_2      //Two layers of CRBM with Probabilistic Max Pooling (C1/C2)
 //#define THIRD_CRBM_PMP_3    //Three layers of CRBM with Probabilistic Max Pooling (C1/C2/C3)
 
 //#define THIRD_CRBM_MP_1  //One layers of CRBM with Max Pooling after each layer (C1)
