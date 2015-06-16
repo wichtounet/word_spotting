@@ -285,18 +285,39 @@ std::vector<std::pair<std::string, weight>> compute_distances(
     return diffs_a;
 }
 
-template<typename Dataset, typename Set, typename DBN>
-double evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters){
-    thread_pool pool;
+template<typename Dataset, typename Set>
+std::vector<std::vector<std::string>> select_keywords(const Dataset& dataset, const Set& set, names train_word_names, names test_image_names){
+    std::vector<std::vector<std::string>> keywords;
 
-    // 0. Select the keywords
+    for(std::size_t k = 0; k < set.keywords.size(); ++k){
+        auto& keyword = set.keywords[k];
 
-    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+        bool found = false;
 
-    // 1. Prepare all the outputs
+        for(auto& labels : dataset.word_labels){
+            if(keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()){
+                found = true;
+                break;
+            }
+        }
 
-    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, false);
+        if(found){
+            auto total_test = std::count_if(test_image_names.begin(), test_image_names.end(),
+                [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
 
+            if(total_test > 0){
+                keywords.push_back(keyword);
+            }
+        }
+    }
+
+    std::cout << "Selected " << keywords.size() << " keyword out of " << set.keywords.size() << std::endl;
+
+    return keywords;
+}
+
+template<typename TF, typename KV, typename Dataset, typename DBN>
+double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywords, const Dataset& dataset, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters){
     // 2. Evaluate the performances
 
     std::vector<double> ap(keywords.size());
@@ -344,6 +365,16 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
 
     std::cout << sc_band_values.size() << " Sikoe-Chiba bands to evaluate" << std::endl;
 
+    thread_pool pool;
+
+    // 0. Select the keywords
+
+    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+
+    // 1. Prepare all the outputs
+
+    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, false);
+
     double best_mean_ap = 0.0;
 
     parameters best_param;
@@ -353,7 +384,8 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
         parameters current_param;
         current_param.sc_band = sc;
 
-        double mean_ap = evaluate_patches_param(dataset, set, conf, dbn, train_word_names, test_image_names, current_param);
+        double mean_ap = evaluate_patches_param(
+            pool, test_features_a, keywords, dataset, conf, dbn, train_word_names, test_image_names, current_param);
 
         std::cout << "(" << i++ << "/" << sc_band_values.size() << ") sc:" << sc << " map: " << mean_ap << std::endl;
 
@@ -369,36 +401,6 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
     param = best_param;
 }
 
-template<typename Dataset, typename Set>
-std::vector<std::vector<std::string>> select_keywords(const Dataset& dataset, const Set& set, names train_word_names, names test_image_names){
-    std::vector<std::vector<std::string>> keywords;
-
-    for(std::size_t k = 0; k < set.keywords.size(); ++k){
-        auto& keyword = set.keywords[k];
-
-        bool found = false;
-
-        for(auto& labels : dataset.word_labels){
-            if(keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()){
-                found = true;
-                break;
-            }
-        }
-
-        if(found){
-            auto total_test = std::count_if(test_image_names.begin(), test_image_names.end(),
-                [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
-
-            if(total_test > 0){
-                keywords.push_back(keyword);
-            }
-        }
-    }
-
-    std::cout << "Selected " << keywords.size() << " keyword out of " << set.keywords.size() << std::endl;
-
-    return keywords;
-}
 
 template<typename Dataset, typename Set, typename DBN>
 void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters){
