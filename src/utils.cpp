@@ -84,7 +84,8 @@ std::vector<etl::dyn_matrix<weight, 3>> mat_to_patches(const config& conf, const
                 uint8_t pixel = 1;
 
                 if(x >= 0 && x < clean_image.size().width){
-                    pixel = image.at<uint8_t>(y, x + i * patch_stride);
+                    //pixel = image.at<uint8_t>(y, x + i * patch_stride);
+                    pixel = clean_image.at<uint8_t>(y, x);
                 }
 
                 patch(0, y, x - i + context) = pixel == 0 ? 0.0 : 1.0;
