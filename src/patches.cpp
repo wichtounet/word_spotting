@@ -18,6 +18,8 @@
 #include "dll/avgp_layer.hpp"
 #include "dll/mp_layer.hpp"
 #include "dll/ocv_visualizer.hpp"
+#include "dll/patches_layer.hpp"
+#include "dll/patches_layer_pad.hpp"
 
 #include "nice_svm.hpp"
 
@@ -159,12 +161,9 @@ std::vector<std::vector<typename DBN::output_t>> prepare_outputs(
         [&,patch_height,patch_width](auto& test_image, std::size_t i){
             auto& vec = test_features_a[i];
 
-            auto patches = mat_to_patches(conf, dataset.word_images.at(test_image), false);
-
-            for(auto& patch : patches){
-                vec.push_back(dbn.prepare_one_output());
-                dbn.activation_probabilities(patch, vec.back());
-            }
+            //Get features from DBN
+            auto image = mat_for_patches(conf, dataset.word_images.at(test_image));
+            dbn.activation_probabilities(image, vec);
 
 #ifdef LOCAL_LINEAR_SCALING
             local_linear_feature_scaling(vec);
@@ -222,14 +221,9 @@ std::vector<std::vector<typename DBN::output_t>> compute_reference(
 
     cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(),
         [&](auto& training_image, std::size_t e){
-            auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"), false);
-
-            ref_a[e].reserve(patches.size());
-
-            for(std::size_t i = 0; i < patches.size(); ++i){
-                ref_a[e].push_back(dbn.prepare_one_output());
-                dbn.activation_probabilities(patches[i], ref_a[e][i]);
-            }
+            //Compute the features
+            auto image = mat_for_patches(conf, dataset.word_images.at(training_image + ".png"));
+            dbn.activation_probabilities(image, ref_a[e]);
 
 #ifdef LOCAL_LINEAR_SCALING
             local_linear_feature_scaling(ref_a[e]);
@@ -292,6 +286,47 @@ std::vector<std::pair<std::string, weight>> compute_distances(
 }
 
 template<typename Dataset, typename Set, typename DBN>
+double evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters){
+    thread_pool pool;
+
+    // 0. Select the keywords
+
+    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+
+    // 1. Prepare all the outputs
+
+    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, false);
+
+    // 2. Evaluate the performances
+
+    std::vector<double> ap(keywords.size());
+
+    for(std::size_t k = 0; k < keywords.size(); ++k){
+        auto& keyword = keywords[k];
+
+        // a) Select the training images
+
+        auto training_images = select_training_images(dataset, keyword, train_word_names);
+
+        // b) Compute the reference features
+
+        auto ref_a = compute_reference(pool, dataset, dbn, conf, training_images);
+
+        // c) Compute the distances
+
+        auto diffs_a = compute_distances(pool, dataset, test_features_a, ref_a, training_images, test_image_names, parameters);
+
+        // d) Update the local stats
+
+        update_stats_light(k, dataset, keyword, diffs_a, ap, test_image_names);
+    }
+
+    double mean_ap = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
+
+    return mean_ap;
+}
+
+template<typename Dataset, typename Set, typename DBN>
 void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters& param){
     std::vector<double> sc_band_values;
 
@@ -313,13 +348,14 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
 
     parameters best_param;
 
+    std::size_t i = 0;
     for(auto sc : sc_band_values){
         parameters current_param;
         current_param.sc_band = sc;
 
         double mean_ap = evaluate_patches_param(dataset, set, conf, dbn, train_word_names, test_image_names, current_param);
 
-        std::cout << "sc:" << sc << " map: " << mean_ap << std::endl;
+        std::cout << "(" << i++ << "/" << sc_band_values.size() << ") sc:" << sc << " map: " << mean_ap << std::endl;
 
         if(mean_ap > best_mean_ap){
             best_param = current_param;
@@ -362,47 +398,6 @@ std::vector<std::vector<std::string>> select_keywords(const Dataset& dataset, co
     std::cout << "Selected " << keywords.size() << " keyword out of " << set.keywords.size() << std::endl;
 
     return keywords;
-}
-
-template<typename Dataset, typename Set, typename DBN>
-double evaluate_patches_param(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters){
-    thread_pool pool;
-
-    // 0. Select the keywords
-
-    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
-
-    // 1. Prepare all the outputs
-
-    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, false);
-
-    // 2. Evaluate the performances
-
-    std::vector<double> ap(keywords.size());
-
-    for(std::size_t k = 0; k < keywords.size(); ++k){
-        auto& keyword = keywords[k];
-
-        // a) Select the training images
-
-        auto training_images = select_training_images(dataset, keyword, train_word_names);
-
-        // b) Compute the reference features
-
-        auto ref_a = compute_reference(pool, dataset, dbn, conf, training_images);
-
-        // c) Compute the distances
-
-        auto diffs_a = compute_distances(pool, dataset, test_features_a, ref_a, training_images, test_image_names, parameters);
-
-        // d) Update the local stats
-
-        update_stats_light(k, dataset, keyword, diffs_a, ap, test_image_names);
-    }
-
-    double mean_ap = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
-
-    return mean_ap;
 }
 
 template<typename Dataset, typename Set, typename DBN>
@@ -634,31 +629,31 @@ void patches_method(
         auto cdbn = std::make_unique<cdbn_t>();
 
         // Level 1
-        half::rate_0(cdbn->template layer<L1>().learning_rate);
-        half::momentum_0(cdbn->template layer<L1>().initial_momentum, cdbn->template layer<L1>().final_momentum);
-        half::wd_l1_0(cdbn->template layer<L1>().l1_weight_cost);
-        half::wd_l2_0(cdbn->template layer<L1>().l2_weight_cost);
-        half::pbias_0(cdbn->template layer<L1>().pbias);
-        half::pbias_lambda_0(cdbn->template layer<L1>().pbias_lambda);
+        half::rate_0(cdbn->template layer_get<L1>().learning_rate);
+        half::momentum_0(cdbn->template layer_get<L1>().initial_momentum, cdbn->template layer_get<L1>().final_momentum);
+        half::wd_l1_0(cdbn->template layer_get<L1>().l1_weight_cost);
+        half::wd_l2_0(cdbn->template layer_get<L1>().l2_weight_cost);
+        half::pbias_0(cdbn->template layer_get<L1>().pbias);
+        half::pbias_lambda_0(cdbn->template layer_get<L1>().pbias_lambda);
 
 #if HALF_LEVELS >= 2
         //Level 2
-        half::rate_1(cdbn->template layer<L2>().learning_rate);
-        half::momentum_1(cdbn->template layer<L2>().initial_momentum, cdbn->template layer<L2>().final_momentum);
-        half::wd_l1_1(cdbn->template layer<L2>().l1_weight_cost);
-        half::wd_l2_1(cdbn->template layer<L2>().l2_weight_cost);
-        half::pbias_1(cdbn->template layer<L2>().pbias);
-        half::pbias_lambda_1(cdbn->template layer<L2>().pbias_lambda);
+        half::rate_1(cdbn->template layer_get<L2>().learning_rate);
+        half::momentum_1(cdbn->template layer_get<L2>().initial_momentum, cdbn->template layer_get<L2>().final_momentum);
+        half::wd_l1_1(cdbn->template layer_get<L2>().l1_weight_cost);
+        half::wd_l2_1(cdbn->template layer_get<L2>().l2_weight_cost);
+        half::pbias_1(cdbn->template layer_get<L2>().pbias);
+        half::pbias_lambda_1(cdbn->template layer_get<L2>().pbias_lambda);
 #endif
 
 #if HALF_LEVELS >= 3
         //Level 3
-        half::rate_2(cdbn->template layer<L3>().learning_rate);
-        half::momentum_2(cdbn->template layer<L3>().initial_momentum, cdbn->template layer<L3>().final_momentum);
-        half::wd_l1_2(cdbn->template layer<L3>().l1_weight_cost);
-        half::wd_l2_2(cdbn->template layer<L3>().l2_weight_cost);
-        half::pbias_2(cdbn->template layer<L3>().pbias);
-        half::pbias_lambda_2(cdbn->template layer<L3>().pbias_lambda);
+        half::rate_2(cdbn->template layer_get<L3>().learning_rate);
+        half::momentum_2(cdbn->template layer_get<L3>().initial_momentum, cdbn->template layer_get<L3>().final_momentum);
+        half::wd_l1_2(cdbn->template layer_get<L3>().l1_weight_cost);
+        half::wd_l2_2(cdbn->template layer_get<L3>().l2_weight_cost);
+        half::pbias_2(cdbn->template layer_get<L3>().pbias);
+        half::pbias_lambda_2(cdbn->template layer_get<L3>().pbias_lambda);
 #endif
 
         cdbn->display();
@@ -703,10 +698,10 @@ void patches_method(
         params.sc_band = 0.1;
 
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
+        //TODO evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
+        //TODO evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
 
 #if HALF_LEVELS < 2
         //Silence some warnings
@@ -938,34 +933,34 @@ void patches_method(
         auto cdbn = std::make_unique<cdbn_t>();
 
         // Level 1
-        third::rate_0(cdbn->template layer<L1>().learning_rate);
-        third::momentum_0(cdbn->template layer<L1>().initial_momentum, cdbn->template layer<L1>().final_momentum);
-        third::wd_l1_0(cdbn->template layer<L1>().l1_weight_cost);
-        third::wd_l2_0(cdbn->template layer<L1>().l2_weight_cost);
-        third::pbias_0(cdbn->template layer<L1>().pbias);
-        third::pbias_lambda_0(cdbn->template layer<L1>().pbias_lambda);
-        third::sparsity_target_0(cdbn->template layer<L1>().sparsity_target);
+        third::rate_0(cdbn->template layer_get<L1>().learning_rate);
+        third::momentum_0(cdbn->template layer_get<L1>().initial_momentum, cdbn->template layer_get<L1>().final_momentum);
+        third::wd_l1_0(cdbn->template layer_get<L1>().l1_weight_cost);
+        third::wd_l2_0(cdbn->template layer_get<L1>().l2_weight_cost);
+        third::pbias_0(cdbn->template layer_get<L1>().pbias);
+        third::pbias_lambda_0(cdbn->template layer_get<L1>().pbias_lambda);
+        third::sparsity_target_0(cdbn->template layer_get<L1>().sparsity_target);
 
 #if THIRD_LEVELS >= 2
         //Level 2
-        third::rate_1(cdbn->template layer<L2>().learning_rate);
-        third::momentum_1(cdbn->template layer<L2>().initial_momentum, cdbn->template layer<L2>().final_momentum);
-        third::wd_l1_1(cdbn->template layer<L2>().l1_weight_cost);
-        third::wd_l2_1(cdbn->template layer<L2>().l2_weight_cost);
-        third::pbias_1(cdbn->template layer<L2>().pbias);
-        third::pbias_lambda_1(cdbn->template layer<L2>().pbias_lambda);
-        third::sparsity_target_1(cdbn->template layer<L1>().sparsity_target);
+        third::rate_1(cdbn->template layer_get<L2>().learning_rate);
+        third::momentum_1(cdbn->template layer_get<L2>().initial_momentum, cdbn->template layer_get<L2>().final_momentum);
+        third::wd_l1_1(cdbn->template layer_get<L2>().l1_weight_cost);
+        third::wd_l2_1(cdbn->template layer_get<L2>().l2_weight_cost);
+        third::pbias_1(cdbn->template layer_get<L2>().pbias);
+        third::pbias_lambda_1(cdbn->template layer_get<L2>().pbias_lambda);
+        third::sparsity_target_1(cdbn->template layer_get<L1>().sparsity_target);
 #endif
 
 #if THIRD_LEVELS >= 3
         //Level 3
-        third::rate_2(cdbn->template layer<L3>().learning_rate);
-        third::momentum_2(cdbn->template layer<L3>().initial_momentum, cdbn->template layer<L3>().final_momentum);
-        third::wd_l1_2(cdbn->template layer<L3>().l1_weight_cost);
-        third::wd_l2_2(cdbn->template layer<L3>().l2_weight_cost);
-        third::pbias_2(cdbn->template layer<L3>().pbias);
-        third::pbias_lambda_2(cdbn->template layer<L3>().pbias_lambda);
-        third::sparsity_target_2(cdbn->template layer<L1>().sparsity_target);
+        third::rate_2(cdbn->template layer_get<L3>().learning_rate);
+        third::momentum_2(cdbn->template layer_get<L3>().initial_momentum, cdbn->template layer_get<L3>().final_momentum);
+        third::wd_l1_2(cdbn->template layer_get<L3>().l1_weight_cost);
+        third::wd_l2_2(cdbn->template layer_get<L3>().l2_weight_cost);
+        third::pbias_2(cdbn->template layer_get<L3>().pbias);
+        third::pbias_lambda_2(cdbn->template layer_get<L3>().pbias_lambda);
+        third::sparsity_target_2(cdbn->template layer_get<L1>().sparsity_target);
 #endif
 
         cdbn->display();
@@ -1011,10 +1006,10 @@ void patches_method(
         params.sc_band = 0.1;
 
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
+        //TODO evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
+        //TODO evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
 
 #if defined(THIRD_RBM_1) || defined(THIRD_RBM_2) || defined(THIRD_RBM_3)
         //Silence some warnings
@@ -1083,7 +1078,8 @@ void patches_method(
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
-                    dll::conv_rbm_mp_desc<
+                      dll::patches_layer_padh_desc<full::patch_width, full::patch_height, 1, full::train_stride, 1>::layer_t
+                    , dll::conv_rbm_mp_desc<
                         NV1_1, NV1_2, 1, NH1_1 , NH1_2, K1, C1
                         , dll::weight_type<weight>, dll::batch_size<full::B1>
                         , dll::parallel, dll::momentum, dll::weight_decay<full::DT1>
@@ -1097,7 +1093,8 @@ void patches_method(
                         , dll::dbn_only>::rbm_t
                 >,
                 dll::memory,
-                dll::parallel
+                dll::parallel,
+                dll::batch_size<5>
             >::dbn_t;
 #elif defined(FULL_CRBM_PMP_3)
         using cdbn_t =
@@ -1187,7 +1184,12 @@ void patches_method(
         static_assert(false, "No architecture has been selected");
 #endif
 
-#if defined(FULL_CRBM_PMP_1) || defined(FULL_CRBM_PMP_2) || defined(FULL_CRBM_PMP_3)
+#if defined(FULL_CRBM_PMP_2)
+        //Probabilistic max poolin models have less layers
+        constexpr const std::size_t L1 = 1;
+        constexpr const std::size_t L2 = 2;
+        constexpr const std::size_t L3 = 3;
+#elif defined(FULL_CRBM_PMP_1) || defined(FULL_CRBM_PMP_3)
         //Probabilistic max poolin models have less layers
         constexpr const std::size_t L1 = 0;
         constexpr const std::size_t L2 = 1;
@@ -1201,31 +1203,31 @@ void patches_method(
         auto cdbn = std::make_unique<cdbn_t>();
 
         // Level 1
-        full::rate_0(cdbn->template layer<L1>().learning_rate);
-        full::momentum_0(cdbn->template layer<L1>().initial_momentum, cdbn->template layer<L1>().final_momentum);
-        full::wd_l1_0(cdbn->template layer<L1>().l1_weight_cost);
-        full::wd_l2_0(cdbn->template layer<L1>().l2_weight_cost);
-        full::pbias_0(cdbn->template layer<L1>().pbias);
-        full::pbias_lambda_0(cdbn->template layer<L1>().pbias_lambda);
+        full::rate_0(cdbn->template layer_get<L1>().learning_rate);
+        full::momentum_0(cdbn->template layer_get<L1>().initial_momentum, cdbn->template layer_get<L1>().final_momentum);
+        full::wd_l1_0(cdbn->template layer_get<L1>().l1_weight_cost);
+        full::wd_l2_0(cdbn->template layer_get<L1>().l2_weight_cost);
+        full::pbias_0(cdbn->template layer_get<L1>().pbias);
+        full::pbias_lambda_0(cdbn->template layer_get<L1>().pbias_lambda);
 
 #if FULL_LEVELS >= 2
         //Level 2
-        full::rate_1(cdbn->template layer<L2>().learning_rate);
-        full::momentum_1(cdbn->template layer<L2>().initial_momentum, cdbn->template layer<L2>().final_momentum);
-        full::wd_l1_1(cdbn->template layer<L2>().l1_weight_cost);
-        full::wd_l2_1(cdbn->template layer<L2>().l2_weight_cost);
-        full::pbias_1(cdbn->template layer<L2>().pbias);
-        full::pbias_lambda_1(cdbn->template layer<L2>().pbias_lambda);
+        full::rate_1(cdbn->template layer_get<L2>().learning_rate);
+        full::momentum_1(cdbn->template layer_get<L2>().initial_momentum, cdbn->template layer_get<L2>().final_momentum);
+        full::wd_l1_1(cdbn->template layer_get<L2>().l1_weight_cost);
+        full::wd_l2_1(cdbn->template layer_get<L2>().l2_weight_cost);
+        full::pbias_1(cdbn->template layer_get<L2>().pbias);
+        full::pbias_lambda_1(cdbn->template layer_get<L2>().pbias_lambda);
 #endif
 
 #if FULL_LEVELS >= 3
         //Level 3
-        full::rate_2(cdbn->template layer<L3>().learning_rate);
-        full::momentum_2(cdbn->template layer<L3>().initial_momentum, cdbn->template layer<L3>().final_momentum);
-        full::wd_l1_2(cdbn->template layer<L3>().l1_weight_cost);
-        full::wd_l2_2(cdbn->template layer<L3>().l2_weight_cost);
-        full::pbias_2(cdbn->template layer<L3>().pbias);
-        full::pbias_lambda_2(cdbn->template layer<L3>().pbias_lambda);
+        full::rate_2(cdbn->template layer_get<L3>().learning_rate);
+        full::momentum_2(cdbn->template layer_get<L3>().initial_momentum, cdbn->template layer_get<L3>().final_momentum);
+        full::wd_l1_2(cdbn->template layer_get<L3>().l1_weight_cost);
+        full::wd_l2_2(cdbn->template layer_get<L3>().l2_weight_cost);
+        full::pbias_2(cdbn->template layer_get<L3>().pbias);
+        full::pbias_lambda_2(cdbn->template layer_get<L3>().pbias_lambda);
 #endif
 
         cdbn->display();
@@ -1248,14 +1250,31 @@ void patches_method(
 
         //1. Pretraining
         {
+            const std::string file_name("method_2_full.dat");
+
+#ifdef FULL_CRBM_PMP_2
+            std::vector<etl::dyn_matrix<weight, 3>> training_images;
+            training_images.reserve(train_image_names.size());
+
+            std::cout << "Generate images ..." << std::endl;
+
+            for(auto& name : train_image_names){
+                training_images.push_back(mat_for_patches(conf, dataset.word_images.at(name)));
+            }
+
+            std::cout << "... done" << std::endl;
+
+            //cdbn->pretrain(training_images, full::epochs);
+            //cdbn->store(file_name);
+            cdbn->load(file_name);
+#else
             patch_iterator it(conf, dataset, train_image_names);
             patch_iterator end(conf, dataset, train_image_names, train_image_names.size());
-
-            const std::string file_name("method_2_full.dat");
 
             cdbn->pretrain(it, end, full::epochs);
             cdbn->store(file_name);
             //cdbn->load(file_name);
+#endif
         }
 
         //2. Evaluation

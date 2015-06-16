@@ -230,19 +230,19 @@ void holistic_method(
 
         std::cout << "DBN size: " << sizeof(cdbn_t) * div << "MB" << std::endl;
 
-        std::cout << "Layer 0 input storage: " << cdbn->template layer<0>().input_size() * mul << "MB necessary" << std::endl;
-        std::cout << "Layer 0 tmp storage: " << cdbn->template layer<0>().output_size() * mul << "MB necessary" << std::endl;
-        std::cout << "Layer 1 tmp storage: " << cdbn->template layer<1>().output_size() * mul << "MB necessary" << std::endl;
-        std::cout << "Layer 2 tmp storage: " << cdbn->template layer<2>().output_size() * mul << "MB necessary" << std::endl;
-        std::cout << "Layer 3 tmp storage: " << cdbn->template layer<3>().output_size() * mul << "MB necessary" << std::endl;
+        std::cout << "Layer 0 input storage: " << cdbn->template layer_get<0>().input_size() * mul << "MB necessary" << std::endl;
+        std::cout << "Layer 0 tmp storage: " << cdbn->template layer_get<0>().output_size() * mul << "MB necessary" << std::endl;
+        std::cout << "Layer 1 tmp storage: " << cdbn->template layer_get<1>().output_size() * mul << "MB necessary" << std::endl;
+        std::cout << "Layer 2 tmp storage: " << cdbn->template layer_get<2>().output_size() * mul << "MB necessary" << std::endl;
+        std::cout << "Layer 3 tmp storage: " << cdbn->template layer_get<3>().output_size() * mul << "MB necessary" << std::endl;
 
-        std::cout << "Trainer 0 storage: " << sizeof(dll::base_cd_trainer<1, cdbn_t::rbm_type<0>, false, false>) / mini_div << "MB necessary" << std::endl;
-        std::cout << "Trainer 2 storage: " << sizeof(dll::base_cd_trainer<1, cdbn_t::rbm_type<2>, false, false>) / mini_div << "MB necessary" << std::endl;
+        std::cout << "Trainer 0 storage: " << sizeof(dll::base_cd_trainer<1, cdbn_t::layer_type<0>, false, false>) / mini_div << "MB necessary" << std::endl;
+        std::cout << "Trainer 2 storage: " << sizeof(dll::base_cd_trainer<1, cdbn_t::layer_type<2>, false, false>) / mini_div << "MB necessary" << std::endl;
 
         std::cout << "Final test features:" << test_image_names.size() * cdbn->output_size() * div << "MB" << std::endl;
 
-        //cdbn->template layer<0>().learning_rate /= 10;
-        //cdbn->template layer<1>()->learning_rate *= 10;
+        //cdbn->template layer_get<0>().learning_rate /= 10;
+        //cdbn->template layer_get<1>()->learning_rate *= 10;
 
         cdbn->pretrain(training_images, 2);
         cdbn->store("method_1_half.dat");
@@ -314,19 +314,19 @@ void holistic_method(
 
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        cdbn->template layer<0>().learning_rate /= 100;
-        //cdbn->template layer<0>().pbias_lambda *= 4;
+        cdbn->template layer_get<0>().learning_rate /= 100;
+        //cdbn->template layer_get<0>().pbias_lambda *= 4;
 
-        cdbn->template layer<2>().learning_rate /= 10;
-        cdbn->template layer<4>().learning_rate /= 10;
-        cdbn->template layer<4>().pbias_lambda *= 2;
+        cdbn->template layer_get<2>().learning_rate /= 10;
+        cdbn->template layer_get<4>().learning_rate /= 10;
+        cdbn->template layer_get<4>().pbias_lambda *= 2;
 
         std::string file_name = "method_1_third.dat";
 
         if(conf.view){
             cdbn->load(file_name);
 
-            dll::visualize_rbm(cdbn->template layer<0>());
+            dll::visualize_rbm(cdbn->template layer_get<0>());
         } else {
             //cdbn->pretrain(training_images, 10);
             //cdbn->store(file_name);
@@ -482,10 +482,10 @@ void holistic_method(
 
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        cdbn->template layer<0>().learning_rate /= 10;
-        cdbn->template layer<1>().learning_rate /= 10;
-        cdbn->template layer<2>().learning_rate /= 10;
-        cdbn->template layer<2>().pbias_lambda *= 2;
+        cdbn->template layer_get<0>().learning_rate /= 10;
+        cdbn->template layer_get<1>().learning_rate /= 10;
+        cdbn->template layer_get<2>().learning_rate /= 10;
+        cdbn->template layer_get<2>().pbias_lambda *= 2;
 
         cdbn->pretrain(training_images, 10);
         cdbn->store("method_1_quarter.dat");
