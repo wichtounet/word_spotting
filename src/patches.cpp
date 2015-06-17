@@ -1298,9 +1298,9 @@ void patches_method(
 
             std::cout << "... done" << std::endl;
 
-            //cdbn->pretrain(training_images, full::epochs);
-            //cdbn->store(file_name);
-            cdbn->load(file_name);
+            cdbn->pretrain(training_images, full::epochs);
+            cdbn->store(file_name);
+            //cdbn->load(file_name);
 #else
             patch_iterator it(conf, dataset, train_image_names);
             patch_iterator end(conf, dataset, train_image_names, train_image_names.size());
