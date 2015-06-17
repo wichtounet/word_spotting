@@ -37,7 +37,7 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
     return training_image;
 }
 
-etl::dyn_matrix<weight, 3> mat_for_patches(const config& conf, const cv::Mat& image){
+etl::dyn_matrix<weight, 3> mat_for_patches(const config& /*conf*/, const cv::Mat& image){
     etl::dyn_matrix<weight, 3> training_image(std::size_t(1), std::size_t(image.size().height), std::size_t(image.size().width));
 
     for(std::size_t y = 0; y < static_cast<std::size_t>(image.size().height); ++y){
