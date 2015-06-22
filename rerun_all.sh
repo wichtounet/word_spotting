@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Script to rerun the same headers on another cv
+
 if [ "$1" == "third" ]; then
     mode="third"
     option="-third"

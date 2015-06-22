@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Script to run on several machines
+
 if [ "$1" == "third" ]; then
     mode="third"
     option="-third"

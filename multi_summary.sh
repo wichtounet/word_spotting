@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Bash script to extract trec eval values of several runs spanning different cvs
+
 machines=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25 160.98.22.8 160.98.22.9)
 
 cv1=$1

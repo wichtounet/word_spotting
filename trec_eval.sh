@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Bash script to extract trec_eval from a standard result (result or dtw_result)
+
 folder=$1
 
 gmap=`/home/wichtounet/dev/trec_eval/trec_eval -q $folder/global_rel_file $folder/global_top_file | /usr/bin/zgrep "map\s*all" | cut -f3`
