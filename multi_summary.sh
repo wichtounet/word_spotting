@@ -33,8 +33,8 @@ cd run
 
 echo "Global Summary:"
 
-best_total=0
-best_machine=0
+cv1_best_total=0
+cv1_best_machine=0
 
 for machine in ${!machines[@]}; do
     gmap=`${grep} map ${cv1}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
@@ -46,11 +46,10 @@ for machine in ${!machines[@]}; do
 
     echo "total score: $total"
 
-    if [ "$total" > "$best_total" ]; then
-        best_total=$total
-        best_machine=$machine
+    if [ "$total" > "$cv1_best_total" ]; then
+        cv1_best_total=$total
+        cv1_best_machine=$machine
     fi
 done
 
-echo $best_total
-echo $best_machine
+echo "$cv1_best_machine is the best machine for CV1 ($cv1_best_total)"
