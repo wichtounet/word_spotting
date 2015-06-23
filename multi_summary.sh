@@ -55,8 +55,6 @@ for machine in ${!machines[@]}; do
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
-    echo "total score: $total"
-
     if [ "$total" > "$cv1_best_total" ]; then
         cv1_best_total=$total
         cv1_best_machine=$machine
@@ -70,8 +68,6 @@ for machine in ${!machines[@]}; do
     lrp=`${grep} R-prec ${cv2}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv2_ | cut -f3`
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
-
-    echo "total score: $total"
 
     if [ "$total" > "$cv2_best_total" ]; then
         cv2_best_total=$total
@@ -87,8 +83,6 @@ for machine in ${!machines[@]}; do
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
-    echo "total score: $total"
-
     if [ "$total" > "$cv3_best_total" ]; then
         cv3_best_total=$total
         cv3_best_machine=$machine
@@ -102,8 +96,6 @@ for machine in ${!machines[@]}; do
     lrp=`${grep} R-prec ${cv4}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv4_ | cut -f3`
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
-
-    echo "total score: $total"
 
     if [ "$total" > "$cv4_best_total" ]; then
         cv4_best_total=$total
