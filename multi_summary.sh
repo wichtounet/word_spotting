@@ -107,3 +107,22 @@ echo "$cv1_best_machine is the best machine for CV1 ($cv1_best_total)"
 echo "$cv2_best_machine is the best machine for CV2 ($cv2_best_total)"
 echo "$cv3_best_machine is the best machine for CV3 ($cv3_best_total)"
 echo "$cv4_best_machine is the best machine for CV4 ($cv4_best_total)"
+
+rm -f global_rel_file
+rm -f global_top_file
+
+cat ${cv1}/${cv1_best_machine}_test_global_rel_file >> global_rel_file
+cat ${cv2}/${cv2_best_machine}_test_global_rel_file >> global_rel_file
+cat ${cv3}/${cv3_best_machine}_test_global_rel_file >> global_rel_file
+cat ${cv4}/${cv4_best_machine}_test_global_rel_file >> global_rel_file
+
+cat ${cv1}/${cv1_best_machine}_test_global_top_file >> global_top_file
+cat ${cv2}/${cv2_best_machine}_test_global_top_file >> global_top_file
+cat ${cv3}/${cv3_best_machine}_test_global_top_file >> global_top_file
+cat ${cv4}/${cv4_best_machine}_test_global_top_file >> global_top_file
+
+gmap=`/home/wichtounet/dev/trec_eval/trec_eval -q global_rel_file global_top_file | /usr/bin/zgrep "map\s*all" | cut -f3`
+grp=`/home/wichtounet/dev/trec_eval/trec_eval -q global_rel_file global_top_file | /usr/bin/zgrep "\(R-prec\)\s*all" | cut -f3`
+
+echo "G-MAP: $gmap"
+echo "G-RP:  $grp"
