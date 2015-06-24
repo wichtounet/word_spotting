@@ -25,6 +25,14 @@ if [ ! -d run/${old_stamp} ]; then
     exit
 fi
 
+all_option=""
+
+if [ "$4" == "all" ]; then
+    all_option="-all"
+fi
+
+options="$option $all_option"
+
 config_file="config_${mode}.hpp"
 
 machines=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25 160.98.22.8 160.98.22.9)
@@ -48,6 +56,7 @@ echo "Old Stamp: $old_stamp"
 echo "Stamp: $stamp"
 echo "Mode: $mode"
 echo "Set: $set"
+echo "Options: $all_option"
 
 mkdir -p "$stamp"
 
@@ -67,7 +76,7 @@ wait
 for machine in ${!machines[@]}; do
     (
     echo "Start execution on ${machines[machine]}"
-    sshpass -p "$password" ssh ${user}@${machines[machine]} "cd ~/dev/word_spotting; rm -rf results/*; ./release_debug/bin/spotter -2 ${option} train ~/datasets/washington ${set} > grid.log ;"
+    sshpass -p "$password" ssh ${user}@${machines[machine]} "cd ~/dev/word_spotting; rm -rf results/*; ./release_debug/bin/spotter -2 ${options} train ~/datasets/washington ${set} > grid.log ;"
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/grid.log ${stamp}/${machine}.log
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/method_2_${mode}.dat ${stamp}/${machine}.dat
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/1/global_rel_file ${stamp}/${machine}_train_global_rel_file
