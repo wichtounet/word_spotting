@@ -55,7 +55,7 @@ for machine in ${!machines[@]}; do
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
-    if [ "$total" > "$cv1_best_total" ]; then
+    if [ $(echo " $total > $cv1_best_total" | bc) -eq 1 ]; then
         cv1_best_total=$total
         cv1_best_machine=$machine
     fi
@@ -69,7 +69,7 @@ for machine in ${!machines[@]}; do
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
-    if [ "$total" > "$cv2_best_total" ]; then
+    if [ $(echo " $total > $cv2_best_total" | bc) -eq 1 ]; then
         cv2_best_total=$total
         cv2_best_machine=$machine
     fi
@@ -83,7 +83,7 @@ for machine in ${!machines[@]}; do
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
-    if [ "$total" > "$cv3_best_total" ]; then
+    if [ $(echo " $total > $cv3_best_total" | bc) -eq 1 ]; then
         cv3_best_total=$total
         cv3_best_machine=$machine
     fi
@@ -97,7 +97,7 @@ for machine in ${!machines[@]}; do
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
-    if [ "$total" > "$cv4_best_total" ]; then
+    if [ $(echo " $total > $cv4_best_total" | bc) -eq 1 ]; then
         cv4_best_total=$total
         cv4_best_machine=$machine
     fi
