@@ -62,10 +62,10 @@ for machine in ${!machines[@]}; do
 done
 
 for machine in ${!machines[@]}; do
-    gmap=`${grep} map ${cv2}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv2_ | cut -f3`
-    grp=`${grep} R-prec ${cv2}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv2_ | cut -f3`
-    lmap=`${grep} map ${cv2}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv2_ | cut -f3`
-    lrp=`${grep} R-prec ${cv2}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv2_ | cut -f3`
+    gmap=`${grep} map ${cv2}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    grp=`${grep} R-prec ${cv2}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lmap=`${grep} map ${cv2}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lrp=`${grep} R-prec ${cv2}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
@@ -76,10 +76,10 @@ for machine in ${!machines[@]}; do
 done
 
 for machine in ${!machines[@]}; do
-    gmap=`${grep} map ${cv3}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv3_ | cut -f3`
-    grp=`${grep} R-prec ${cv3}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv3_ | cut -f3`
-    lmap=`${grep} map ${cv3}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv3_ | cut -f3`
-    lrp=`${grep} R-prec ${cv3}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv3_ | cut -f3`
+    gmap=`${grep} map ${cv3}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    grp=`${grep} R-prec ${cv3}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lmap=`${grep} map ${cv3}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lrp=`${grep} R-prec ${cv3}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
@@ -90,10 +90,10 @@ for machine in ${!machines[@]}; do
 done
 
 for machine in ${!machines[@]}; do
-    gmap=`${grep} map ${cv4}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv4_ | cut -f3`
-    grp=`${grep} R-prec ${cv4}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv4_ | cut -f3`
-    lmap=`${grep} map ${cv4}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv4_ | cut -f3`
-    lrp=`${grep} R-prec ${cv4}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv4_ | cut -f3`
+    gmap=`${grep} map ${cv4}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    grp=`${grep} R-prec ${cv4}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lmap=`${grep} map ${cv4}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lrp=`${grep} R-prec ${cv4}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
