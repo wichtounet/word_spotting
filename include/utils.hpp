@@ -14,7 +14,7 @@
 #include "etl/etl.hpp"
 
 #include "config.hpp"
-#include "washington.hpp"
+#include "dataset.hpp"
 
 template<typename T>
 std::ostream& operator<<(std::ostream& stream, const std::vector<T>& vec){

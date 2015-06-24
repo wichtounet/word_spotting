@@ -10,11 +10,11 @@
 
 #include <dirent.h>
 
-#include "washington.hpp"
+#include "dataset.hpp"
 
 namespace {
 
-void read_word_labels(washington_dataset& dataset, const std::string& path){
+void read_word_labels(spot_dataset& dataset, const std::string& path){
     std::ifstream word_labels_stream(path + "/ground_truth/word_labels.txt");
 
     while(!word_labels_stream.eof()){
@@ -24,9 +24,7 @@ void read_word_labels(washington_dataset& dataset, const std::string& path){
         std::string label;
         word_labels_stream >> label;
 
-        if(image_name.empty() || label.empty()){
-            continue;
-        }
+        if(image_name.empty() || label.empty()){ continue; }
 
         std::istringstream ss(label);
         std::string token;
@@ -37,7 +35,7 @@ void read_word_labels(washington_dataset& dataset, const std::string& path){
     }
 }
 
-void read_line_transcriptions(washington_dataset& dataset, const std::string& path){
+void read_line_transcriptions(spot_dataset& dataset, const std::string& path){
     std::ifstream line_transcriptions_stream(path + "/ground_truth/transcription.txt");
 
     while(!line_transcriptions_stream.eof()){
@@ -90,11 +88,11 @@ void read_images(std::unordered_map<std::string, cv::Mat>& map, const std::strin
     }
 }
 
-void read_line_images(washington_dataset& dataset, const std::string& path){
+void read_line_images(spot_dataset& dataset, const std::string& path){
     read_images(dataset.line_images, path + "/data/line_images_normalized/");
 }
 
-void read_word_images(washington_dataset& dataset, const std::string& path){
+void read_word_images(spot_dataset& dataset, const std::string& path){
     read_images(dataset.word_images, path + "/data/word_images_normalized/");
 }
 
@@ -131,7 +129,7 @@ void read_keywords(std::vector<std::vector<std::string>>& list, const std::strin
     }
 }
 
-void load_sets(washington_dataset& dataset, const std::string& path){
+void load_sets_washington(spot_dataset& dataset, const std::string& path){
     std::string file_path(path + "/sets");
 
     struct dirent *entry;
@@ -153,10 +151,19 @@ void load_sets(washington_dataset& dataset, const std::string& path){
     }
 }
 
+void load_sets_parzival(spot_dataset& dataset, const std::string& path){
+    std::string full_name(path + "/sets1/");
+
+    read_list(dataset.sets["cv1"].test_set, full_name + "/test.txt");
+    read_list(dataset.sets["cv1"].train_set, full_name + "/train.txt");
+    read_list(dataset.sets["cv1"].validation_set, full_name + "/valid.txt");
+    read_keywords(dataset.sets["cv1"].keywords, full_name + "/keywords.txt");
+}
+
 } //end of anonymous namespace
 
-washington_dataset read_dataset(const std::string& path){
-    washington_dataset dataset;
+spot_dataset read_washington(const std::string& path){
+    spot_dataset dataset;
 
     read_word_labels(dataset, path);
     read_line_transcriptions(dataset, path);
@@ -164,7 +171,21 @@ washington_dataset read_dataset(const std::string& path){
     read_line_images(dataset, path);
     read_word_images(dataset, path);
 
-    load_sets(dataset, path);
+    load_sets_washington(dataset, path);
+
+    return dataset;
+}
+
+spot_dataset read_parzival(const std::string& path){
+    spot_dataset dataset;
+
+    read_word_labels(dataset, path);
+    read_line_transcriptions(dataset, path);
+
+    read_line_images(dataset, path);
+    read_word_images(dataset, path);
+
+    load_sets_parzival(dataset, path);
 
     return dataset;
 }

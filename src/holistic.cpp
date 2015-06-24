@@ -31,7 +31,7 @@
 #include "scaling.hpp"      //Scaling functions
 
 void holistic_method(
-        const washington_dataset& dataset, const washington_dataset_set& set, config& conf,
+        const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
         names train_word_names, names train_image_names, names /*valid_image_names*/, names test_image_names){
     std::cout << "Use method 1 (holistic)" << std::endl;
     std::cout << "Method 1 is disabled for now (needs check matrix dimensions" << std::endl;

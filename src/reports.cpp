@@ -16,7 +16,7 @@
 #include "reports.hpp"
 
 void generate_rel_files(
-            const std::string& result_folder, const washington_dataset& dataset,
+            const std::string& result_folder, const spot_dataset& dataset,
             const std::vector<std::string>& test_image_names, const std::vector<std::vector<std::string>>& keywords){
     std::cout << "Generate relevance files..." << std::endl;
 
@@ -48,7 +48,7 @@ void generate_rel_files(
     std::cout << "... done" << std::endl;
 }
 
-void update_stats(std::size_t k, const std::string& result_folder, const washington_dataset& dataset, const std::vector<std::string>& keyword, std::vector<std::pair<std::string, weight>> diffs_a, std::vector<double>& eer, std::vector<double>& ap, std::ofstream& global_top_stream, std::ofstream& local_top_stream, const std::vector<std::string>& test_image_names){
+void update_stats(std::size_t k, const std::string& result_folder, const spot_dataset& dataset, const std::vector<std::string>& keyword, std::vector<std::pair<std::string, weight>> diffs_a, std::vector<double>& eer, std::vector<double>& ap, std::ofstream& global_top_stream, std::ofstream& local_top_stream, const std::vector<std::string>& test_image_names){
     std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
 
     auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
@@ -142,7 +142,7 @@ void update_stats(std::size_t k, const std::string& result_folder, const washing
     }
 }
 
-void update_stats_light(std::size_t k, const washington_dataset& dataset, const std::vector<std::string>& keyword, std::vector<std::pair<std::string, weight>> diffs_a, std::vector<double>& ap, const std::vector<std::string>& test_image_names){
+void update_stats_light(std::size_t k, const spot_dataset& dataset, const std::vector<std::string>& keyword, std::vector<std::pair<std::string, weight>> diffs_a, std::vector<double>& ap, const std::vector<std::string>& test_image_names){
     std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
 
     auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),

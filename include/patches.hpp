@@ -9,9 +9,9 @@
 #define WORD_SPOTTER_PATCHES_METHOD_HPP
 
 #include "config.hpp"
-#include "washington.hpp"
+#include "dataset.hpp"
 
-void patches_method(const washington_dataset& dataset, const washington_dataset_set& set, config& conf,
+void patches_method(const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
     names train_word_names,
     names train_image_names, names valid_image_names, names test_image_names);
 

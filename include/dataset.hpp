@@ -5,8 +5,8 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
-#ifndef WORD_SPOTTER_WASHINGTON_HPP
-#define WORD_SPOTTER_WASHINGTON_HPP
+#ifndef WORD_SPOTTER_HPP
+#define WORD_SPOTTER_HPP
 
 #include <unordered_map>
 #include <vector>
@@ -14,24 +14,25 @@
 
 #include <opencv2/opencv.hpp>
 
-struct washington_dataset_set {
+struct spot_dataset_set {
     std::vector<std::vector<std::string>> keywords;
     std::vector<std::string> test_set;
     std::vector<std::string> train_set;
     std::vector<std::string> validation_set;
 };
 
-struct washington_dataset {
+struct spot_dataset {
     std::unordered_map<std::string, std::vector<std::string>> word_labels;
     std::unordered_map<std::string, std::vector<std::vector<std::string>>> line_transcriptions;
 
     std::unordered_map<std::string, cv::Mat> line_images;
     std::unordered_map<std::string, cv::Mat> word_images;
 
-    std::unordered_map<std::string, washington_dataset_set> sets;
+    std::unordered_map<std::string, spot_dataset_set> sets;
 };
 
-washington_dataset read_dataset(const std::string& path);
+spot_dataset read_washington(const std::string& path);
+spot_dataset read_parzival(const std::string& path);
 
 using names = const std::vector<std::string>&;
 

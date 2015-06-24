@@ -8,7 +8,7 @@
 #include <iostream>
 
 #include "config.hpp"
-#include "washington.hpp"   //Dataset handling
+#include "dataset.hpp"   //Dataset handling
 
 //Include methods
 #include "standard.hpp"     //Method 0
@@ -29,7 +29,8 @@ int command_train(config& conf){
     std::cout << "Dataset: " << dataset_path << std::endl;
     std::cout << "    Set: " << cv_set << std::endl;
 
-    auto dataset = read_dataset(dataset_path);
+    //Load the correct dataset
+    auto dataset = conf.washington ? read_washington(dataset_path) : read_parzival(dataset_path);
 
     std::cout << dataset.line_images.size() << " line images loaded from the dataset" << std::endl;
     std::cout << dataset.word_images.size() << " word images loaded from the dataset" << std::endl;

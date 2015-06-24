@@ -16,20 +16,20 @@
 #include <numeric>
 #include <cmath>
 
-#include "washington.hpp"
+#include "dataset.hpp"
 
 std::string select_folder(const std::string& base_folder);
 
 void generate_rel_files(
     const std::string& result_folder,
-    const washington_dataset& dataset,
+    const spot_dataset& dataset,
     const std::vector<std::string>& test_image_names,
     const std::vector<std::vector<std::string>>& keywords);
 
 void update_stats(
     std::size_t k,
     const std::string& result_folder,
-    const washington_dataset& dataset,
+    const spot_dataset& dataset,
     const std::vector<std::string>& keyword,
     std::vector<std::pair<std::string, weight>> diffs_a,
     std::vector<double>& eer, std::vector<double>& ap,
@@ -38,7 +38,7 @@ void update_stats(
 
 void update_stats_light(
     std::size_t k,
-    const washington_dataset& dataset,
+    const spot_dataset& dataset,
     const std::vector<std::string>& keyword,
     std::vector<std::pair<std::string, weight>> diffs_a,
     std::vector<double>& ap,

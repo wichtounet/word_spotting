@@ -83,14 +83,14 @@ using thread_pool = cpp::default_thread_pool<>;
 
 struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<weight, 3>> {
     config& conf;
-    const washington_dataset& dataset;
+    const spot_dataset& dataset;
     names image_names;
 
     std::size_t current_image = 0;
     std::vector<etl::dyn_matrix<weight, 3>> patches;
     std::size_t current_patch = 0;
 
-    patch_iterator(config& conf, const washington_dataset& dataset, names image_names, std::size_t i = 0)
+    patch_iterator(config& conf, const spot_dataset& dataset, names image_names, std::size_t i = 0)
             : conf(conf), dataset(dataset), image_names(image_names), current_image(i) {
         if(current_image < image_names.size()){
             patches = mat_to_patches(conf, dataset.word_images.at(image_names[current_image]), true);
@@ -488,7 +488,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 } // end of anonymous namespace
 
 void patches_method(
-        const washington_dataset& dataset, const washington_dataset_set& set, config& conf,
+        const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
         names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
     std::cout << "Use method 2 (patches)" << std::endl;
 

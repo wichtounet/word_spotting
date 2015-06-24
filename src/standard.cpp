@@ -214,7 +214,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
 } //end of anonymous namespace
 
 void standard_method(
-        const washington_dataset& dataset, const washington_dataset_set& set, config& conf,
+        const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
         names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
     std::cout << "Use method 0 (Standard Features + DTW)" << std::endl;
 
