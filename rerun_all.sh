@@ -65,7 +65,7 @@ mkdir -p "$stamp"
 for machine in ${!machines[@]}; do
     (
     sshpass -p "$password" scp ${old_stamp}/${machine}_config.hpp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/include/${config_file}
-    sshpass -p "$password" ssh ${user}@${machines[machine]} 'cd /home/wicht/dev/word_spotting; CXX=g++-4.9 LD=g++-4.9 make release_debug;'
+    sshpass -p "$password" ssh ${user}@${machines[machine]} 'cd /home/wicht/dev/word_spotting; make release_debug;'
     ) &
 done
 
