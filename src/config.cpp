@@ -39,6 +39,8 @@ config parse_args(int argc, char** argv){
             conf.method_1 = true;
         } else if(conf.args[i] == "-2"){
             conf.method_2 = true;
+        } else if(conf.args[i] == "-full"){
+            //Simply here for consistency sake
         } else if(conf.args[i] == "-half"){
             conf.half = true;
         } else if(conf.args[i] == "-quarter"){
@@ -55,8 +57,10 @@ config parse_args(int argc, char** argv){
             conf.all = true;
         } else if(conf.args[i] == "-washington"){
             conf.washington = true;
+            conf.parzival = false;
         } else if(conf.args[i] == "-parzival"){
-            conf.washington = true;
+            conf.washington = false;
+            conf.parzival = true;
         } else {
             break;
         }
