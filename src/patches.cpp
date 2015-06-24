@@ -492,6 +492,18 @@ void patches_method(
         names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
     std::cout << "Use method 2 (patches)" << std::endl;
 
+    auto pretraining_image_names = train_image_names;
+
+    if(conf.all){
+        std::cout << "Use all images from pretraining" << std::endl;
+
+        pretraining_image_names.reserve(pretraining_image_names.size() + valid_image_names.size() + test_image_names.size());
+
+        //Copy valid and image into the pretraining set
+        std::copy(valid_image_names.begin(), valid_image_names.end(), std::back_inserter(pretraining_image_names));
+        std::copy(test_image_names.begin(), test_image_names.end(), std::back_inserter(pretraining_image_names));
+    }
+
     if(conf.half){
         std::cout << "Use a half of the resolution" << std::endl;
 
@@ -698,11 +710,11 @@ void patches_method(
 
         {
             std::vector<etl::dyn_matrix<weight, 3>> training_patches;
-            training_patches.reserve(train_image_names.size() * 5);
+            training_patches.reserve(pretraining_image_names.size() * 5);
 
             std::cout << "Generate patches ..." << std::endl;
 
-            for(auto& name : train_image_names){
+            for(auto& name : pretraining_image_names){
                 auto patches = mat_to_patches(conf, dataset.word_images.at(name), true);
                 std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
             }
@@ -1012,11 +1024,11 @@ void patches_method(
         //Train the DBN
         {
             std::vector<etl::dyn_matrix<weight, 3>> training_patches;
-            training_patches.reserve(train_image_names.size() * 5);
+            training_patches.reserve(pretraining_image_names.size() * 5);
 
             std::cout << "Generate patches ..." << std::endl;
 
-            for(auto& name : train_image_names){
+            for(auto& name : pretraining_image_names){
                 auto patches = mat_to_patches(conf, dataset.word_images.at(name), true);
                 std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
             }
@@ -1288,11 +1300,11 @@ void patches_method(
 
 #ifdef FULL_CRBM_PMP_2
             std::vector<etl::dyn_matrix<weight, 3>> training_images;
-            training_images.reserve(train_image_names.size());
+            training_images.reserve(pretraining_image_names.size());
 
             std::cout << "Generate images ..." << std::endl;
 
-            for(auto& name : train_image_names){
+            for(auto& name : pretraining_image_names){
                 training_images.push_back(mat_for_patches(conf, dataset.word_images.at(name)));
             }
 
@@ -1302,8 +1314,8 @@ void patches_method(
             cdbn->store(file_name);
             //cdbn->load(file_name);
 #else
-            patch_iterator it(conf, dataset, train_image_names);
-            patch_iterator end(conf, dataset, train_image_names, train_image_names.size());
+            patch_iterator it(conf, dataset, pretraining_image_names);
+            patch_iterator end(conf, dataset, pretraining_image_names, pretraining_image_names.size());
 
             cdbn->pretrain(it, end, full::epochs);
             cdbn->store(file_name);
