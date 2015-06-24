@@ -51,12 +51,16 @@ config parse_args(int argc, char** argv){
             conf.view = true;
         } else if(conf.args[i] == "-sub"){
             conf.sub = true;
+        } else if(conf.args[i] == "-all"){
+            conf.all = true;
+        } else if(conf.args[i] == "-washington"){
+            conf.washington = true;
+        } else if(conf.args[i] == "-parzival"){
+            conf.washington = true;
         } else {
             break;
         }
     }
-
-    //TODO Ensure that methods are mutually exclusive
 
     conf.command = conf.args[i++];
 

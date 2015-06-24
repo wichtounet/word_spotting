@@ -33,6 +33,10 @@ struct config {
     bool svm = false;
     bool view = false;
     bool sub = false;
+    bool all = false;
+
+    bool washington = true;
+    bool parzival = false;
 
     //The following values are set during execution
     std::size_t downscale = 1;

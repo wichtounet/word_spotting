@@ -102,6 +102,10 @@ int main(int argc, char** argv){
         std::cout << "error: One method must be selected" << std::endl;
         print_usage();
         return -1;
+    } else if( (conf.method_0 ? 1 : 0) + (conf.method_1 ? 1 : 0) + (conf.method_2 ? 1 : 0) > 1){
+        std::cout << "error: Only one method must be selected" << std::endl;
+        print_usage();
+        return -1;
     }
 
     if(conf.half){
