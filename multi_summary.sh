@@ -111,6 +111,9 @@ echo "$cv4_best_machine is the best machine for CV4 ($cv4_best_total)"
 rm -f global_rel_file
 rm -f global_top_file
 
+rm -f local_rel_file
+rm -f local_top_file
+
 cat ${cv1}/${cv1_best_machine}_test_global_rel_file >> global_rel_file
 cat ${cv2}/${cv2_best_machine}_test_global_rel_file >> global_rel_file
 cat ${cv3}/${cv3_best_machine}_test_global_rel_file >> global_rel_file
@@ -121,8 +124,25 @@ cat ${cv2}/${cv2_best_machine}_test_global_top_file >> global_top_file
 cat ${cv3}/${cv3_best_machine}_test_global_top_file >> global_top_file
 cat ${cv4}/${cv4_best_machine}_test_global_top_file >> global_top_file
 
-gmap=`/home/wichtounet/dev/trec_eval/trec_eval -q global_rel_file global_top_file | /usr/bin/zgrep "map\s*all" | cut -f3`
-grp=`/home/wichtounet/dev/trec_eval/trec_eval -q global_rel_file global_top_file | /usr/bin/zgrep "\(R-prec\)\s*all" | cut -f3`
+cat ${cv1}/${cv1_best_machine}_test_local_rel_file >> local_rel_file
+cat ${cv2}/${cv2_best_machine}_test_local_rel_file | sed -e "s/cv1/cv2/" >> local_rel_file
+cat ${cv3}/${cv3_best_machine}_test_local_rel_file | sed -e "s/cv1/cv3/" >> local_rel_file
+cat ${cv4}/${cv4_best_machine}_test_local_rel_file | sed -e "s/cv1/cv4/" >> local_rel_file
+
+cat ${cv1}/${cv1_best_machine}_test_local_top_file >> local_top_file
+cat ${cv2}/${cv2_best_machine}_test_local_top_file | sed -e "s/cv1/cv2/" >> local_top_file
+cat ${cv3}/${cv3_best_machine}_test_local_top_file | sed -e "s/cv1/cv3/" >> local_top_file
+cat ${cv4}/${cv4_best_machine}_test_local_top_file | sed -e "s/cv1/cv4/" >> local_top_file
+
+trec=/home/wichtounet/dev/trec_eval/trec_eval
+
+gmap=`$trec -q global_rel_file global_top_file | ${grep} "map\s*all" | cut -f3`
+grp=`$trec -q global_rel_file global_top_file | ${grep} "\(R-prec\)\s*all" | cut -f3`
+lmap=`$trec -q local_rel_file local_top_file | ${grep} "map\s*all" | cut -f3`
+lrp=`$trec -q local_rel_file local_top_file | ${grep} "\(R-prec\)\s*all" | cut -f3`
 
 echo "G-MAP: $gmap"
 echo "G-RP:  $grp"
+
+echo "L-MAP: $lmap"
+echo "L-RP:  $lrp"
