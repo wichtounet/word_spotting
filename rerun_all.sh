@@ -31,7 +31,7 @@ if [ "$4" == "all" ]; then
     all_option="-all"
 fi
 
-options="$option $all_option"
+options=" $option $all_option "
 
 config_file="config_${mode}.hpp"
 
