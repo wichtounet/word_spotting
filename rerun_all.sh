@@ -66,6 +66,7 @@ for machine in ${!machines[@]}; do
     (
     sshpass -p "$password" scp ${old_stamp}/${machine}_config.hpp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/include/${config_file}
     sshpass -p "$password" ssh ${user}@${machines[machine]} 'cd /home/wicht/dev/word_spotting; make release_debug;'
+    cp ${old_stamp}/${machine}_config.hpp ${stamp}/${machine}_config.hpp
     ) &
 done
 
