@@ -305,37 +305,6 @@ std::vector<std::pair<std::string, weight>> compute_distances(
     return diffs_a;
 }
 
-template<typename Dataset, typename Set>
-std::vector<std::vector<std::string>> select_keywords(const Dataset& dataset, const Set& set, names train_word_names, names test_image_names){
-    std::vector<std::vector<std::string>> keywords;
-
-    for(std::size_t k = 0; k < set.keywords.size(); ++k){
-        auto& keyword = set.keywords[k];
-
-        bool found = false;
-
-        for(auto& labels : dataset.word_labels){
-            if(keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()){
-                found = true;
-                break;
-            }
-        }
-
-        if(found){
-            auto total_test = std::count_if(test_image_names.begin(), test_image_names.end(),
-                [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
-
-            if(total_test > 0){
-                keywords.push_back(keyword);
-            }
-        }
-    }
-
-    std::cout << "Selected " << keywords.size() << " keyword out of " << set.keywords.size() << std::endl;
-
-    return keywords;
-}
-
 template<bool D_P, typename TF, typename KV, typename Dataset, typename DBN>
 double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywords, const Dataset& dataset, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters){
     // 2. Evaluate the performances
