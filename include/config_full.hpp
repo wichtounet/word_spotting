@@ -18,10 +18,7 @@ namespace full {
 //#define FULL_CRBM_MP_2  //Two layers of CRBM with Max Pooling after each layer (C1/C2)
 //#define FULL_CRBM_MP_3  //Three layers of CRBM with Max Pooling after each layer (C1/C2/C3)
 
-constexpr const std::size_t height = 120;           //Should not be changed
-constexpr const std::size_t width = 660;            //Should not be changed
-
-constexpr const std::size_t patch_height = height;  //Should not be changed
+constexpr const std::size_t patch_height = 120;  //Should not be changed
 constexpr const std::size_t patch_width = 20;
 
 constexpr const std::size_t epochs = 50;

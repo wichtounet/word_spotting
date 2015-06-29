@@ -20,9 +20,6 @@ namespace third {
 //#define THIRD_CRBM_MP_2  //Two layers of CRBM with Max Pooling after each layer (C1/C2)
 //#define THIRD_CRBM_MP_3  //Three layers of CRBM with Max Pooling after each layer (C1/C2/C3)
 
-constexpr const std::size_t height = 40;        //Should not be changed
-constexpr const std::size_t width = 220;        //Should not be changed
-
 constexpr const std::size_t patch_height = 40;  //Should not be changed
 constexpr const std::size_t patch_width = 20;
 
