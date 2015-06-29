@@ -64,7 +64,7 @@ echo "Stamp: $stamp"
 echo "Mode: $mode"
 echo "Dataset: $dataset"
 echo "Set: $set"
-echo "Options: $all_option"
+echo "Options: $options"
 
 mkdir -p "$stamp"
 
