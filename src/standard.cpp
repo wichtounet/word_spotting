@@ -111,18 +111,18 @@ std::vector<etl::dyn_vector<weight>> standard_features(const cv::Mat& clean_imag
 
 template<typename Dataset, typename Set>
 void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
+    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+
     auto result_folder = select_folder("./dtw_results/");
 
-    //TODO keywords should be selected correctly
-
-    generate_rel_files(result_folder, dataset, test_image_names, set.keywords);
+    generate_rel_files(result_folder, dataset, test_image_names, keywords);
 
     std::cout << "Evaluate performance..." << std::endl;
 
     std::size_t evaluated = 0;
 
-    std::vector<double> eer(set.keywords.size());
-    std::vector<double> ap(set.keywords.size());
+    std::vector<double> eer(keywords.size());
+    std::vector<double> ap(keywords.size());
 
     std::ofstream global_top_stream(result_folder + "/global_top_file");
     std::ofstream local_top_stream(result_folder + "/local_top_file");
@@ -158,8 +158,8 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
 
     cpp::default_thread_pool<> pool;
 
-    for(std::size_t k = 0; k < set.keywords.size(); ++k){
-        auto& keyword = set.keywords[k];
+    for(std::size_t k = 0; k < keywords.size(); ++k){
+        auto& keyword = keywords[k];
 
         std::string training_image;
         for(auto& labels : dataset.word_labels){
@@ -193,7 +193,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
             [&](auto& test_image, std::size_t t){
                 decltype(auto) test_a = test_features[t];
 
-                double diff_a = dtw_distance(ref_a, test_a);
+                double diff_a = dtw_distance(ref_a, test_a, true);
                 diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), diff_a);
             });
 
