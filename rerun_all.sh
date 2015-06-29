@@ -29,11 +29,11 @@ all_option=""
 dataset="washington"
 dataset_option=""
 
-if [ "$3" == "all" ]; then
+if [ "$4" == "all" ]; then
     all_option="-all"
 fi
 
-if [ "$3" == "parzival" ]; then
+if [ "$4" == "parzival" ]; then
     dataset_option="-parzival"
     dataset="parzival"
 fi
