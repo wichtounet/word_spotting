@@ -19,12 +19,19 @@ fi
 set=$2
 
 all_option=""
+dataset="washington"
+dataset_option=""
 
 if [ "$3" == "all" ]; then
     all_option="-all"
 fi
 
-options="$option $all_option"
+if [ "$3" == "parzival" ]; then
+    dataset_option="-parzival"
+    dataset="parzival"
+fi
+
+options="$option $all_option $dataset_option"
 
 config_file="config_${mode}.hpp"
 
@@ -47,6 +54,7 @@ echo "$new_stamp" > stamp
 
 echo "Stamp: $stamp"
 echo "Mode: $mode"
+echo "Dataset: $dataset"
 echo "Set: $set"
 echo "Options: $all_option"
 
@@ -77,7 +85,7 @@ wait
 for machine in ${!machines[@]}; do
     (
     echo "Start execution on ${machines[machine]}"
-    sshpass -p "$password" ssh ${user}@${machines[machine]} "cd ~/dev/word_spotting; rm -rf results/*; ./release_debug/bin/spotter -2 ${options} train ~/datasets/washington ${set} > grid.log ;"
+    sshpass -p "$password" ssh ${user}@${machines[machine]} "cd ~/dev/word_spotting; rm -rf results/*; ./release_debug/bin/spotter -2 ${options} train ~/datasets/${dataset} ${set} > grid.log ;"
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/grid.log ${stamp}/${machine}.log
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/method_2_${mode}.dat ${stamp}/${machine}.dat
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/1/global_rel_file ${stamp}/${machine}_train_global_rel_file
