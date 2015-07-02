@@ -17,7 +17,7 @@
 #include "dll/dbn.hpp"
 #include "dll/avgp_layer.hpp"
 #include "dll/mp_layer.hpp"
-#include "dll/ocv_visualizer.hpp"
+//#include "dll/ocv_visualizer.hpp"
 
 #include "nice_svm.hpp"
 
@@ -275,7 +275,7 @@ void holistic_method(
                         , dll::dbn_only
                         , dll::hidden<dll::unit_type::RELU6>
                         //, dll::sparsity<dll::sparsity_method::LEE>
-                        , dll::watcher<dll::opencv_rbm_visualizer>
+                        //, dll::watcher<dll::opencv_rbm_visualizer>
                     >::rbm_t
                     , dll::mp_layer_3d_desc<30,208,28,1,2,2>::layer_t
                     , dll::conv_rbm_desc<
@@ -326,7 +326,7 @@ void holistic_method(
         if(conf.view){
             cdbn->load(file_name);
 
-            dll::visualize_rbm(cdbn->template layer_get<0>());
+            //dll::visualize_rbm(cdbn->template layer_get<0>());
         } else {
             //cdbn->pretrain(training_images, 10);
             //cdbn->store(file_name);
