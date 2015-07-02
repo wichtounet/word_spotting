@@ -11,6 +11,9 @@
 #include "utils.hpp"
 
 etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
+#ifdef OPENCV_23
+    etl::dyn_matrix<weight> training_image(HEIGHT, WIDTH);
+#else
     cv::Mat normalized(cv::Size(WIDTH, HEIGHT), CV_8U);
     normalized = cv::Scalar(255);
 
@@ -33,6 +36,7 @@ etl::dyn_matrix<weight> mat_to_dyn(const config& conf, const cv::Mat& image){
             }
         }
     }
+#endif
 
     return training_image;
 }

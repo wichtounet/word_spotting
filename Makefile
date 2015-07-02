@@ -45,6 +45,10 @@ endif
 endif
 endif
 
+ifneq (,$(SPOTTER_OLD))
+CXX_FLAGS += -DOPENCV_23
+endif
+
 $(eval $(call auto_folder_compile,src))
 $(eval $(call auto_add_executable,spotter))
 
