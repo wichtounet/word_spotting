@@ -30,6 +30,12 @@
 #define LOCAL_MEAN_SCALING
 #include "scaling.hpp"      //Scaling functions
 
+namespace {
+
+using image_type = etl::dyn_matrix<weight>;
+
+} //end of anonymous namespace
+
 void holistic_method(
         const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
         names train_word_names, names train_image_names, names /*valid_image_names*/, names test_image_names){
@@ -38,6 +44,7 @@ void holistic_method(
 
     return;
 
+#if 0
     std::vector<etl::dyn_matrix<weight>> training_images;
 
     for(auto& name : train_image_names){
@@ -47,6 +54,7 @@ void holistic_method(
 
         training_images.emplace_back(mat_to_dyn(conf, dataset.word_images.at(name)));
     }
+
     auto evaluate = [&dataset,&set,&conf](auto& dbn, auto& train_word_names, auto& test_image_names){
         std::vector<etl::dyn_matrix<weight, 3>> test_features_a;
 
@@ -174,13 +182,12 @@ void holistic_method(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        WIDTH / 2, HEIGHT / 2, 1                    //330x60 input image (1 channel)
-                        , WIDTH / 2 + 1 - NF , HEIGHT / 2 + 1 - NF  //Configure the size of the filter
+                        1, WIDTH / 2, HEIGHT / 2                    //330x60 input image (1 channel)
                         , 30                                       //Number of feature maps
+                        , WIDTH / 2 + 1 - NF , HEIGHT / 2 + 1 - NF  //Configure the size of the filter
                         //, 2                                       //Probabilistic max pooling (2x2)
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
-                        , dll::parallel
                         , dll::verbose
                         , dll::momentum
                         //, dll::weight_decay<dll::decay_type::L2>
@@ -189,12 +196,11 @@ void holistic_method(
                     >::rbm_t
                     , dll::mp_layer_3d_desc<30,318,48,1,2,2>::layer_t
                     , dll::conv_rbm_desc<
-                        159, 24, 30
-                        , 159 + 1 - NF2 , 24 + 1 - NF2
+                        30, 159, 24
                         , 30
+                        , 159 + 1 - NF2 , 24 + 1 - NF2
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
-                        , dll::parallel
                         , dll::verbose
                         , dll::momentum
                         //, dll::weight_decay<dll::decay_type::L2>
@@ -202,12 +208,11 @@ void holistic_method(
                         //, dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
                     , dll::conv_rbm_desc<
-                        152, 17, 30
-                        , 152 + 1 - NF3 , 17 + 1 - NF3
+                        30, 152, 17
                         , 30
+                        , 152 + 1 - NF3 , 17 + 1 - NF3
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
-                        , dll::parallel
                         , dll::verbose
                         , dll::momentum
                         //, dll::weight_decay<dll::decay_type::L2>
@@ -262,13 +267,12 @@ void holistic_method(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        WIDTH / 3, HEIGHT / 3, 1                    //165x30 input image (1 channel)
-                        , WIDTH / 3 + 1 - NF , HEIGHT / 3 + 1 - NF  //Configure the size of the filter
+                        1, WIDTH / 3, HEIGHT / 3                    //165x30 input image (1 channel)
                         , 30                                        //Number of feature maps
+                        , WIDTH / 3 + 1 - NF , HEIGHT / 3 + 1 - NF  //Configure the size of the filter
                         //, 2                                       //Probabilistic max pooling (2x2)
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
-                        , dll::parallel
                         , dll::verbose
                         , dll::momentum
                         , dll::weight_decay<dll::decay_type::L2>
@@ -279,12 +283,11 @@ void holistic_method(
                     >::rbm_t
                     , dll::mp_layer_3d_desc<30,208,28,1,2,2>::layer_t
                     , dll::conv_rbm_desc<
-                        104, 14, 30
-                        , 104 + 1 - NF2 , 14 + 1 - NF2
+                        30, 104, 14
                         , 30
+                        , 104 + 1 - NF2 , 14 + 1 - NF2
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
-                        , dll::parallel
                         , dll::verbose
                         , dll::momentum , dll::weight_decay<dll::decay_type::L2>
                         , dll::dbn_only
@@ -292,12 +295,11 @@ void holistic_method(
                     >::rbm_t
                     , dll::mp_layer_3d_desc<30,98,8,1,2,2>::layer_t
                     , dll::conv_rbm_desc<
-                        49, 4, 30
-                        , 49 + 1 - NF3 , 4 + 1 - NF3
+                        30, 49, 4
                         , 30
+                        , 49 + 1 - NF3 , 4 + 1 - NF3
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
-                        , dll::parallel
                         , dll::verbose
                         , dll::momentum
                         , dll::weight_decay<dll::decay_type::L2>
@@ -432,13 +434,12 @@ void holistic_method(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        WIDTH / 4, HEIGHT / 4, 1                    //165x30 input image (1 channel)
-                        , WIDTH / 4 + 1 - NF , HEIGHT / 4 + 1 - NF  //Configure the size of the filter
+                        1, WIDTH / 4, HEIGHT / 4                    //165x30 input image (1 channel)
                         , 30                                        //Number of feature maps
+                        , WIDTH / 4 + 1 - NF , HEIGHT / 4 + 1 - NF  //Configure the size of the filter
                         //, 2                                       //Probabilistic max pooling (2x2)
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
-                        , dll::parallel
                         , dll::verbose
                         , dll::momentum
                         //, dll::weight_decay<dll::decay_type::L2>
@@ -447,12 +448,11 @@ void holistic_method(
                     >::rbm_t
                     //, dll::mp_layer_3d_desc<30,318,48,1,2,2>::layer_t
                     , dll::conv_rbm_desc<
-                        159, 24, 30
-                        , 159 + 1 - NF2 , 24 + 1 - NF2
+                        30, 159, 24
                         , 30
+                        , 159 + 1 - NF2 , 24 + 1 - NF2
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
-                        , dll::parallel
                         , dll::verbose
                         , dll::momentum
                         //, dll::weight_decay<dll::decay_type::L2>
@@ -460,12 +460,11 @@ void holistic_method(
                         , dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
                     , dll::conv_rbm_desc<
-                        157, 22, 30
-                        , 157 + 1 - NF3 , 22 + 1 - NF3
+                        30, 157, 22
                         , 30
+                        , 157 + 1 - NF3 , 22 + 1 - NF3
                         , dll::weight_type<weight>
                         , dll::batch_size<25>
-                        , dll::parallel
                         , dll::verbose
                         , dll::momentum
                         //, dll::weight_decay<dll::decay_type::L2>
@@ -500,12 +499,11 @@ void holistic_method(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                    WIDTH, HEIGHT, 1                     //660x120 input image (1 channel)
-                    , WIDTH + 1 - 19 , HEIGHT + 1 - 19   //Configure the size of the filter
+                    1, WIDTH, HEIGHT                     //660x120 input image (1 channel)
                     , 12                                 //Number of feature maps
+                    , WIDTH + 1 - 19 , HEIGHT + 1 - 19   //Configure the size of the filter
                     //, 2                                //Probabilistic max pooling (2x2)
                     , dll::batch_size<25>
-                    , dll::parallel
                     , dll::verbose
                     , dll::momentum
                     , dll::weight_type<weight>
@@ -529,4 +527,5 @@ void holistic_method(
         std::cout << "Evaluate on test set" << std::endl;
         evaluate(cdbn, train_word_names, test_image_names);
     }
+#endif
 }
