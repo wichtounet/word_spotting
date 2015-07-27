@@ -115,14 +115,14 @@ rm -f local_rel_file
 rm -f local_top_file
 
 cat ${cv1}/${cv1_best_machine}_test_global_rel_file >> global_rel_file
-cat ${cv2}/${cv2_best_machine}_test_global_rel_file >> global_rel_file
-cat ${cv3}/${cv3_best_machine}_test_global_rel_file >> global_rel_file
-cat ${cv4}/${cv4_best_machine}_test_global_rel_file >> global_rel_file
+cat ${cv2}/${cv2_best_machine}_test_global_rel_file | sed -e "s/cv1/cv2/" >> global_rel_file
+cat ${cv3}/${cv3_best_machine}_test_global_rel_file | sed -e "s/cv1/cv3/" >> global_rel_file
+cat ${cv4}/${cv4_best_machine}_test_global_rel_file | sed -e "s/cv1/cv4/" >> global_rel_file
 
 cat ${cv1}/${cv1_best_machine}_test_global_top_file >> global_top_file
-cat ${cv2}/${cv2_best_machine}_test_global_top_file >> global_top_file
-cat ${cv3}/${cv3_best_machine}_test_global_top_file >> global_top_file
-cat ${cv4}/${cv4_best_machine}_test_global_top_file >> global_top_file
+cat ${cv2}/${cv2_best_machine}_test_global_top_file | sed -e "s/cv1/cv2/" >> global_top_file
+cat ${cv3}/${cv3_best_machine}_test_global_top_file | sed -e "s/cv1/cv3/" >> global_top_file
+cat ${cv4}/${cv4_best_machine}_test_global_top_file | sed -e "s/cv1/cv4/" >> global_top_file
 
 cat ${cv1}/${cv1_best_machine}_test_local_rel_file >> local_rel_file
 cat ${cv2}/${cv2_best_machine}_test_local_rel_file | sed -e "s/cv1/cv2/" >> local_rel_file

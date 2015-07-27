@@ -37,14 +37,14 @@ rm -f local_rel_file
 rm -f local_top_file
 
 cat dtw_results/${cv1}/global_rel_file >> global_rel_file
-cat dtw_results/${cv2}/global_rel_file >> global_rel_file
-cat dtw_results/${cv3}/global_rel_file >> global_rel_file
-cat dtw_results/${cv4}/global_rel_file >> global_rel_file
+cat dtw_results/${cv2}/global_rel_file | sed -e "s/cv1/cv2/" >> global_rel_file
+cat dtw_results/${cv3}/global_rel_file | sed -e "s/cv1/cv3/" >> global_rel_file
+cat dtw_results/${cv4}/global_rel_file | sed -e "s/cv1/cv4/" >> global_rel_file
 
 cat dtw_results/${cv1}/global_top_file >> global_top_file
-cat dtw_results/${cv2}/global_top_file >> global_top_file
-cat dtw_results/${cv3}/global_top_file >> global_top_file
-cat dtw_results/${cv4}/global_top_file >> global_top_file
+cat dtw_results/${cv2}/global_top_file | sed -e "s/cv1/cv2/" >> global_top_file
+cat dtw_results/${cv3}/global_top_file | sed -e "s/cv1/cv3/" >> global_top_file
+cat dtw_results/${cv4}/global_top_file | sed -e "s/cv1/cv4/" >> global_top_file
 
 cat dtw_results/${cv1}/local_rel_file >> local_rel_file
 cat dtw_results/${cv2}/local_rel_file | sed -e "s/cv1/cv2/" >> local_rel_file
