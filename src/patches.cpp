@@ -169,7 +169,7 @@ std::vector<std::vector<typename DBN::output_t>> prepare_outputs(
                 auto patches = mat_to_patches(conf, dataset.word_images.at(test_image), training);
 
                 for(auto& patch : patches){
-                    vec.push_back(dbn.prepare_one_output());
+                    f(vec).push_back(f(dbn).prepare_one_output());
                     f(dbn).activation_probabilities(patch, vec.back());
                 }
             });
@@ -240,7 +240,7 @@ std::vector<std::vector<typename DBN::output_t>> compute_reference(
                 ref_a[e].reserve(patches.size());
 
                 for(std::size_t i = 0; i < patches.size(); ++i){
-                    ref_a[e].push_back(dbn.prepare_one_output());
+                    ref_a[e].push_back(f(dbn).prepare_one_output());
                     f(dbn).activation_probabilities(patches[i], ref_a[e][i]);
                 }
             });
