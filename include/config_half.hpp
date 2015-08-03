@@ -49,29 +49,29 @@ constexpr const dll::unit_type HT3 = dll::unit_type::BINARY;
 constexpr const dll::decay_type DT3 = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM3 = dll::sparsity_method::NONE;
 
-const auto rate_0 = [](double& value){ value = 0.1 * value; };
-const auto rate_1 = [](double& value){ value = 0.1 * value; };
-const auto rate_2 = [](double& value){ value = 1.0 * value; };
+const auto rate_0 = [](weight& value){ value = 0.1 * value; };
+const auto rate_1 = [](weight& value){ value = 0.1 * value; };
+const auto rate_2 = [](weight& value){ value = 1.0 * value; };
 
-const auto momentum_0 = [](double& ini, double& fin){ ini = 0.9; fin = 0.9;};
-const auto momentum_1 = [](double& ini, double& fin){ ini = 0.9; fin = 0.9;};
-const auto momentum_2 = [](double& ini, double& fin){ ini = 1.0 * ini; fin = 1.0 * fin;};
+const auto momentum_0 = [](weight& ini, weight& fin){ ini = 0.9; fin = 0.9;};
+const auto momentum_1 = [](weight& ini, weight& fin){ ini = 0.9; fin = 0.9;};
+const auto momentum_2 = [](weight& ini, weight& fin){ ini = 1.0 * ini; fin = 1.0 * fin;};
 
-const auto wd_l1_0 = [](double& value){ value = 1.0 * value; };
-const auto wd_l1_1 = [](double& value){ value = 1.0 * value; };
-const auto wd_l1_2 = [](double& value){ value = 1.0 * value; };
+const auto wd_l1_0 = [](weight& value){ value = 1.0 * value; };
+const auto wd_l1_1 = [](weight& value){ value = 1.0 * value; };
+const auto wd_l1_2 = [](weight& value){ value = 1.0 * value; };
 
-const auto wd_l2_0 = [](double& value){ value = 1.0 * value; };
-const auto wd_l2_1 = [](double& value){ value = 1.0 * value; };
-const auto wd_l2_2 = [](double& value){ value = 1.0 * value; };
+const auto wd_l2_0 = [](weight& value){ value = 1.0 * value; };
+const auto wd_l2_1 = [](weight& value){ value = 1.0 * value; };
+const auto wd_l2_2 = [](weight& value){ value = 1.0 * value; };
 
-const auto pbias_0 = [](double& value){ value = 0.5 * value; };
-const auto pbias_1 = [](double& value){ value = 0.5 * value; };
-const auto pbias_2 = [](double& value){ value = 1.0 * value; };
+const auto pbias_0 = [](weight& value){ value = 0.5 * value; };
+const auto pbias_1 = [](weight& value){ value = 0.5 * value; };
+const auto pbias_2 = [](weight& value){ value = 1.0 * value; };
 
-const auto pbias_lambda_0 = [](double& value){ value = 2.0 * value; };
-const auto pbias_lambda_1 = [](double& value){ value = 2.0 * value; };
-const auto pbias_lambda_2 = [](double& value){ value = 1.0 * value; };
+const auto pbias_lambda_0 = [](weight& value){ value = 2.0 * value; };
+const auto pbias_lambda_1 = [](weight& value){ value = 2.0 * value; };
+const auto pbias_lambda_2 = [](weight& value){ value = 1.0 * value; };
 
 } // end of namespace half
 

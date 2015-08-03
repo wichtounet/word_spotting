@@ -18,7 +18,7 @@ static constexpr const bool generate_graphs = false;
 
 constexpr const std::size_t MAX_N = 25;
 
-using weight = double;
+using weight = float;
 
 struct config {
     std::vector<std::string> args;

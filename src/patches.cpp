@@ -1093,7 +1093,7 @@ void patches_method(
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
-                      dll::patches_layer_padh_desc<full::patch_width, full::patch_height, 1, full::train_stride, 1>::layer_t
+                      dll::patches_layer_padh_desc<full::patch_width, full::patch_height, 1, full::train_stride, 1, dll::weight_type<weight>>::layer_t
                     , dll::conv_rbm_mp_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1
                         , dll::weight_type<weight>, dll::batch_size<full::B1>
