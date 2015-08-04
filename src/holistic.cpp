@@ -8,6 +8,8 @@
 #include <iostream>
 #include <string>
 
+#include "memory.hpp" //First for debug reasons
+
 #include "etl/etl.hpp"
 
 #include "cpp_utils/parallel.hpp"

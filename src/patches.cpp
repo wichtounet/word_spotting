@@ -8,6 +8,8 @@
 #include <iostream>
 #include <string>
 
+#include "memory.hpp" //First for debug reasons
+
 #include "etl/etl.hpp"
 
 #include "cpp_utils/parallel.hpp"
@@ -629,6 +631,10 @@ void patches_method(
         constexpr const std::size_t L3 = 4;
 #endif
 
+        memory_debug("before cdbn");
+
+        std::cout << "DBN Size: " << sizeof(cdbn_t) << std::endl;
+
         auto cdbn = std::make_unique<cdbn_t>();
 
         // Level 1
@@ -677,6 +683,8 @@ void patches_method(
         conf.train_stride = train_stride;
         conf.test_stride = test_stride;
 
+        memory_debug("before training");
+
         {
             std::vector<etl::dyn_matrix<weight, 3>> training_patches;
             training_patches.reserve(pretraining_image_names.size() * 5);
@@ -685,10 +693,13 @@ void patches_method(
 
             for(auto& name : pretraining_image_names){
                 auto patches = mat_to_patches(conf, dataset.word_images.at(name), true);
+
                 std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
             }
 
             std::cout << "... done" << std::endl;
+
+            memory_debug("after patches extraction");
 
             const std::string file_name("method_2_half.dat");
 
