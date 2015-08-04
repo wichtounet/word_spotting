@@ -180,10 +180,11 @@ spot_dataset read_parzival(const std::string& path){
     spot_dataset dataset;
 
     read_word_labels(dataset, path);
-    read_line_transcriptions(dataset, path);
-
-    read_line_images(dataset, path);
     read_word_images(dataset, path);
+
+    //Note: This is disabled to save some time and memory
+    //read_line_transcriptions(dataset, path);
+    //read_line_images(dataset, path);
 
     load_sets_parzival(dataset, path);
 
