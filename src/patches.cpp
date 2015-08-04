@@ -83,19 +83,22 @@ namespace {
 
 using thread_pool = cpp::default_thread_pool<>;
 
-struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<weight, 3>> {
+template<typename DBN>
+struct patch_iterator : std::iterator<std::input_iterator_tag, typename DBN::template layer_type<0>::input_one_t> {
+    using value_t = typename DBN::template layer_type<0>::input_one_t;
+
     config& conf;
     const spot_dataset& dataset;
     names image_names;
 
     std::size_t current_image = 0;
-    std::vector<etl::dyn_matrix<weight, 3>> patches;
+    std::vector<value_t> patches;
     std::size_t current_patch = 0;
 
     patch_iterator(config& conf, const spot_dataset& dataset, names image_names, std::size_t i = 0)
             : conf(conf), dataset(dataset), image_names(image_names), current_image(i) {
         if(current_image < image_names.size()){
-            patches = mat_to_patches(conf, dataset.word_images.at(image_names[current_image]), true);
+            patches = mat_to_patches<DBN>(conf, dataset.word_images.at(image_names[current_image]), true);
         }
     }
 
@@ -113,11 +116,12 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<w
     bool operator!=(const patch_iterator& rhs){
         return !(*this == rhs);
     }
-    etl::dyn_matrix<weight, 3>& operator*(){
+
+    value_t& operator*(){
         return patches[current_patch];
     }
 
-    etl::dyn_matrix<weight, 3>* operator->(){
+    value_t* operator->(){
         return &patches[current_patch];
     }
 
@@ -127,7 +131,7 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, etl::dyn_matrix<w
             current_patch = 0;
 
             if(current_image < image_names.size()){
-                patches = mat_to_patches(conf, dataset.word_images.at(image_names[current_image]), true);
+                patches = mat_to_patches<DBN>(conf, dataset.word_images.at(image_names[current_image]), true);
             }
         } else {
             ++current_patch;
@@ -168,7 +172,7 @@ std::vector<std::vector<typename DBN::output_t>> prepare_outputs(
                 auto image = mat_for_patches(conf, dataset.word_images.at(test_image));
                 f(dbn).activation_probabilities(image, vec);
             }).else_([&](auto f){
-                auto patches = mat_to_patches(conf, dataset.word_images.at(test_image), training);
+                auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(test_image), training);
 
                 for(auto& patch : patches){
                     f(vec).push_back(f(dbn).prepare_one_output());
@@ -237,7 +241,7 @@ std::vector<std::vector<typename DBN::output_t>> compute_reference(
                 auto image = mat_for_patches(conf, dataset.word_images.at(training_image + ".png"));
                 f(dbn).activation_probabilities(image, ref_a[e]);
             }).else_([&](auto f){
-                auto patches = mat_to_patches(conf, dataset.word_images.at(training_image + ".png"), false);
+                auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(training_image + ".png"), false);
 
                 ref_a[e].reserve(patches.size());
 
@@ -686,14 +690,13 @@ void patches_method(
         memory_debug("before training");
 
         {
-            std::vector<etl::dyn_matrix<weight, 3>> training_patches;
+            std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
             training_patches.reserve(pretraining_image_names.size() * 5);
 
             std::cout << "Generate patches ..." << std::endl;
 
             for(auto& name : pretraining_image_names){
-                auto patches = mat_to_patches(conf, dataset.word_images.at(name), true);
-
+                auto patches = mat_to_patches<cdbn_t>(conf, dataset.word_images.at(name), true);
                 std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
             }
 
@@ -1003,14 +1006,14 @@ void patches_method(
 
         //Train the DBN
         {
-            std::vector<etl::dyn_matrix<weight, 3>> training_patches;
+            std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
             training_patches.reserve(pretraining_image_names.size() * 5);
 
             std::cout << "Generate patches ..." << std::endl;
 
             for(auto& name : pretraining_image_names){
-                auto patches = mat_to_patches(conf, dataset.word_images.at(name), true);
-                std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
+                auto patches = mat_to_patches<cdbn_t>(conf, dataset.word_images.at(name), true);
+                std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
             }
 
             std::cout << "... done" << std::endl;
@@ -1308,16 +1311,16 @@ void patches_method(
         params.sc_band = 0.1;
 
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
+        //evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
 
         std::cout << "Optimize parameters" << std::endl;
-        optimize_parameters<true>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        //optimize_parameters<true>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
 
         std::cout << "Evaluate on validation set" << std::endl;
-        evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params);
+        //evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
+        //evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
 
 #if FULL_LEVELS < 2
         //Silence some warnings
