@@ -527,13 +527,15 @@ void patches_method(
                         , dll::weight_type<weight>, dll::batch_size<half::B1>
                         , dll::momentum, dll::weight_decay<half::DT1>
                         , dll::hidden<half::HT1>, dll::sparsity<half::SM1>
-                        , dll::dbn_only>::rbm_t
+                        , dll::dbn_only
+                        , dll::parallel_mode>::rbm_t
                     , dll::conv_rbm_mp_desc<
                         K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2, C2
                         , dll::weight_type<weight>, dll::batch_size<half::B2>
                         , dll::momentum, dll::weight_decay<half::DT2>
                         , dll::hidden<half::HT2>, dll::sparsity<half::SM2>
-                        , dll::dbn_only>::rbm_t
+                        , dll::dbn_only
+                        , dll::parallel_mode>::rbm_t
                 >
             >::dbn_t;
 #elif defined(HALF_CRBM_PMP_3)
@@ -706,25 +708,25 @@ void patches_method(
 
             const std::string file_name("method_2_half.dat");
 
-            cdbn->pretrain(training_patches, half::epochs);
-            cdbn->store(file_name);
+            cdbn->pretrain(training_patches, 2);
+            //cdbn->store(file_name);
             //cdbn->load(file_name);
         }
 
-        parameters params;
-        params.sc_band = 0.1;
+        //parameters params;
+        //params.sc_band = 0.1;
 
-        std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
+        //std::cout << "Evaluate on training set" << std::endl;
+        //evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
 
-        std::cout << "Optimize parameters" << std::endl;
-        optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        //std::cout << "Optimize parameters" << std::endl;
+        //optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
 
-        std::cout << "Evaluate on validation set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params);
+        //std::cout << "Evaluate on validation set" << std::endl;
+        //evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params);
 
-        std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
+        //std::cout << "Evaluate on test set" << std::endl;
+        //evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
 
 #if HALF_LEVELS < 2
         //Silence some warnings
