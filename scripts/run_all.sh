@@ -2,31 +2,43 @@
 
 # Script to run on several machines
 
-if [ "$1" == "third" ]; then
-    mode="third"
-    option="-third"
-elif [ "$1" == "half" ]; then
-    mode="half"
-    option="-half"
-elif [ "$1" == "full" ]; then
-    mode="full"
-    option=""
+machines_seven=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25 160.98.22.8 160.98.22.9)
+machines_ten=(160.98.22.10 160.98.22.11 160.98.22.12 160.98.22.13 160.98.22.14 160.98.22.15 160.98.22.16 160.98.22.17 160.98.22.18 160.98.22.19)
+
+if [ "$1" == "7" ]; then
+    machines=("${machines_seven[@]}")
+elif [ "$1" == "10" ]; then
+    machines=("${machines_ten[@]}")
 else
-    echo "The first parameter must be one of [full,half,third]"
+    echo "The first parameter must be one of [7,10]"
     exit 1
 fi
 
-set=$2
+if [ "$2" == "third" ]; then
+    mode="third"
+    option="-third"
+elif [ "$2" == "half" ]; then
+    mode="half"
+    option="-half"
+elif [ "$2" == "full" ]; then
+    mode="full"
+    option=""
+else
+    echo "The second parameter must be one of [full,half,third]"
+    exit 1
+fi
+
+set=$3
 
 all_option=""
 dataset="washington"
 dataset_option=""
 
-if [ "$3" == "all" ]; then
+if [ "$4" == "all" ]; then
     all_option="-all"
 fi
 
-if [ "$3" == "parzival" ]; then
+if [ "$4" == "parzival" ]; then
     dataset_option="-parzival"
     dataset="parzival"
 fi
@@ -35,7 +47,6 @@ options="$option $all_option $dataset_option"
 
 config_file="config_${mode}.hpp"
 
-machines=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25 160.98.22.8 160.98.22.9)
 user=wicht
 password=`cat .passwd`
 
