@@ -2,8 +2,6 @@
 
 # Bash script to extract trec eval values of several runs spanning different cvs
 
-machines=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25 160.98.22.8 160.98.22.9)
-
 cv=$1
 
 if [ ! -d run/${cv} ]; then
@@ -13,18 +11,21 @@ fi
 
 grep=/usr/bin/zgrep
 
-cd run
+cd run/${cv}
 
 echo "Global Summary:"
 
 cv_best_total=0
 cv_best_machine=0
 
-for machine in ${!machines[@]}; do
-    gmap=`${grep} map ${cv}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    grp=`${grep} R-prec ${cv}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    lmap=`${grep} map ${cv}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    lrp=`${grep} R-prec ${cv}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+for log_file in *.log; do
+    machine=${log_file%log}
+    machine=${machine%?}
+
+    gmap=`${grep} map ${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    grp=`${grep} R-prec ${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lmap=`${grep} map ${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lrp=`${grep} R-prec ${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
@@ -36,10 +37,10 @@ done
 
 echo "$cv_best_machine is the best machine for run $cv ($cv_best_total)"
 
-gmap=`${grep} map ${cv}/${cv_best_machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-grp=`${grep} R-prec ${cv}/${cv_best_machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-lmap=`${grep} map ${cv}/${cv_best_machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-lrp=`${grep} R-prec ${cv}/${cv_best_machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+gmap=`${grep} map ${cv_best_machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+grp=`${grep} R-prec ${cv_best_machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+lmap=`${grep} map ${cv_best_machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+lrp=`${grep} R-prec ${cv_best_machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
 
 echo "G-MAP: $gmap"
 echo "G-RP:  $grp"

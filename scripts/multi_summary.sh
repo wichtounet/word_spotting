@@ -2,8 +2,6 @@
 
 # Bash script to extract trec eval values of several runs spanning different cvs
 
-machines=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25 160.98.22.8 160.98.22.9)
-
 cv1=$1
 cv2=$2
 cv3=$3
@@ -31,8 +29,6 @@ fi
 
 grep=/usr/bin/zgrep
 
-cd run
-
 echo "Global Summary:"
 
 cv1_best_total=0
@@ -47,11 +43,16 @@ cv3_best_machine=0
 cv4_best_total=0
 cv4_best_machine=0
 
-for machine in ${!machines[@]}; do
-    gmap=`${grep} map ${cv1}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    grp=`${grep} R-prec ${cv1}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    lmap=`${grep} map ${cv1}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    lrp=`${grep} R-prec ${cv1}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+cd run/${cv1}
+
+for log_file in *.log; do
+    machine=${log_file%log}
+    machine=${machine%?}
+
+    gmap=`${grep} map ${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    grp=`${grep} R-prec ${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lmap=`${grep} map ${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lrp=`${grep} R-prec ${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
@@ -61,11 +62,16 @@ for machine in ${!machines[@]}; do
     fi
 done
 
-for machine in ${!machines[@]}; do
-    gmap=`${grep} map ${cv2}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    grp=`${grep} R-prec ${cv2}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    lmap=`${grep} map ${cv2}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    lrp=`${grep} R-prec ${cv2}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+cd ../${cv2}
+
+for log_file in *.log; do
+    machine=${log_file%log}
+    machine=${machine%?}
+
+    gmap=`${grep} map ${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    grp=`${grep} R-prec ${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lmap=`${grep} map ${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lrp=`${grep} R-prec ${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
@@ -75,11 +81,16 @@ for machine in ${!machines[@]}; do
     fi
 done
 
-for machine in ${!machines[@]}; do
-    gmap=`${grep} map ${cv3}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    grp=`${grep} R-prec ${cv3}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    lmap=`${grep} map ${cv3}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    lrp=`${grep} R-prec ${cv3}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+cd ../${cv3}
+
+for log_file in *.log; do
+    machine=${log_file%log}
+    machine=${machine%?}
+
+    gmap=`${grep} map ${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    grp=`${grep} R-prec ${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lmap=`${grep} map ${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lrp=`${grep} R-prec ${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
@@ -89,11 +100,16 @@ for machine in ${!machines[@]}; do
     fi
 done
 
-for machine in ${!machines[@]}; do
-    gmap=`${grep} map ${cv4}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    grp=`${grep} R-prec ${cv4}/${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    lmap=`${grep} map ${cv4}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
-    lrp=`${grep} R-prec ${cv4}/${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+cd ../${cv4}
+
+for log_file in *.log; do
+    machine=${log_file%log}
+    machine=${machine%?}
+
+    gmap=`${grep} map ${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    grp=`${grep} R-prec ${machine}_test_global_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lmap=`${grep} map ${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
+    lrp=`${grep} R-prec ${machine}_test_local_eval | ${grep} all | ${grep} -v cv1_ | cut -f3`
 
     total="$(echo "${gmap} + ${grp} + ${lmap} + ${lrp}" | bc -l)"
 
@@ -102,6 +118,8 @@ for machine in ${!machines[@]}; do
         cv4_best_machine=$machine
     fi
 done
+
+cd ..
 
 echo "$cv1_best_machine is the best machine for CV1 ($cv1_best_total)"
 echo "$cv2_best_machine is the best machine for CV2 ($cv2_best_total)"
