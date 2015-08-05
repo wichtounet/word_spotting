@@ -593,7 +593,7 @@ void patches_method(
                         , dll::hidden<half::HT2>, dll::sparsity<half::SM2>
                         , dll::dbn_only>::rbm_t
                     , dll::mp_layer_3d_desc<K2,NH2_1,NH2_2,1,C2,C2>::layer_t
-                >, dll::memory,
+                >
             >::dbn_t;
 #elif defined(HALF_CRBM_MP_3)
         using cdbn_t =
