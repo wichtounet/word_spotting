@@ -3,14 +3,20 @@
 # Script to rerun the same headers on another cv
 
 machines_seven=(160.98.22.21 160.98.22.22 160.98.22.23 160.98.22.24 160.98.22.25 160.98.22.8 160.98.22.9)
+machines_sevenb=(160.98.22.10 160.98.22.11 160.98.22.12 160.98.22.13 160.98.22.14 160.98.22.15 160.98.22.16)
+machines_threeb=(160.98.22.17 160.98.22.18 160.98.22.19)
 machines_ten=(160.98.22.10 160.98.22.11 160.98.22.12 160.98.22.13 160.98.22.14 160.98.22.15 160.98.22.16 160.98.22.17 160.98.22.18 160.98.22.19)
 
 if [ "$1" == "7" ]; then
     machines=("${machines_seven[@]}")
+elif [ "$1" == "7b" ]; then
+    machines=("${machines_sevenb[@]}")
+elif [ "$1" == "3b" ]; then
+    machines=("${machines_sevenb[@]}")
 elif [ "$1" == "10" ]; then
     machines=("${machines_ten[@]}")
 else
-    echo "The first parameter must be one of [7,10]"
+    echo "The first parameter must be one of [7,3b,7b,10]"
     exit 1
 fi
 
