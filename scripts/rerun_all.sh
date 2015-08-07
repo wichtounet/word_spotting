@@ -12,7 +12,7 @@ if [ "$1" == "7" ]; then
 elif [ "$1" == "7b" ]; then
     machines=("${machines_sevenb[@]}")
 elif [ "$1" == "3b" ]; then
-    machines=("${machines_sevenb[@]}")
+    machines=("${machines_threeb[@]}")
 elif [ "$1" == "10" ]; then
     machines=("${machines_ten[@]}")
 else
