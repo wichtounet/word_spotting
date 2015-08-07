@@ -713,6 +713,8 @@ void patches_method(
             //cdbn->load(file_name);
         }
 
+        memory_debug("after training");
+
         parameters params;
         params.sc_band = 0.1;
 
