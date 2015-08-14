@@ -1311,8 +1311,8 @@ void patches_method(
 
         //2. Evaluation
 
-        parameters params;
-        params.sc_band = 0.1;
+        //parameters params;
+        //params.sc_band = 0.1;
 
         std::cout << "Evaluate on training set" << std::endl;
         //evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
