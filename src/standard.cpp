@@ -218,8 +218,6 @@ template<typename Dataset, typename Set>
 void extract_features(const Dataset& dataset, const Set& set, config& conf, const std::vector<std::string>& test_image_names, bool training){
     std::cout << "Extract features ..." << std::endl;
 
-    std::size_t evaluated = 0;
-
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
 
     for(std::size_t t = 0; t < test_image_names.size(); ++t){
