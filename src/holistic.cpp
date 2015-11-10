@@ -19,7 +19,7 @@
 #include "dll/dbn.hpp"
 #include "dll/avgp_layer.hpp"
 #include "dll/mp_layer.hpp"
-//#include "dll/ocv_visualizer.hpp"
+#include "dll/ocv_visualizer.hpp"
 
 #include "nice_svm.hpp"
 
@@ -256,9 +256,12 @@ void holistic_train(
         //cdbn->template layer_get<0>().learning_rate /= 10;
         //cdbn->template layer_get<1>()->learning_rate *= 10;
 
-        cdbn->pretrain(training_images, 2);
-        cdbn->store("method_1_half.dat");
-        //cdbn->load("method_1_half.dat");
+        if(conf.load){
+            cdbn->load("method_1_half.dat");
+        } else {
+            cdbn->pretrain(training_images, 2);
+            cdbn->store("method_1_half.dat");
+        }
 
         std::cout << "Evaluate on training set" << std::endl;
         evaluate(cdbn, train_word_names, train_image_names);
@@ -286,7 +289,6 @@ void holistic_train(
                         , dll::dbn_only
                         , dll::hidden<dll::unit_type::RELU6>
                         //, dll::sparsity<dll::sparsity_method::LEE>
-                        //, dll::watcher<dll::opencv_rbm_visualizer>
                     >::rbm_t
                     , dll::mp_layer_3d_desc<30,208,28,1,2,2, dll::weight_type<weight>>::layer_t
                     , dll::conv_rbm_desc<
@@ -337,29 +339,20 @@ void holistic_train(
         if(conf.view){
             cdbn->load(file_name);
 
-            //dll::visualize_rbm(cdbn->template layer_get<0>());
+            dll::visualize_rbm(cdbn->template layer_get<0>());
         } else {
-            //cdbn->pretrain(training_images, 10);
-            //cdbn->store(file_name);
-            cdbn->load(file_name);
+            if(conf.load){
+                cdbn->load(file_name);
+            } else {
+                cdbn->pretrain(training_images, 10);
+                cdbn->store(file_name);
+            }
 
             std::cout << "Evaluate on training set" << std::endl;
             evaluate(cdbn, train_word_names, train_image_names);
 
             std::cout << "Evaluate on test set" << std::endl;
-            //evaluate(cdbn, train_word_names, test_image_names);
-
-            //for(std::size_t i = 0; i < 4; ++i){
-                //auto features = cdbn->prepare_one_output();
-
-                //cdbn->activation_probabilities(
-                    //training_images[i],
-                    //features);
-
-                //std::cout << features << std::endl;
-                //std::cout << etl::sum(features) << std::endl;
-                //std::cout << etl::to_string(features) << std::endl;
-            //}
+            evaluate(cdbn, train_word_names, test_image_names);
 
             if(conf.svm){
                 std::vector<std::vector<double>> training_samples(train_image_names.size());
@@ -407,7 +400,6 @@ void holistic_train(
                 std::cout << "... done" << std::endl;
 
                 auto training_problem = svm::make_problem(training_labels, training_samples);
-                //auto test_problem = svm::make_problem(dataset.test_labels, dataset.test_images, 0, false);
 
                 auto mnist_parameters = svm::default_parameters();
 
@@ -497,9 +489,13 @@ void holistic_train(
         cdbn->template layer_get<2>().learning_rate /= 10;
         cdbn->template layer_get<2>().pbias_lambda *= 2;
 
-        cdbn->pretrain(training_images, 10);
-        cdbn->store("method_1_quarter.dat");
-        //cdbn->load("method_1_quarter.dat");
+        if(conf.load){
+            cdbn->load("method_1_quarter.dat");
+        } else {
+            cdbn->pretrain(training_images, 10);
+            cdbn->store("method_1_quarter.dat");
+        }
+
         std::cout << "Evaluate on training set" << std::endl;
         evaluate(cdbn, train_word_names, train_image_names);
 
@@ -530,9 +526,12 @@ void holistic_train(
 
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        cdbn->pretrain(training_images, 10);
-        cdbn->store("method_1.dat");
-        //cdbn->load("method_1.dat");
+        if(conf.load){
+            cdbn->load("method_1.dat");
+        } else {
+            cdbn->pretrain(training_images, 10);
+            cdbn->store("method_1.dat");
+        }
 
         std::cout << "Evaluate on training set" << std::endl;
         evaluate(cdbn, train_word_names, train_image_names);

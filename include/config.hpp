@@ -34,6 +34,7 @@ struct config {
     bool view = false;
     bool sub = false;
     bool all = false;
+    bool load = false;
 
     bool washington = true;
     bool parzival = false;

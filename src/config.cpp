@@ -13,6 +13,8 @@ void print_usage(){
     std::cout << "Usage: spotter [options] <command> file [file...]" << std::endl;
     std::cout << "Supported commands: " << std::endl;
     std::cout << " * train" << std::endl;
+    std::cout << " * features" << std::endl;
+    std::cout << " * evaluate" << std::endl;
     std::cout << "Supported options: " << std::endl;
     std::cout << " -1 : Method 1" << std::endl;
     std::cout << " -2 : Method 2" << std::endl;
@@ -51,6 +53,8 @@ config parse_args(int argc, char** argv){
             conf.svm = true;
         } else if(conf.args[i] == "-view"){
             conf.view = true;
+        } else if(conf.args[i] == "-load"){
+            conf.load = true;
         } else if(conf.args[i] == "-sub"){
             conf.sub = true;
         } else if(conf.args[i] == "-all"){

@@ -168,7 +168,10 @@ int main(int argc, char** argv){
         conf.downscale = 4;
     }
 
-    if(conf.command == "train"){
+    if(conf.command == "evaluate"){
+        conf.load = true;
+        return command_train(conf);
+    } else if(conf.command == "train"){
         return command_train(conf);
     } else if(conf.command == "features"){
         return command_features(conf);
