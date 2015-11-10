@@ -42,11 +42,7 @@ void holistic_train(
         const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
         names train_word_names, names train_image_names, names /*valid_image_names*/, names test_image_names){
     std::cout << "Use method 1 (holistic)" << std::endl;
-    std::cout << "Method 1 is disabled for now (needs check matrix dimensions" << std::endl;
 
-    return;
-
-#if 0
     std::vector<etl::dyn_matrix<weight>> training_images;
 
     for(auto& name : train_image_names){
@@ -529,7 +525,6 @@ void holistic_train(
         std::cout << "Evaluate on test set" << std::endl;
         evaluate(cdbn, train_word_names, test_image_names);
     }
-#endif
 }
 
 void holistic_features(
