@@ -276,8 +276,8 @@ void standard_features(
     extract_features(dataset, set, conf, train_image_names, true);
 
     std::cout << "Extract features on validation set" << std::endl;
-    //extract_features(dataset, set, conf, valid_image_names, false);
+    extract_features(dataset, set, conf, valid_image_names, false);
 
     std::cout << "Extract features on test set" << std::endl;
-    //extract_features(dataset, set, conf, test_image_names, false);
+    extract_features(dataset, set, conf, test_image_names, false);
 }
