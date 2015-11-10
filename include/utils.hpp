@@ -78,7 +78,6 @@ std::vector<typename DBN::template layer_type<0>::input_one_t> mat_to_patches(co
                 uint8_t pixel = 1;
 
                 if(x >= 0 && x < clean_image.size().width){
-                    //pixel = image.at<uint8_t>(y, x + i * patch_stride);
                     pixel = clean_image.at<uint8_t>(y, x);
                 }
 
