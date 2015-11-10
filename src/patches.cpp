@@ -398,73 +398,79 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
 
 
 template<bool D_P, typename Dataset, typename Set, typename DBN>
-void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters){
+void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters, bool features){
     thread_pool pool;
 
-    // 0. Select the keywords
+    if(features){
+        auto test_features_a = prepare_outputs<D_P>(pool, dataset, dbn, conf, test_image_names, training);
 
-    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+        //TODO Save features
+    } else {
+        // 0. Select the keywords
 
-    // 1. Select a folder
+        auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
 
-    auto result_folder = select_folder("./results/");
+        // 1. Select a folder
 
-    // 2. Generate the rel files
+        auto result_folder = select_folder("./results/");
 
-    generate_rel_files(result_folder, dataset, test_image_names, keywords);
+        // 2. Generate the rel files
 
-    // 3. Prepare all the outputs
+        generate_rel_files(result_folder, dataset, test_image_names, keywords);
 
-    auto test_features_a = prepare_outputs<D_P>(pool, dataset, dbn, conf, test_image_names, training);
+        // 3. Prepare all the outputs
 
-    // 4. Evaluate the performances
+        auto test_features_a = prepare_outputs<D_P>(pool, dataset, dbn, conf, test_image_names, training);
 
-    std::cout << "Evaluate performance..." << std::endl;
+        // 4. Evaluate the performances
 
-    std::vector<double> eer(keywords.size());
-    std::vector<double> ap(keywords.size());
+        std::cout << "Evaluate performance..." << std::endl;
 
-    std::ofstream global_top_stream(result_folder + "/global_top_file");
-    std::ofstream local_top_stream(result_folder + "/local_top_file");
+        std::vector<double> eer(keywords.size());
+        std::vector<double> ap(keywords.size());
 
-    for(std::size_t k = 0; k < keywords.size(); ++k){
-        auto& keyword = keywords[k];
+        std::ofstream global_top_stream(result_folder + "/global_top_file");
+        std::ofstream local_top_stream(result_folder + "/local_top_file");
 
-        // a) Select the training images
+        for(std::size_t k = 0; k < keywords.size(); ++k){
+            auto& keyword = keywords[k];
 
-        auto training_images = select_training_images(dataset, keyword, train_word_names);
+            // a) Select the training images
 
-        // b) Compute the reference features
+            auto training_images = select_training_images(dataset, keyword, train_word_names);
 
-        auto ref_a = compute_reference<D_P>(pool, dataset, dbn, conf, training_images);
+            // b) Compute the reference features
 
-        // c) Compute the distances
+            auto ref_a = compute_reference<D_P>(pool, dataset, dbn, conf, training_images);
 
-        auto diffs_a = compute_distances(pool, dataset, test_features_a, ref_a, training_images, test_image_names, parameters);
+            // c) Compute the distances
 
-        // d) Update the local stats
+            auto diffs_a = compute_distances(pool, dataset, test_features_a, ref_a, training_images, test_image_names, parameters);
 
-        update_stats(k, result_folder, dataset, keyword, diffs_a, eer, ap, global_top_stream, local_top_stream, test_image_names);
+            // d) Update the local stats
+
+            update_stats(k, result_folder, dataset, keyword, diffs_a, eer, ap, global_top_stream, local_top_stream, test_image_names);
+        }
+
+        std::cout << "... done" << std::endl;
+
+        // 5. Finalize the results
+
+        std::cout << keywords.size() << " keywords evaluated" << std::endl;
+
+        double mean_eer = std::accumulate(eer.begin(), eer.end(), 0.0) / eer.size();
+        double mean_ap = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
+
+        std::cout << "Mean EER: " << mean_eer << std::endl;
+        std::cout << "Mean AP: " << mean_ap << std::endl;
     }
-
-    std::cout << "... done" << std::endl;
-
-    // 5. Finalize the results
-
-    std::cout << keywords.size() << " keywords evaluated" << std::endl;
-
-    double mean_eer = std::accumulate(eer.begin(), eer.end(), 0.0) / eer.size();
-    double mean_ap = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
-
-    std::cout << "Mean EER: " << mean_eer << std::endl;
-    std::cout << "Mean AP: " << mean_ap << std::endl;
 }
 
 } // end of anonymous namespace
 
 void patches_train(
         const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
-        names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
+        names train_word_names, names train_image_names, names valid_image_names, names test_image_names, bool features){
     std::cout << "Use method 2 (patches)" << std::endl;
 
     auto pretraining_image_names = train_image_names;
@@ -691,7 +697,11 @@ void patches_train(
 
         memory_debug("before training");
 
-        {
+        const std::string file_name("method_2_half.dat");
+
+        if(conf.load || features){
+            cdbn->load(file_name);
+        } else {
             std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
             training_patches.reserve(pretraining_image_names.size() * 5);
 
@@ -706,14 +716,8 @@ void patches_train(
 
             memory_debug("after patches extraction");
 
-            const std::string file_name("method_2_half.dat");
-
-            if(conf.load){
-                cdbn->load(file_name);
-            } else {
-                cdbn->pretrain(training_patches, half::epochs);
-                cdbn->store(file_name);
-            }
+            cdbn->pretrain(training_patches, half::epochs);
+            cdbn->store(file_name);
         }
 
         memory_debug("after training");
@@ -722,16 +726,22 @@ void patches_train(
         params.sc_band = 0.1;
 
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
+        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
 
-        std::cout << "Optimize parameters" << std::endl;
-        optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        if(!features){
+            std::cout << "Optimize parameters" << std::endl;
+            optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        } else {
+            std::cout << "Switch to optimal parameters" << std::endl;
+            //TODO Here we should put the optimal parameters
+            params.sc_band = 0.05;
+        }
 
         std::cout << "Evaluate on validation set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params);
+        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
+        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
 
 #if HALF_LEVELS < 2
         //Silence some warnings
@@ -1011,8 +1021,12 @@ void patches_train(
         conf.train_stride = train_stride;
         conf.test_stride = test_stride;
 
+        const std::string file_name("method_2_third.dat");
+
         //Train the DBN
-        {
+        if(conf.load || features){
+            cdbn->load(file_name);
+        } else {
             std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
             training_patches.reserve(pretraining_image_names.size() * 5);
 
@@ -1025,30 +1039,30 @@ void patches_train(
 
             std::cout << "... done" << std::endl;
 
-            const std::string file_name("method_2_third.dat");
-
-            if(conf.load){
-                cdbn->load(file_name);
-            } else {
-                cdbn->pretrain(training_patches, third::epochs);
-                cdbn->store(file_name);
-            }
+            cdbn->pretrain(training_patches, third::epochs);
+            cdbn->store(file_name);
         }
 
         parameters params;
         params.sc_band = 0.1;
 
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
+        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
 
-        std::cout << "Optimize parameters" << std::endl;
-        optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        if(!features){
+            std::cout << "Optimize parameters" << std::endl;
+            optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        } else {
+            std::cout << "Switch to optimal parameters" << std::endl;
+            //TODO Here we should put the optimal parameters
+            params.sc_band = 0.05;
+        }
 
         std::cout << "Evaluate on validation set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params);
+        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
+        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
 
 #if defined(THIRD_RBM_1) || defined(THIRD_RBM_2) || defined(THIRD_RBM_3)
         //Silence some warnings
@@ -1286,10 +1300,12 @@ void patches_train(
         conf.train_stride = train_stride;
         conf.test_stride = test_stride;
 
-        //1. Pretraining
-        {
-            const std::string file_name("method_2_full.dat");
+        const std::string file_name("method_2_full.dat");
 
+        //1. Pretraining
+        if(conf.load || features){
+            cdbn->load(file_name);
+        } else {
 #ifdef FULL_CRBM_PMP_2
             std::vector<etl::dyn_matrix<weight, 3>> training_images;
             training_images.reserve(pretraining_image_names.size());
@@ -1302,41 +1318,41 @@ void patches_train(
 
             std::cout << "... done" << std::endl;
 
-            if(conf.load){
-                cdbn->load(file_name);
-            } else {
-                cdbn->pretrain(training_images, full::epochs);
-                cdbn->store(file_name);
-            }
+            cdbn->pretrain(training_images, full::epochs);
+            cdbn->store(file_name);
+
 #else
             patch_iterator it(conf, dataset, pretraining_image_names);
             patch_iterator end(conf, dataset, pretraining_image_names, pretraining_image_names.size());
 
-            if(conf.load){
-                cdbn->load(file_name);
-            } else {
-                cdbn->pretrain(it, end, full::epochs);
-                cdbn->store(file_name);
-            }
+            cdbn->pretrain(it, end, full::epochs);
+            cdbn->store(file_name);
 #endif
         }
 
         //2. Evaluation
 
-        //parameters params;
-        //params.sc_band = 0.1;
+        parameters params;
+        params.sc_band = 0.1;
 
         std::cout << "Evaluate on training set" << std::endl;
-        //evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params);
+        //evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
 
-        std::cout << "Optimize parameters" << std::endl;
-        //optimize_parameters<true>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        if(!features){
+            std::cout << "Optimize parameters" << std::endl;
+            //optimize_parameters<true>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params, features);
+        } else {
+            std::cout << "Switch to optimal parameters" << std::endl;
+            //TODO Here we should put the optimal parameters
+            params.sc_band = 0.05;
+        }
+
 
         std::cout << "Evaluate on validation set" << std::endl;
-        //evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params);
+        //evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
 
         std::cout << "Evaluate on test set" << std::endl;
-        //evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params);
+        //evaluate_patches<true>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
 
 #if FULL_LEVELS < 2
         //Silence some warnings
@@ -1363,5 +1379,6 @@ void patches_features(
         names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
     std::cout << "Use method 2 (patches)" << std::endl;
 
-    //TODO
+    //Generate features and save them
+    patches_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names, true);
 }
