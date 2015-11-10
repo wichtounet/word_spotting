@@ -211,6 +211,63 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
     std::cout << "Mean AP: " << mean_ap << std::endl;
 }
 
+template<typename Dataset, typename Set>
+void extract_features(const Dataset& dataset, const Set& set, config& conf, const std::vector<std::string>& test_image_names, bool training){
+    std::cout << "Extract features ..." << std::endl;
+
+    std::size_t evaluated = 0;
+
+    std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
+
+    for(std::size_t t = 0; t < test_image_names.size(); ++t){
+        decltype(auto) test_image = test_image_names[t];
+        test_features.push_back(standard_features(dataset.word_images.at(test_image)));
+    }
+
+#ifdef GLOBAL_MEAN_SCALING
+    auto scale = global_mean_scaling(test_features, conf, training);
+#endif
+
+#ifdef GLOBAL_LINEAR_SCALING
+    auto scale = global_linear_scaling(test_features, conf, training);
+#endif
+
+#if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
+    for(std::size_t t = 0; t < test_features.size(); ++t){
+        for(std::size_t i = 0; i < test_features[t].size(); ++i){
+            for(std::size_t f = 0; f < test_features.back().back().size(); ++f){
+                test_features[t][i][f] = scale(test_features[t][i][f], conf.scale_a[f], conf.scale_b[f]);
+            }
+        }
+    }
+#else
+    cpp_unused(training);
+    cpp_unused(conf);
+#endif
+
+    for(std::size_t t = 0; t < test_image_names.size(); ++t){
+        auto features_path = conf.data_full_path + test_image_names[t] + ".0";
+        decltype(auto) features = test_features[t];
+
+        std::cout << features_path << std::endl;
+
+        std::ofstream os(features_path);
+
+        for(auto& f : features){
+            std::string comma;
+
+            for(auto& v : f){
+                os << comma << v;
+                comma = ";";
+            }
+
+            os << '\n';
+        }
+    }
+
+    std::cout << "... done" << std::endl;
+}
+
 } //end of anonymous namespace
 
 void standard_train(
@@ -230,8 +287,15 @@ void standard_train(
 
 void standard_features(
         const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
-        names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
+        names /*train_word_names*/, names train_image_names, names valid_image_names, names test_image_names){
     std::cout << "Use method 0 (Standard Features + DTW)" << std::endl;
 
-    //TODO
+    std::cout << "Extract features on training set" << std::endl;
+    extract_features(dataset, set, conf, train_image_names, true);
+
+    std::cout << "Extract features on validation set" << std::endl;
+    //extract_features(dataset, set, conf, valid_image_names, false);
+
+    std::cout << "Extract features on test set" << std::endl;
+    //extract_features(dataset, set, conf, test_image_names, false);
 }

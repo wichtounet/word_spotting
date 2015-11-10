@@ -47,6 +47,9 @@ struct config {
     std::vector<double> scale_a;
     std::vector<double> scale_b;
 
+    std::string cv_full_path;
+    std::string data_full_path;
+
     config() : scale_a(4096), scale_b(4096) {}
 
     config(const config& config) = default;
