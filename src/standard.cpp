@@ -126,6 +126,7 @@ void scale(std::vector<std::vector<etl::dyn_vector<weight>>>& test_features, con
         }
     }
 #else
+    cpp_unused(test_features);
     cpp_unused(training);
     cpp_unused(conf);
 #endif
@@ -214,8 +215,8 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
     std::cout << "Mean AP: " << mean_ap << std::endl;
 }
 
-template<typename Dataset, typename Set>
-void extract_features(const Dataset& dataset, const Set& set, config& conf, const std::vector<std::string>& test_image_names, bool training){
+template<typename Dataset>
+void extract_features(const Dataset& dataset, config& conf, const std::vector<std::string>& test_image_names, bool training){
     std::cout << "Extract features ..." << std::endl;
 
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
@@ -266,16 +267,16 @@ void standard_train(
 }
 
 void standard_features(
-        const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
+        const spot_dataset& dataset, const spot_dataset_set& /*set*/, config& conf,
         names /*train_word_names*/, names train_image_names, names valid_image_names, names test_image_names){
     std::cout << "Use method 0 (Standard Features + DTW)" << std::endl;
 
     std::cout << "Extract features on training set" << std::endl;
-    extract_features(dataset, set, conf, train_image_names, true);
+    extract_features(dataset, conf, train_image_names, true);
 
     std::cout << "Extract features on validation set" << std::endl;
-    extract_features(dataset, set, conf, valid_image_names, false);
+    extract_features(dataset, conf, valid_image_names, false);
 
     std::cout << "Extract features on test set" << std::endl;
-    extract_features(dataset, set, conf, test_image_names, false);
+    extract_features(dataset, conf, test_image_names, false);
 }
