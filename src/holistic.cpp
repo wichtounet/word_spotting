@@ -38,7 +38,7 @@ using image_type = etl::dyn_matrix<weight>;
 
 } //end of anonymous namespace
 
-void holistic_method(
+void holistic_train(
         const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
         names train_word_names, names train_image_names, names /*valid_image_names*/, names test_image_names){
     std::cout << "Use method 1 (holistic)" << std::endl;
@@ -530,4 +530,13 @@ void holistic_method(
         evaluate(cdbn, train_word_names, test_image_names);
     }
 #endif
+}
+
+void holistic_features(
+        const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
+        names train_word_names, names train_image_names, names /*valid_image_names*/, names test_image_names){
+    std::cout << "Use method 1 (holistic)" << std::endl;
+    std::cout << "Method 1 is disabled for now (needs check matrix dimensions" << std::endl;
+
+    return;
 }

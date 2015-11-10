@@ -11,7 +11,11 @@
 #include "config.hpp"
 #include "dataset.hpp"
 
-void standard_method(const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
+void standard_train(const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
+    names train_word_names,
+    names train_image_names, names valid_image_names, names test_image_names);
+
+void standard_features(const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
     names train_word_names,
     names train_image_names, names valid_image_names, names test_image_names);
 

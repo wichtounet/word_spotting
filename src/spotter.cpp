@@ -17,39 +17,13 @@
 
 namespace {
 
-int command_train(config& conf){
-    if(conf.files.size() < 2){
-        std::cout << "Train needs the path to the dataset and the cv set to use" << std::endl;
-        return -1;
-    }
+using string_vector = std::vector<std::string>;
 
-    auto& dataset_path = conf.files[0];
-    auto& cv_set = conf.files[1];
-
-    std::cout << "Dataset: " << dataset_path << std::endl;
-    std::cout << "    Set: " << cv_set << std::endl;
-
-    //Load the correct dataset
-    auto dataset = conf.washington ? read_washington(dataset_path) : read_parzival(dataset_path);
-
-    std::cout << dataset.line_images.size() << " line images loaded from the dataset" << std::endl;
-    std::cout << dataset.word_images.size() << " word images loaded from the dataset" << std::endl;
-
-    if(!dataset.sets.count(cv_set)){
-        std::cout << "The subset \"" << cv_set << "\" does not exist" << std::endl;
-        return -1;
-    }
-
-    auto& set = dataset.sets[cv_set];
-
+template<typename Dataset, typename Set>
+void extract_names(Dataset& dataset, Set& set, string_vector& train_image_names, string_vector& train_word_names, string_vector& test_image_names, string_vector& valid_image_names){
     std::cout << set.train_set.size() << " training line images in set" << std::endl;
     std::cout << set.validation_set.size() << " validation line images in set" << std::endl;
     std::cout << set.test_set.size() << " test line images in set" << std::endl;
-
-    std::vector<std::string> train_image_names;
-    std::vector<std::string> train_word_names;
-    std::vector<std::string> test_image_names;
-    std::vector<std::string> valid_image_names;
 
     for(auto& word_image : dataset.word_images){
         auto& name = word_image.first;
@@ -77,13 +51,83 @@ int command_train(config& conf){
     std::cout << train_image_names.size() << " training word images in set" << std::endl;
     std::cout << valid_image_names.size() << " validation word images in set" << std::endl;
     std::cout << test_image_names.size() << " test word images in set" << std::endl;
+}
+
+int command_train(config& conf){
+    if(conf.files.size() < 2){
+        std::cout << "Train needs the path to the dataset and the cv set to use" << std::endl;
+        return -1;
+    }
+
+    auto& dataset_path = conf.files[0];
+    auto& cv_set = conf.files[1];
+
+    std::cout << "Dataset: " << dataset_path << std::endl;
+    std::cout << "    Set: " << cv_set << std::endl;
+
+    //Load the correct dataset
+    auto dataset = conf.washington ? read_washington(dataset_path) : read_parzival(dataset_path);
+
+    std::cout << dataset.line_images.size() << " line images loaded from the dataset" << std::endl;
+    std::cout << dataset.word_images.size() << " word images loaded from the dataset" << std::endl;
+
+    if(!dataset.sets.count(cv_set)){
+        std::cout << "The subset \"" << cv_set << "\" does not exist" << std::endl;
+        return -1;
+    }
+
+    auto& set = dataset.sets[cv_set];
+
+    string_vector train_image_names, train_word_names,  test_image_names,  valid_image_names;
+
+    extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
 
     if(conf.method_0){
-        standard_method(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+        standard_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
     } else if(conf.method_1){
-        holistic_method(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+        holistic_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
     } else if(conf.method_2){
-        patches_method(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+        patches_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+    }
+
+    return 0;
+}
+
+int command_features(config& conf){
+    if(conf.files.size() < 2){
+        std::cout << "features needs the path to the dataset and the cv set to use" << std::endl;
+        return -1;
+    }
+
+    auto& dataset_path = conf.files[0];
+    auto& cv_set = conf.files[1];
+
+    std::cout << "Dataset: " << dataset_path << std::endl;
+    std::cout << "    Set: " << cv_set << std::endl;
+
+    //Load the correct dataset
+    auto dataset = conf.washington ? read_washington(dataset_path) : read_parzival(dataset_path);
+
+    std::cout << dataset.line_images.size() << " line images loaded from the dataset" << std::endl;
+    std::cout << dataset.word_images.size() << " word images loaded from the dataset" << std::endl;
+
+    if(!dataset.sets.count(cv_set)){
+        std::cout << "The subset \"" << cv_set << "\" does not exist" << std::endl;
+        return -1;
+    }
+
+    auto& set = dataset.sets[cv_set];
+
+    string_vector train_image_names, train_word_names,  test_image_names,  valid_image_names;
+
+    extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
+
+    if(conf.method_0){
+        standard_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+    } else if(conf.method_1){
+        holistic_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+    } else if(conf.method_2){
+        patches_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
     }
 
     return 0;
@@ -119,6 +163,8 @@ int main(int argc, char** argv){
 
     if(conf.command == "train"){
         return command_train(conf);
+    } else if(conf.command == "features"){
+        return command_features(conf);
     }
 
     print_usage();

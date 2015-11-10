@@ -462,7 +462,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
 } // end of anonymous namespace
 
-void patches_method(
+void patches_train(
         const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
         names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
     std::cout << "Use method 2 (patches)" << std::endl;
@@ -1344,4 +1344,12 @@ void patches_method(
         cpp_unused(NH3_2);
 #endif
     }
+}
+
+void patches_features(
+        const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
+        names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
+    std::cout << "Use method 2 (patches)" << std::endl;
+
+    //TODO
 }
