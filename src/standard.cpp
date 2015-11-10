@@ -108,6 +108,28 @@ std::vector<etl::dyn_vector<weight>> standard_features(const cv::Mat& clean_imag
     return features;
 }
 
+void scale(std::vector<std::vector<etl::dyn_vector<weight>>>& test_features, config& conf, bool training){
+#ifdef GLOBAL_MEAN_SCALING
+    auto scale = global_mean_scaling(test_features, conf, training);
+#endif
+
+#ifdef GLOBAL_LINEAR_SCALING
+    auto scale = global_linear_scaling(test_features, conf, training);
+#endif
+
+#if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
+    for(std::size_t t = 0; t < test_features.size(); ++t){
+        for(std::size_t i = 0; i < test_features[t].size(); ++i){
+            for(std::size_t f = 0; f < test_features.back().back().size(); ++f){
+                test_features[t][i][f] = scale(test_features[t][i][f], conf.scale_a[f], conf.scale_b[f]);
+            }
+        }
+    }
+#else
+    cpp_unused(training);
+    cpp_unused(conf);
+#endif
+}
 
 template<typename Dataset, typename Set>
 void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training){
@@ -135,26 +157,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
         test_features.push_back(standard_features(dataset.word_images.at(test_image)));
     }
 
-#ifdef GLOBAL_MEAN_SCALING
-    auto scale = global_mean_scaling(test_features, conf, training);
-#endif
-
-#ifdef GLOBAL_LINEAR_SCALING
-    auto scale = global_linear_scaling(test_features, conf, training);
-#endif
-
-#if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
-    for(std::size_t t = 0; t < test_features.size(); ++t){
-        for(std::size_t i = 0; i < test_features[t].size(); ++i){
-            for(std::size_t f = 0; f < test_features.back().back().size(); ++f){
-                test_features[t][i][f] = scale(test_features[t][i][f], conf.scale_a[f], conf.scale_b[f]);
-            }
-        }
-    }
-#else
-    cpp_unused(training);
-    cpp_unused(conf);
-#endif
+    scale(test_features, conf, training);
 
     cpp::default_thread_pool<> pool;
 
@@ -224,32 +227,11 @@ void extract_features(const Dataset& dataset, const Set& set, config& conf, cons
         test_features.push_back(standard_features(dataset.word_images.at(test_image)));
     }
 
-#ifdef GLOBAL_MEAN_SCALING
-    auto scale = global_mean_scaling(test_features, conf, training);
-#endif
-
-#ifdef GLOBAL_LINEAR_SCALING
-    auto scale = global_linear_scaling(test_features, conf, training);
-#endif
-
-#if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
-    for(std::size_t t = 0; t < test_features.size(); ++t){
-        for(std::size_t i = 0; i < test_features[t].size(); ++i){
-            for(std::size_t f = 0; f < test_features.back().back().size(); ++f){
-                test_features[t][i][f] = scale(test_features[t][i][f], conf.scale_a[f], conf.scale_b[f]);
-            }
-        }
-    }
-#else
-    cpp_unused(training);
-    cpp_unused(conf);
-#endif
+    scale(test_features, conf, training);
 
     for(std::size_t t = 0; t < test_image_names.size(); ++t){
         auto features_path = conf.data_full_path + test_image_names[t] + ".0";
         decltype(auto) features = test_features[t];
-
-        std::cout << features_path << std::endl;
 
         std::ofstream os(features_path);
 

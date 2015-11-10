@@ -74,7 +74,7 @@ void read_images(std::unordered_map<std::string, cv::Mat>& map, const std::strin
     while ((entry = readdir(dir))) {
         std::string file_name(entry->d_name);
 
-        if(file_name.size() <= 3 || file_name.find(".png") == std::string::npos){
+        if(file_name.size() <= 3 || file_name.find(".png") != file_name.size() - 4){
             continue;
         }
 
