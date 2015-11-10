@@ -708,9 +708,12 @@ void patches_train(
 
             const std::string file_name("method_2_half.dat");
 
-            cdbn->pretrain(training_patches, half::epochs);
-            cdbn->store(file_name);
-            //cdbn->load(file_name);
+            if(conf.load){
+                cdbn->load(file_name);
+            } else {
+                cdbn->pretrain(training_patches, half::epochs);
+                cdbn->store(file_name);
+            }
         }
 
         memory_debug("after training");
@@ -1024,9 +1027,12 @@ void patches_train(
 
             const std::string file_name("method_2_third.dat");
 
-            cdbn->pretrain(training_patches, third::epochs);
-            cdbn->store(file_name);
-            //cdbn->load(file_name);
+            if(conf.load){
+                cdbn->load(file_name);
+            } else {
+                cdbn->pretrain(training_patches, third::epochs);
+                cdbn->store(file_name);
+            }
         }
 
         parameters params;
@@ -1296,16 +1302,22 @@ void patches_train(
 
             std::cout << "... done" << std::endl;
 
-            cdbn->pretrain(training_images, full::epochs);
-            cdbn->store(file_name);
-            //cdbn->load(file_name);
+            if(conf.load){
+                cdbn->load(file_name);
+            } else {
+                cdbn->pretrain(training_images, full::epochs);
+                cdbn->store(file_name);
+            }
 #else
             patch_iterator it(conf, dataset, pretraining_image_names);
             patch_iterator end(conf, dataset, pretraining_image_names, pretraining_image_names.size());
 
-            cdbn->pretrain(it, end, full::epochs);
-            cdbn->store(file_name);
-            //cdbn->load(file_name);
+            if(conf.load){
+                cdbn->load(file_name);
+            } else {
+                cdbn->pretrain(it, end, full::epochs);
+                cdbn->store(file_name);
+            }
 #endif
         }
 
