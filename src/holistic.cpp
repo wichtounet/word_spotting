@@ -38,23 +38,30 @@ using image_type = etl::dyn_matrix<weight>;
 
 } //end of anonymous namespace
 
-void holistic_train(
-        const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
-        names train_word_names, names train_image_names, names /*valid_image_names*/, names test_image_names){
-    std::cout << "Use method 1 (holistic)" << std::endl;
-
-    std::vector<etl::dyn_matrix<weight>> training_images;
+template<typename DBN>
+std::vector<typename DBN::template layer_type<0>::input_one_t> read_images(const spot_dataset& dataset, config& conf, names train_image_names){
+    std::vector<typename DBN::template layer_type<0>::input_one_t> training_images;
 
     for(auto& name : train_image_names){
         if(conf.sub && training_images.size() == 1000){
             break;
         }
 
-        training_images.emplace_back(mat_to_dyn(conf, dataset.word_images.at(name)));
+        training_images.emplace_back(holistic_mat<DBN>(conf, dataset.word_images.at(name)));
     }
 
+    return training_images;
+}
+
+void holistic_train(
+        const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
+        names train_word_names, names train_image_names, names /*valid_image_names*/, names test_image_names){
+    std::cout << "Use method 1 (holistic)" << std::endl;
+
     auto evaluate = [&dataset,&set,&conf](auto& dbn, auto& train_word_names, auto& test_image_names){
-        std::vector<etl::dyn_matrix<weight, 3>> test_features_a;
+        using dbn_t = std::decay_t<decltype(*dbn)>;
+
+        std::vector<typename dbn_t::output_t> test_features_a;
 
         for(std::size_t i = 0; i < test_image_names.size(); ++i){
             test_features_a.emplace_back(dbn->prepare_one_output());
@@ -64,7 +71,7 @@ void holistic_train(
 
         cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
             [&test_features_a, &dbn, &dataset, &conf](auto& test_image, std::size_t i){
-                auto test_v = mat_to_dyn(conf, dataset.word_images.at(test_image));
+                auto test_v = holistic_mat<dbn_t>(conf, dataset.word_images.at(test_image));
 
                 dbn->activation_probabilities(test_v, test_features_a[i]);
             });
@@ -105,7 +112,7 @@ void holistic_train(
 
             ++evaluated;
 
-            auto ref_v = mat_to_dyn(conf, dataset.word_images.at(training_image + ".png"));
+            auto ref_v = holistic_mat<dbn_t>(conf, dataset.word_images.at(training_image + ".png"));
             auto ref_a = dbn->prepare_one_output();
 
             dbn->activation_probabilities(ref_v, ref_a);
@@ -192,7 +199,7 @@ void holistic_train(
                         , dll::dbn_only
                         //, dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
-                    , dll::mp_layer_3d_desc<30,318,48,1,2,2>::layer_t
+                    , dll::mp_layer_3d_desc<30,318,48,1,2,2, dll::weight_type<weight>>::layer_t
                     , dll::conv_rbm_desc<
                         30, 159, 24
                         , 30
@@ -220,6 +227,8 @@ void holistic_train(
                 >
                 , dll::memory
             >::dbn_t;
+
+        auto training_images = read_images<cdbn_t>(dataset, conf, train_image_names);
 
         auto cdbn = std::make_unique<cdbn_t>();
 
@@ -279,7 +288,7 @@ void holistic_train(
                         //, dll::sparsity<dll::sparsity_method::LEE>
                         //, dll::watcher<dll::opencv_rbm_visualizer>
                     >::rbm_t
-                    , dll::mp_layer_3d_desc<30,208,28,1,2,2>::layer_t
+                    , dll::mp_layer_3d_desc<30,208,28,1,2,2, dll::weight_type<weight>>::layer_t
                     , dll::conv_rbm_desc<
                         30, 104, 14
                         , 30
@@ -291,7 +300,7 @@ void holistic_train(
                         , dll::dbn_only
                         , dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
-                    , dll::mp_layer_3d_desc<30,98,8,1,2,2>::layer_t
+                    , dll::mp_layer_3d_desc<30,98,8,1,2,2, dll::weight_type<weight>>::layer_t
                     , dll::conv_rbm_desc<
                         30, 49, 4
                         , 30
@@ -307,6 +316,8 @@ void holistic_train(
                 >
                 , dll::memory
             >::dbn_t;
+
+        auto training_images = read_images<cdbn_t>(dataset, conf, train_image_names);
 
         auto cdbn = std::make_unique<cdbn_t>();
 
@@ -352,7 +363,7 @@ void holistic_train(
 
             if(conf.svm){
                 std::vector<std::vector<double>> training_samples(train_image_names.size());
-                std::vector<etl::dyn_matrix<weight, 3>> training_features;
+                std::vector<cdbn_t::output_one_t> training_features;
                 std::vector<std::size_t> training_labels(train_image_names.size());
 
                 for(std::size_t i = 0; i < train_image_names.size(); ++i){
@@ -367,7 +378,7 @@ void holistic_train(
                 for(std::size_t i = 0; i < train_image_names.size(); ++i){
                     auto test_image = train_image_names[i];
 
-                    auto test_v = mat_to_dyn(conf, dataset.word_images.at(test_image));
+                    auto test_v = holistic_mat<cdbn_t>(conf, dataset.word_images.at(test_image));
 
                     cdbn->activation_probabilities(test_v, training_features[i]);
 
@@ -444,7 +455,7 @@ void holistic_train(
                         , dll::dbn_only
                         , dll::sparsity<dll::sparsity_method::LEE>
                     >::rbm_t
-                    //, dll::mp_layer_3d_desc<30,318,48,1,2,2>::layer_t
+                    //, dll::mp_layer_3d_desc<30,318,48,1,2,2, dll::weight_type<weight>>::layer_t
                     , dll::conv_rbm_desc<
                         30, 159, 24
                         , 30
@@ -472,6 +483,8 @@ void holistic_train(
                 >
                 , dll::memory
             >::dbn_t;
+
+        auto training_images = read_images<cdbn_t>(dataset, conf, train_image_names);
 
         auto cdbn = std::make_unique<cdbn_t>();
 
@@ -510,6 +523,8 @@ void holistic_train(
                 >
                 , dll::memory
             >::dbn_t;
+
+        auto training_images = read_images<cdbn_t>(dataset, conf, train_image_names);
 
         auto cdbn = std::make_unique<cdbn_t>();
 
