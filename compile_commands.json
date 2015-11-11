@@ -1,0 +1,42 @@
+[
+    {
+        "command": "/usr/bin/g++-4.9.3 -g -Iinclude -std=c++1y -Wextra -Wall -Wuninitialized -Wno-long-long -Winit-self -pedantic -Idll/etl/include -Idll/etl/lib/include -Idll/nice_svm/include -Idll/include -DETL_VECTORIZE_FULL -DETL_MKL_MODE -I/opt/intel/mkl//include -MD -MF debug/src/holistic.cpp.d -o debug/src/holistic.cpp.o -c src/holistic.cpp", 
+        "directory": "/home/wichtounet/dev/word_spotting", 
+        "file": "/home/wichtounet/dev/word_spotting/src/holistic.cpp"
+    }, 
+    {
+        "command": "/usr/bin/g++-4.9.3 -g -Iinclude -std=c++1y -Wextra -Wall -Wuninitialized -Wno-long-long -Winit-self -pedantic -Idll/etl/include -Idll/etl/lib/include -Idll/nice_svm/include -Idll/include -DETL_VECTORIZE_FULL -DETL_MKL_MODE -I/opt/intel/mkl//include -MD -MF debug/src/patches.cpp.d -o debug/src/patches.cpp.o -c src/patches.cpp", 
+        "directory": "/home/wichtounet/dev/word_spotting", 
+        "file": "/home/wichtounet/dev/word_spotting/src/patches.cpp"
+    }, 
+    {
+        "command": "/usr/bin/g++-4.9.3 -g -Iinclude -std=c++1y -Wextra -Wall -Wuninitialized -Wno-long-long -Winit-self -pedantic -Idll/etl/include -Idll/etl/lib/include -Idll/nice_svm/include -Idll/include -DETL_VECTORIZE_FULL -DETL_MKL_MODE -I/opt/intel/mkl//include -MD -MF debug/src/spotter.cpp.d -o debug/src/spotter.cpp.o -c src/spotter.cpp", 
+        "directory": "/home/wichtounet/dev/word_spotting", 
+        "file": "/home/wichtounet/dev/word_spotting/src/spotter.cpp"
+    }, 
+    {
+        "command": "/usr/bin/g++-4.9.3 -g -Iinclude -std=c++1y -Wextra -Wall -Wuninitialized -Wno-long-long -Winit-self -pedantic -Idll/etl/include -Idll/etl/lib/include -Idll/nice_svm/include -Idll/include -DETL_VECTORIZE_FULL -DETL_MKL_MODE -I/opt/intel/mkl//include -MD -MF debug/src/utils.cpp.d -o debug/src/utils.cpp.o -c src/utils.cpp", 
+        "directory": "/home/wichtounet/dev/word_spotting", 
+        "file": "/home/wichtounet/dev/word_spotting/src/utils.cpp"
+    }, 
+    {
+        "command": "/usr/bin/g++-4.9.3 -g -Iinclude -std=c++1y -Wextra -Wall -Wuninitialized -Wno-long-long -Winit-self -pedantic -Idll/etl/include -Idll/etl/lib/include -Idll/nice_svm/include -Idll/include -DETL_VECTORIZE_FULL -DETL_MKL_MODE -I/opt/intel/mkl//include -MD -MF debug/src/reports.cpp.d -o debug/src/reports.cpp.o -c src/reports.cpp", 
+        "directory": "/home/wichtounet/dev/word_spotting", 
+        "file": "/home/wichtounet/dev/word_spotting/src/reports.cpp"
+    }, 
+    {
+        "command": "/usr/bin/g++-4.9.3 -g -Iinclude -std=c++1y -Wextra -Wall -Wuninitialized -Wno-long-long -Winit-self -pedantic -Idll/etl/include -Idll/etl/lib/include -Idll/nice_svm/include -Idll/include -DETL_VECTORIZE_FULL -DETL_MKL_MODE -I/opt/intel/mkl//include -MD -MF debug/src/config.cpp.d -o debug/src/config.cpp.o -c src/config.cpp", 
+        "directory": "/home/wichtounet/dev/word_spotting", 
+        "file": "/home/wichtounet/dev/word_spotting/src/config.cpp"
+    }, 
+    {
+        "command": "/usr/bin/g++-4.9.3 -g -Iinclude -std=c++1y -Wextra -Wall -Wuninitialized -Wno-long-long -Winit-self -pedantic -Idll/etl/include -Idll/etl/lib/include -Idll/nice_svm/include -Idll/include -DETL_VECTORIZE_FULL -DETL_MKL_MODE -I/opt/intel/mkl//include -MD -MF debug/src/dataset.cpp.d -o debug/src/dataset.cpp.o -c src/dataset.cpp", 
+        "directory": "/home/wichtounet/dev/word_spotting", 
+        "file": "/home/wichtounet/dev/word_spotting/src/dataset.cpp"
+    }, 
+    {
+        "command": "/usr/bin/g++-4.9.3 -g -Iinclude -std=c++1y -Wextra -Wall -Wuninitialized -Wno-long-long -Winit-self -pedantic -Idll/etl/include -Idll/etl/lib/include -Idll/nice_svm/include -Idll/include -DETL_VECTORIZE_FULL -DETL_MKL_MODE -I/opt/intel/mkl//include -MD -MF debug/src/standard.cpp.d -o debug/src/standard.cpp.o -c src/standard.cpp", 
+        "directory": "/home/wichtounet/dev/word_spotting", 
+        "file": "/home/wichtounet/dev/word_spotting/src/standard.cpp"
+    }
+]
