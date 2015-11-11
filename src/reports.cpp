@@ -16,22 +16,22 @@
 #include "reports.hpp"
 
 void generate_rel_files(
-            const std::string& result_folder, const spot_dataset& dataset,
-            const std::vector<std::string>& test_image_names, const std::vector<std::vector<std::string>>& keywords){
+    const std::string& result_folder, const spot_dataset& dataset,
+    const std::vector<std::string>& test_image_names, const std::vector<std::vector<std::string>>& keywords) {
     std::cout << "Generate relevance files..." << std::endl;
 
     std::ofstream global_relevance_stream(result_folder + "/global_rel_file");
     std::ofstream local_relevance_stream(result_folder + "/local_rel_file");
 
-    for(auto & keyword : keywords){
-        for(auto & test_image : test_image_names){
+    for (auto& keyword : keywords) {
+        for (auto& test_image : test_image_names) {
             std::string keyword_str;
             keyword_str = std::accumulate(keyword.begin(), keyword.end(), keyword_str);
 
             global_relevance_stream << "cv1 0 " << keyword_str << "_" << test_image;
             local_relevance_stream << "cv1_" << keyword_str << " 0 " << test_image;
 
-            if(dataset.word_labels.at({test_image.begin(), test_image.end() - 4}) == keyword){
+            if (dataset.word_labels.at({test_image.begin(), test_image.end() - 4}) == keyword) {
                 global_relevance_stream << " 1" << std::endl;
                 local_relevance_stream << " 1" << std::endl;
             } else {
@@ -44,11 +44,11 @@ void generate_rel_files(
     std::cout << "... done" << std::endl;
 }
 
-void update_stats(std::size_t k, const std::string& result_folder, const spot_dataset& dataset, const std::vector<std::string>& keyword, std::vector<std::pair<std::string, weight>> diffs_a, std::vector<double>& eer, std::vector<double>& ap, std::ofstream& global_top_stream, std::ofstream& local_top_stream, const std::vector<std::string>& test_image_names){
-    std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
+void update_stats(std::size_t k, const std::string& result_folder, const spot_dataset& dataset, const std::vector<std::string>& keyword, std::vector<std::pair<std::string, weight>> diffs_a, std::vector<double>& eer, std::vector<double>& ap, std::ofstream& global_top_stream, std::ofstream& local_top_stream, const std::vector<std::string>& test_image_names) {
+    std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b) { return a.second < b.second; });
 
     auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
-        [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
+                                        [&dataset, &keyword](auto& i) { return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
 
     cpp_assert(total_positive > 0, "No example for one keyword");
 
@@ -62,7 +62,7 @@ void update_stats(std::size_t k, const std::string& result_folder, const spot_da
 
     std::size_t ap_updates = 0;
 
-    for(std::size_t n = 0; n < diffs_a.size(); ++n){
+    for (std::size_t n = 0; n < diffs_a.size(); ++n) {
         std::string keyword_str;
         keyword_str = std::accumulate(keyword.begin(), keyword.end(), keyword_str);
 
@@ -73,7 +73,7 @@ void update_stats(std::size_t k, const std::string& result_folder, const spot_da
         std::size_t fp_n = n == 0 ? 0 : fp[n - 1];
         std::size_t fn_n = n == 0 ? total_positive : fn[n - 1];
 
-        if(dataset.word_labels.at(diffs_a[n].first) == keyword){
+        if (dataset.word_labels.at(diffs_a[n].first) == keyword) {
             ++tp_n;
             --fn_n;
         } else {
@@ -87,17 +87,17 @@ void update_stats(std::size_t k, const std::string& result_folder, const spot_da
         tpr[n] = static_cast<double>(tp_n) / (tp_n + fn_n);
         fpr[n] = static_cast<double>(fp_n) / (n + 1);
 
-        recall[n] = tpr[n];
+        recall[n]    = tpr[n];
         precision[n] = static_cast<double>(tp_n) / (tp_n + fp_n);
 
-        if(std::fabs(fpr[n] - (1.0 - tpr[n])) < 1e-7){
+        if (std::fabs(fpr[n] - (1.0 - tpr[n])) < 1e-7) {
             eer[k] = fpr[n];
         }
 
-        if(n == 0){
+        if (n == 0) {
             ++ap_updates;
             ap[k] += precision[n];
-        } else if(recall[n] != recall[n - 1]){
+        } else if (recall[n] != recall[n - 1]) {
             ++ap_updates;
             ap[k] += precision[n];
         }
@@ -105,7 +105,7 @@ void update_stats(std::size_t k, const std::string& result_folder, const spot_da
 
     ap[k] /= ap_updates;
 
-    if(generate_graphs){
+    if (generate_graphs) {
         std::ofstream roc_gp_stream(result_folder + "/" + std::to_string(k) + "_roc.gp");
 
         roc_gp_stream << "set terminal png size 300,300 enhanced" << std::endl;
@@ -117,7 +117,7 @@ void update_stats(std::size_t k, const std::string& result_folder, const spot_da
 
         std::ofstream roc_data_stream(result_folder + "/" + std::to_string(k) + "_roc.dat");
 
-        for(std::size_t nn = 0; nn < tpr.size(); ++nn){
+        for (std::size_t nn = 0; nn < tpr.size(); ++nn) {
             roc_data_stream << fpr[nn] << " " << tpr[nn] << std::endl;
         }
 
@@ -132,17 +132,17 @@ void update_stats(std::size_t k, const std::string& result_folder, const spot_da
 
         std::ofstream pr_data_stream(result_folder + "/" + std::to_string(k) + "_pr.dat");
 
-        for(std::size_t nn = 0; nn < tpr.size(); ++nn){
+        for (std::size_t nn = 0; nn < tpr.size(); ++nn) {
             pr_data_stream << precision[nn] << " " << recall[nn] << std::endl;
         }
     }
 }
 
-void update_stats_light(std::size_t k, const spot_dataset& dataset, const std::vector<std::string>& keyword, std::vector<std::pair<std::string, weight>> diffs_a, std::vector<double>& ap, const std::vector<std::string>& test_image_names){
-    std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
+void update_stats_light(std::size_t k, const spot_dataset& dataset, const std::vector<std::string>& keyword, std::vector<std::pair<std::string, weight>> diffs_a, std::vector<double>& ap, const std::vector<std::string>& test_image_names) {
+    std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b) { return a.second < b.second; });
 
     auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
-        [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
+                                        [&dataset, &keyword](auto& i) { return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
 
     cpp_assert(total_positive > 0, "No example for one keyword");
 
@@ -154,8 +154,8 @@ void update_stats_light(std::size_t k, const spot_dataset& dataset, const std::v
 
     std::size_t ap_updates = 0;
 
-    for(std::size_t n = 0; n < diffs_a.size(); ++n){
-        if(dataset.word_labels.at(diffs_a[n].first) == keyword){
+    for (std::size_t n = 0; n < diffs_a.size(); ++n) {
+        if (dataset.word_labels.at(diffs_a[n].first) == keyword) {
             ++tp_n;
             --fn_n;
         } else {
@@ -164,10 +164,10 @@ void update_stats_light(std::size_t k, const spot_dataset& dataset, const std::v
 
         recall[n] = static_cast<double>(tp_n) / (tp_n + fn_n);
 
-        if(n == 0){
+        if (n == 0) {
             ++ap_updates;
             ap[k] += static_cast<double>(tp_n) / (tp_n + fp_n);
-        } else if(recall[n] != recall[n - 1]){
+        } else if (recall[n] != recall[n - 1]) {
             ++ap_updates;
             ap[k] += static_cast<double>(tp_n) / (tp_n + fp_n);
         }
@@ -176,7 +176,7 @@ void update_stats_light(std::size_t k, const spot_dataset& dataset, const std::v
     ap[k] /= ap_updates;
 }
 
-std::string select_folder(const std::string& base_folder){
+std::string select_folder(const std::string& base_folder) {
     std::cout << "Select a folder ..." << std::endl;
 
     mkdir(base_folder.c_str(), 0777);
@@ -189,7 +189,7 @@ std::string select_folder(const std::string& base_folder){
     do {
         ++result_name;
         result_folder = base_folder + std::to_string(result_name);
-    } while(stat(result_folder.c_str(), &buffer) == 0);
+    } while (stat(result_folder.c_str(), &buffer) == 0);
 
     mkdir(result_folder.c_str(), 0777);
 

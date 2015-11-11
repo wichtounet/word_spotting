@@ -9,7 +9,7 @@
 
 #include "config.hpp"
 
-void print_usage(){
+void print_usage() {
     std::cout << "Usage: spotter [options] <command> file [file...]" << std::endl;
     std::cout << "Supported commands: " << std::endl;
     std::cout << " * train" << std::endl;
@@ -26,45 +26,45 @@ void print_usage(){
     std::cout << " -sub : Takes only a subset of the dataset to train" << std::endl;
 }
 
-config parse_args(int argc, char** argv){
+config parse_args(int argc, char** argv) {
     config conf;
 
-    for(std::size_t i = 1; i < static_cast<size_t>(argc); ++i){
+    for (std::size_t i = 1; i < static_cast<size_t>(argc); ++i) {
         conf.args.emplace_back(argv[i]);
     }
 
     std::size_t i = 0;
-    for(; i < conf.args.size(); ++i){
-        if(conf.args[i] == "-0"){
+    for (; i < conf.args.size(); ++i) {
+        if (conf.args[i] == "-0") {
             conf.method_0 = true;
-        } else if(conf.args[i] == "-1"){
+        } else if (conf.args[i] == "-1") {
             conf.method_1 = true;
-        } else if(conf.args[i] == "-2"){
+        } else if (conf.args[i] == "-2") {
             conf.method_2 = true;
-        } else if(conf.args[i] == "-full"){
+        } else if (conf.args[i] == "-full") {
             //Simply here for consistency sake
-        } else if(conf.args[i] == "-half"){
+        } else if (conf.args[i] == "-half") {
             conf.half = true;
-        } else if(conf.args[i] == "-quarter"){
+        } else if (conf.args[i] == "-quarter") {
             conf.quarter = true;
-        } else if(conf.args[i] == "-third"){
+        } else if (conf.args[i] == "-third") {
             conf.third = true;
-        } else if(conf.args[i] == "-svm"){
+        } else if (conf.args[i] == "-svm") {
             conf.svm = true;
-        } else if(conf.args[i] == "-view"){
+        } else if (conf.args[i] == "-view") {
             conf.view = true;
-        } else if(conf.args[i] == "-load"){
+        } else if (conf.args[i] == "-load") {
             conf.load = true;
-        } else if(conf.args[i] == "-sub"){
+        } else if (conf.args[i] == "-sub") {
             conf.sub = true;
-        } else if(conf.args[i] == "-all"){
+        } else if (conf.args[i] == "-all") {
             conf.all = true;
-        } else if(conf.args[i] == "-washington"){
+        } else if (conf.args[i] == "-washington") {
             conf.washington = true;
             conf.parzival = false;
-        } else if(conf.args[i] == "-parzival"){
+        } else if (conf.args[i] == "-parzival") {
             conf.washington = false;
-            conf.parzival = true;
+            conf.parzival   = true;
         } else {
             break;
         }
@@ -72,7 +72,7 @@ config parse_args(int argc, char** argv){
 
     conf.command = conf.args[i++];
 
-    for(; i < conf.args.size(); ++i){
+    for (; i < conf.args.size(); ++i) {
         conf.files.push_back(conf.args[i]);
     }
 

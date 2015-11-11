@@ -11,7 +11,7 @@
 #include <vector>
 #include <string>
 
-static constexpr const std::size_t WIDTH = 660;
+static constexpr const std::size_t WIDTH  = 660;
 static constexpr const std::size_t HEIGHT = 120;
 
 static constexpr const bool generate_graphs = false;
@@ -27,23 +27,23 @@ struct config {
     bool method_0 = false;
     bool method_1 = false;
     bool method_2 = false;
-    bool half = false;
-    bool quarter = false;
-    bool third = false;
-    bool svm = false;
-    bool view = false;
-    bool sub = false;
-    bool all = false;
-    bool load = false;
+    bool half     = false;
+    bool quarter  = false;
+    bool third    = false;
+    bool svm      = false;
+    bool view     = false;
+    bool sub      = false;
+    bool all      = false;
+    bool load     = false;
 
     bool washington = true;
-    bool parzival = false;
+    bool parzival   = false;
 
     //The following values are set during execution
-    std::size_t downscale = 1;
-    std::size_t patch_width = 0;
+    std::size_t downscale    = 1;
+    std::size_t patch_width  = 0;
     std::size_t train_stride = 0;
-    std::size_t test_stride = 0;
+    std::size_t test_stride  = 0;
 
     std::vector<double> scale_a;
     std::vector<double> scale_b;
@@ -51,7 +51,8 @@ struct config {
     std::string cv_full_path;
     std::string data_full_path;
 
-    config() : scale_a(4096), scale_b(4096) {}
+    config()
+            : scale_a(4096), scale_b(4096) {}
 
     config(const config& config) = default;
     config(config&& config) noexcept = default;

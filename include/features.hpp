@@ -8,18 +8,18 @@
 #ifndef WORD_SPOTTER_FEATURES_HPP
 #define WORD_SPOTTER_FEATURES_HPP
 
-template<typename Features>
-void export_features(config& conf, const std::vector<std::string>& images, Features& all_features, const std::string& suffix){
-    for(std::size_t t = 0; t < images.size(); ++t){
+template <typename Features>
+void export_features(config& conf, const std::vector<std::string>& images, Features& all_features, const std::string& suffix) {
+    for (std::size_t t = 0; t < images.size(); ++t) {
         auto features_path = conf.data_full_path + images[t] + suffix;
         decltype(auto) features = all_features[t];
 
         std::ofstream os(features_path);
 
-        for(auto& f : features){
+        for (auto& f : features) {
             std::string comma;
 
-            for(auto& v : f){
+            for (auto& v : f) {
                 os << comma << v;
                 comma = ";";
             }
@@ -29,9 +29,9 @@ void export_features(config& conf, const std::vector<std::string>& images, Featu
     }
 }
 
-template<typename Features>
-void export_features_flat(config& conf, const std::vector<std::string>& images, Features& all_features, const std::string& suffix){
-    for(std::size_t t = 0; t < images.size(); ++t){
+template <typename Features>
+void export_features_flat(config& conf, const std::vector<std::string>& images, Features& all_features, const std::string& suffix) {
+    for (std::size_t t = 0; t < images.size(); ++t) {
         auto features_path = conf.data_full_path + images[t] + suffix;
         decltype(auto) features = all_features[t];
 
@@ -39,7 +39,7 @@ void export_features_flat(config& conf, const std::vector<std::string>& images, 
 
         std::string comma;
 
-        for(auto& v : features){
+        for (auto& v : features) {
             os << comma << v;
             comma = ";";
         }

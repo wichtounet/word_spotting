@@ -12,11 +12,11 @@
 #include "dataset.hpp"
 
 void holistic_train(const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
-    names train_word_names,
-    names train_image_names, names valid_image_names, names test_image_names, bool features = false);
+                    names train_word_names,
+                    names train_image_names, names valid_image_names, names test_image_names, bool features = false);
 
 void holistic_features(const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
-    names train_word_names,
-    names train_image_names, names valid_image_names, names test_image_names);
+                       names train_word_names,
+                       names train_image_names, names valid_image_names, names test_image_names);
 
 #endif

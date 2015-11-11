@@ -8,17 +8,17 @@
 #ifndef WORD_SPOTTER_DTW_HPP
 #define WORD_SPOTTER_DTW_HPP
 
-template<typename V1, typename V2>
-double dtw_distance(const V1& s, const V2& t, bool sc_band = true, double band = 0.1){
+template <typename V1, typename V2>
+double dtw_distance(const V1& s, const V2& t, bool sc_band = true, double band = 0.1) {
     const auto n = s.size();
     const auto m = t.size();
 
     auto ratio = static_cast<double>(n) / m;
-    if(ratio > 2.0 || ratio < 0.5){
+    if (ratio > 2.0 || ratio < 0.5) {
         return 100000.0;
     }
 
-    auto d = [&s,&t](std::size_t i, std::size_t j){ return etl::sum((s[i] - t[j]) >> (s[i] - t[j])); };
+    auto d = [&s, &t](std::size_t i, std::size_t j) { return etl::sum((s[i] - t[j]) >> (s[i] - t[j])); };
 
     etl::dyn_matrix<double> dtw(n, m);
 
@@ -35,12 +35,12 @@ double dtw_distance(const V1& s, const V2& t, bool sc_band = true, double band =
     for (std::size_t i = 1; i < n; i++) {
         for (std::size_t j = 1; j < m; j++) {
             //Sakoe-Chiba constraint
-            if(sc_band && (j < (m * static_cast<double>(i) / n) - band * m || j > (m * static_cast<double>(i) / n) + band * m)){
+            if (sc_band && (j < (m * static_cast<double>(i) / n) - band * m || j > (m * static_cast<double>(i) / n) + band * m)) {
                 dtw(i, j) = 100000.0;
                 continue;
             }
 
-            dtw(i, j) = d(i, j) + std::min(dtw(i-1, j), std::min(dtw(i-1, j-1), dtw(i, j - 1)));
+            dtw(i, j) = d(i, j) + std::min(dtw(i - 1, j), std::min(dtw(i - 1, j - 1), dtw(i, j - 1)));
         }
     }
 
@@ -48,16 +48,16 @@ double dtw_distance(const V1& s, const V2& t, bool sc_band = true, double band =
     std::size_t j = m - 1;
     std::size_t K = 1;
 
-    while((i + j) > 0){
-        if(i == 0){
+    while ((i + j) > 0) {
+        if (i == 0) {
             --j;
-        } else if(j == 0){
+        } else if (j == 0) {
             --i;
         } else {
-            if(dtw(i-1,j-1) < dtw(i-1,j) && dtw(i-1,j-1) < dtw(i,j-1)){
+            if (dtw(i - 1, j - 1) < dtw(i - 1, j) && dtw(i - 1, j - 1) < dtw(i, j - 1)) {
                 --i;
                 --j;
-            } else if(dtw(i-1,j) < dtw(i,j-1)){
+            } else if (dtw(i - 1, j) < dtw(i, j - 1)) {
                 --i;
             } else {
                 --j;

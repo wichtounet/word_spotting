@@ -29,11 +29,11 @@
 #include "standard.hpp"
 #include "utils.hpp"
 #include "reports.hpp"
-#include "dtw.hpp"        //Dynamic time warping
-#include "features.hpp"   //Features exporting
+#include "dtw.hpp"      //Dynamic time warping
+#include "features.hpp" //Features exporting
 
 #define LOCAL_MEAN_SCALING
-#include "scaling.hpp"      //Scaling functions
+#include "scaling.hpp" //Scaling functions
 
 //The different configurations
 #include "config_third.hpp"
@@ -84,7 +84,7 @@ namespace {
 
 using thread_pool = cpp::default_thread_pool<>;
 
-template<typename DBN>
+template <typename DBN>
 struct patch_iterator : std::iterator<std::input_iterator_tag, typename DBN::template layer_type<0>::input_one_t> {
     using value_t = typename DBN::template layer_type<0>::input_one_t;
 
@@ -98,7 +98,7 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, typename DBN::tem
 
     patch_iterator(config& conf, const spot_dataset& dataset, names image_names, std::size_t i = 0)
             : conf(conf), dataset(dataset), image_names(image_names), current_image(i) {
-        if(current_image < image_names.size()){
+        if (current_image < image_names.size()) {
             patches = mat_to_patches<DBN>(conf, dataset.word_images.at(image_names[current_image]), true);
         }
     }
@@ -106,32 +106,32 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, typename DBN::tem
     patch_iterator(const patch_iterator& rhs) = default;
     patch_iterator& operator=(const patch_iterator& rhs) = default;
 
-    bool operator==(const patch_iterator& rhs){
-        if(current_image == image_names.size() && current_image == rhs.current_image){
+    bool operator==(const patch_iterator& rhs) {
+        if (current_image == image_names.size() && current_image == rhs.current_image) {
             return true;
         } else {
             return current_image == rhs.current_image && current_patch == rhs.current_patch;
         }
     }
 
-    bool operator!=(const patch_iterator& rhs){
+    bool operator!=(const patch_iterator& rhs) {
         return !(*this == rhs);
     }
 
-    value_t& operator*(){
+    value_t& operator*() {
         return patches[current_patch];
     }
 
-    value_t* operator->(){
+    value_t* operator->() {
         return &patches[current_patch];
     }
 
-    patch_iterator operator++(){
-        if(current_patch == patches.size() - 1){
+    patch_iterator operator++() {
+        if (current_patch == patches.size() - 1) {
             ++current_image;
             current_patch = 0;
 
-            if(current_image < image_names.size()){
+            if (current_image < image_names.size()) {
                 patches = mat_to_patches<DBN>(conf, dataset.word_images.at(image_names[current_image]), true);
             }
         } else {
@@ -141,7 +141,7 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, typename DBN::tem
         return *this;
     }
 
-    patch_iterator operator++(int){
+    patch_iterator operator++(int) {
         patch_iterator it = *this;
         ++(*this);
         return it;
@@ -152,50 +152,48 @@ struct parameters {
     double sc_band;
 };
 
-template<bool DBN_Patch, typename DBN>
+template <bool DBN_Patch, typename DBN>
 using features_t = typename std::conditional_t<
-        DBN_Patch,
-        std::vector<typename DBN::output_t>,
-        std::vector<std::vector<typename DBN::output_t>>>;
+    DBN_Patch,
+    std::vector<typename DBN::output_t>,
+    std::vector<std::vector<typename DBN::output_t>>>;
 
-
-template<bool DBN_Patch, typename Dataset, typename DBN>
+template <bool DBN_Patch, typename Dataset, typename DBN>
 features_t<DBN_Patch, DBN> prepare_outputs(
-        thread_pool& pool, const Dataset& dataset, const DBN& dbn, config& conf,
-        names test_image_names, bool training){
+    thread_pool& pool, const Dataset& dataset, const DBN& dbn, config& conf,
+    names test_image_names, bool training) {
     //Get some sizes
     const std::size_t patch_height = HEIGHT / conf.downscale;
-    const std::size_t patch_width = conf.patch_width;
+    const std::size_t patch_width  = conf.patch_width;
 
     features_t<DBN_Patch, DBN> test_features_a(test_image_names.size());
 
     std::cout << "Prepare the outputs ..." << std::endl;
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
-        [&,patch_height,patch_width](auto& test_image, std::size_t i){
-            auto& vec = test_features_a[i];
+                            [&, patch_height, patch_width](auto& test_image, std::size_t i) {
+                                auto& vec = test_features_a[i];
 
-            cpp::static_if<DBN_Patch>([&](auto f){
-                //Get features from DBN
-                auto image = mat_for_patches(conf, dataset.word_images.at(test_image));
-                f(dbn).activation_probabilities(image, vec);
-            }).else_([&](auto f){
+                                cpp::static_if<DBN_Patch>([&](auto f) {
+                                    //Get features from DBN
+                                    auto image = mat_for_patches(conf, dataset.word_images.at(test_image));
+                                    f(dbn).activation_probabilities(image, vec);
+                                }).else_([&](auto f) {
                 auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(test_image), training);
 
                 for(auto& patch : patches){
                     f(vec).push_back(f(dbn).prepare_one_output());
                     f(dbn).activation_probabilities(patch, vec.back());
-                }
-            });
+                } });
 
 #ifdef LOCAL_LINEAR_SCALING
-            local_linear_feature_scaling(vec);
+                                local_linear_feature_scaling(vec);
 #endif
 
 #ifdef LOCAL_MEAN_SCALING
-            local_mean_feature_scaling(vec);
+                                local_mean_feature_scaling(vec);
 #endif
-        });
+                            });
 
 #ifdef GLOBAL_MEAN_SCALING
     auto scale = global_mean_scaling(test_features_a, conf, training);
@@ -206,9 +204,9 @@ features_t<DBN_Patch, DBN> prepare_outputs(
 #endif
 
 #if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
-    for(std::size_t t = 0; t < test_features_a.size(); ++t){
-        for(std::size_t i = 0; i < test_features_a[t].size(); ++i){
-            for(std::size_t f = 0; f < test_features_a.back().back().size(); ++f){
+    for (std::size_t t = 0; t < test_features_a.size(); ++t) {
+        for (std::size_t i = 0; i < test_features_a[t].size(); ++i) {
+            for (std::size_t f = 0; f < test_features_a.back().back().size(); ++f) {
                 test_features_a[t][i][f] = scale(test_features_a[t][i][f], conf.scale_a[f], conf.scale_b[f]);
             }
         }
@@ -223,12 +221,12 @@ features_t<DBN_Patch, DBN> prepare_outputs(
     return test_features_a;
 }
 
-template<typename Dataset>
-std::vector<std::string> select_training_images(const Dataset& dataset, names keyword, names train_names){
+template <typename Dataset>
+std::vector<std::string> select_training_images(const Dataset& dataset, names keyword, names train_names) {
     std::vector<std::string> training_images;
 
-    for(auto& labels : dataset.word_labels){
-        if(keyword == labels.second && std::find(train_names.begin(), train_names.end(), labels.first) != train_names.end()){
+    for (auto& labels : dataset.word_labels) {
+        if (keyword == labels.second && std::find(train_names.begin(), train_names.end(), labels.first) != train_names.end()) {
             training_images.push_back(labels.first);
         }
     }
@@ -236,19 +234,19 @@ std::vector<std::string> select_training_images(const Dataset& dataset, names ke
     return training_images;
 }
 
-template<bool DBN_Patch, typename Dataset, typename DBN>
+template <bool DBN_Patch, typename Dataset, typename DBN>
 features_t<DBN_Patch, DBN> compute_reference(
-        thread_pool& pool, const Dataset& dataset, const DBN& dbn,
-        const config& conf, names training_images){
+    thread_pool& pool, const Dataset& dataset, const DBN& dbn,
+    const config& conf, names training_images) {
     features_t<DBN_Patch, DBN> ref_a(training_images.size());
 
     cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(),
-        [&](auto& training_image, std::size_t e){
-            cpp::static_if<DBN_Patch>([&](auto f){
-                //Compute the features
-                auto image = mat_for_patches(conf, dataset.word_images.at(training_image + ".png"));
-                f(dbn).activation_probabilities(image, ref_a[e]);
-            }).else_([&](auto f){
+                            [&](auto& training_image, std::size_t e) {
+                                cpp::static_if<DBN_Patch>([&](auto f) {
+                                    //Compute the features
+                                    auto image = mat_for_patches(conf, dataset.word_images.at(training_image + ".png"));
+                                    f(dbn).activation_probabilities(image, ref_a[e]);
+                                }).else_([&](auto f) {
                 auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(training_image + ".png"), false);
 
                 ref_a[e].reserve(patches.size());
@@ -256,76 +254,75 @@ features_t<DBN_Patch, DBN> compute_reference(
                 for(std::size_t i = 0; i < patches.size(); ++i){
                     ref_a[e].push_back(f(dbn).prepare_one_output());
                     f(dbn).activation_probabilities(patches[i], ref_a[e][i]);
-                }
-            });
+                } });
 
 #ifdef LOCAL_LINEAR_SCALING
-            local_linear_feature_scaling(ref_a[e]);
+                                local_linear_feature_scaling(ref_a[e]);
 #endif
 
 #ifdef LOCAL_MEAN_SCALING
-            local_mean_feature_scaling(ref_a[e]);
+                                local_mean_feature_scaling(ref_a[e]);
 #endif
 
 #ifdef GLOBAL_MEAN_SCALING
-            auto scale = global_mean_scaling(ref_a[e], conf, false);
+                                auto scale = global_mean_scaling(ref_a[e], conf, false);
 #endif
 
 #ifdef GLOBAL_LINEAR_SCALING
-            auto scale = global_linear_scaling(ref_a[e], conf, false);
+                                auto scale = global_linear_scaling(ref_a[e], conf, false);
 #endif
 
 #if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
-            for(std::size_t i = 0; i < ref_a.size(); ++i){
-                for(std::size_t f = 0; f < ref_a[i].size(); ++f){
-                    ref_a[e][i][f] = scale(ref_a[i][f], conf.scale_a[f], conf.scale_b[f]);
-                }
-            }
+                                for (std::size_t i = 0; i < ref_a.size(); ++i) {
+                                    for (std::size_t f = 0; f < ref_a[i].size(); ++f) {
+                                        ref_a[e][i][f] = scale(ref_a[i][f], conf.scale_a[f], conf.scale_b[f]);
+                                    }
+                                }
 #endif
-        });
+                            });
 
     return ref_a;
 }
 
-template<typename Dataset, typename Ref, typename Features>
+template <typename Dataset, typename Ref, typename Features>
 std::vector<std::pair<std::string, weight>> compute_distances(
-        thread_pool& pool, const Dataset& dataset, Features& test_features_a, Ref& ref_a,
-        names training_images, names test_image_names, parameters parameters){
+    thread_pool& pool, const Dataset& dataset, Features& test_features_a, Ref& ref_a,
+    names training_images, names test_image_names, parameters parameters) {
     std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
-        [&](auto& test_image, std::size_t t){
-            auto t_size = dataset.word_images.at(test_image).size().width;
+                            [&](auto& test_image, std::size_t t) {
+                                auto t_size = dataset.word_images.at(test_image).size().width;
 
-            double best_diff_a = 100000000.0;
+                                double best_diff_a = 100000000.0;
 
-            for(std::size_t i = 0; i < ref_a.size(); ++i){
-                auto ref_size = dataset.word_images.at(training_images[i] + ".png").size().width;
+                                for (std::size_t i = 0; i < ref_a.size(); ++i) {
+                                    auto ref_size = dataset.word_images.at(training_images[i] + ".png").size().width;
 
-                double diff_a;
-                auto ratio = static_cast<double>(ref_size) / t_size;
-                if(ratio > 2.0 || ratio < 0.5){
-                    diff_a = 100000000.0;
-                } else {
-                    diff_a = dtw_distance(ref_a[i], test_features_a[t], true, parameters.sc_band);
-                }
+                                    double diff_a;
+                                    auto ratio = static_cast<double>(ref_size) / t_size;
+                                    if (ratio > 2.0 || ratio < 0.5) {
+                                        diff_a = 100000000.0;
+                                    } else {
+                                        diff_a = dtw_distance(ref_a[i], test_features_a[t], true, parameters.sc_band);
+                                    }
 
-                best_diff_a = std::min(best_diff_a, diff_a);
-            }
+                                    best_diff_a = std::min(best_diff_a, diff_a);
+                                }
 
-            diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
-        });
+                                diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
+                            });
 
     return diffs_a;
 }
 
-template<bool DBN_Patch, typename TF, typename KV, typename Dataset, typename DBN>
-double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywords, const Dataset& dataset, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters){
+template <bool DBN_Patch, typename TF, typename KV, typename Dataset, typename DBN>
+double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywords, const Dataset& dataset, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters) {
     // 2. Evaluate the performances
 
     std::vector<double> ap(keywords.size());
 
-    for(std::size_t k = 0; k < keywords.size(); ++k){
+    for (std::size_t k = 0; k < keywords.size(); ++k) {
         auto& keyword = keywords[k];
 
         // a) Select the training images
@@ -350,19 +347,19 @@ double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywor
     return mean_ap;
 }
 
-template<bool DBN_Patch, typename Dataset, typename Set, typename DBN>
-void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters& param){
+template <bool DBN_Patch, typename Dataset, typename Set, typename DBN>
+void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters& param) {
     std::vector<double> sc_band_values;
 
-    for(double sc = 0.005; sc < 0.03; sc += 0.001){
+    for (double sc = 0.005; sc < 0.03; sc += 0.001) {
         sc_band_values.push_back(sc);
     }
 
-    for(double sc = 0.030; sc < 0.2; sc += 0.005){
+    for (double sc = 0.030; sc < 0.2; sc += 0.005) {
         sc_band_values.push_back(sc);
     }
 
-    for(double sc = 0.2; sc <= 0.9; sc += 0.05){
+    for (double sc = 0.2; sc <= 0.9; sc += 0.05) {
         sc_band_values.push_back(sc);
     }
 
@@ -383,7 +380,7 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
     parameters best_param;
 
     std::size_t i = 0;
-    for(auto sc : sc_band_values){
+    for (auto sc : sc_band_values) {
         parameters current_param;
         current_param.sc_band = sc;
 
@@ -392,8 +389,8 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
 
         std::cout << "(" << i++ << "/" << sc_band_values.size() << ") sc:" << sc << " map: " << mean_ap << std::endl;
 
-        if(mean_ap > best_mean_ap){
-            best_param = current_param;
+        if (mean_ap > best_mean_ap) {
+            best_param   = current_param;
             best_mean_ap = mean_ap;
         }
     }
@@ -404,12 +401,11 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
     param = best_param;
 }
 
-
-template<bool DBN_Patch, typename Dataset, typename Set, typename DBN>
-void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters, bool features){
+template <bool DBN_Patch, typename Dataset, typename Set, typename DBN>
+void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters, bool features) {
     thread_pool pool;
 
-    if(features){
+    if (features) {
         auto test_features_a = prepare_outputs<DBN_Patch>(pool, dataset, dbn, conf, test_image_names, training);
 
         export_features(conf, test_image_names, test_features_a, ".2");
@@ -440,7 +436,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
         std::ofstream global_top_stream(result_folder + "/global_top_file");
         std::ofstream local_top_stream(result_folder + "/local_top_file");
 
-        for(std::size_t k = 0; k < keywords.size(); ++k){
+        for (std::size_t k = 0; k < keywords.size(); ++k) {
             auto& keyword = keywords[k];
 
             // a) Select the training images
@@ -467,7 +463,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
         std::cout << keywords.size() << " keywords evaluated" << std::endl;
 
         double mean_eer = std::accumulate(eer.begin(), eer.end(), 0.0) / eer.size();
-        double mean_ap = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
+        double mean_ap  = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
 
         std::cout << "Mean EER: " << mean_eer << std::endl;
         std::cout << "Mean AP: " << mean_ap << std::endl;
@@ -477,13 +473,13 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 } // end of anonymous namespace
 
 void patches_train(
-        const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
-        names train_word_names, names train_image_names, names valid_image_names, names test_image_names, bool features){
+    const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
+    names train_word_names, names train_image_names, names valid_image_names, names test_image_names, bool features) {
     std::cout << "Use method 2 (patches)" << std::endl;
 
     auto pretraining_image_names = train_image_names;
 
-    if(conf.all){
+    if (conf.all) {
         std::cout << "Use all images from pretraining" << std::endl;
 
         pretraining_image_names.reserve(pretraining_image_names.size() + valid_image_names.size() + test_image_names.size());
@@ -493,28 +489,28 @@ void patches_train(
         std::copy(test_image_names.begin(), test_image_names.end(), std::back_inserter(pretraining_image_names));
     }
 
-    if(conf.half){
+    if (conf.half) {
         std::cout << "Use a half of the resolution" << std::endl;
 
-        static constexpr const std::size_t K1 = half::K1;
-        static constexpr const std::size_t C1 = half::C1;
-        static constexpr const std::size_t NF1 = half::NF1;
+        static constexpr const std::size_t K1    = half::K1;
+        static constexpr const std::size_t C1    = half::C1;
+        static constexpr const std::size_t NF1   = half::NF1;
         static constexpr const std::size_t NV1_1 = half::patch_height;
         static constexpr const std::size_t NV1_2 = half::patch_width;
         static constexpr const std::size_t NH1_1 = NV1_1 - NF1 + 1;
         static constexpr const std::size_t NH1_2 = NV1_2 - NF1 + 1;
 
-        static constexpr const std::size_t K2 = half::K2;
-        static constexpr const std::size_t C2 = half::C2;
-        static constexpr const std::size_t NF2 = half::NF2;
+        static constexpr const std::size_t K2    = half::K2;
+        static constexpr const std::size_t C2    = half::C2;
+        static constexpr const std::size_t NF2   = half::NF2;
         static constexpr const std::size_t NV2_1 = NH1_1 / C1;
         static constexpr const std::size_t NV2_2 = NH1_2 / C1;
         static constexpr const std::size_t NH2_1 = NV2_1 - NF2 + 1;
         static constexpr const std::size_t NH2_2 = NV2_2 - NF2 + 1;
 
-        static constexpr const std::size_t K3 = half::K3;
-        static constexpr const std::size_t C3 = half::C3;
-        static constexpr const std::size_t NF3 = half::NF3;
+        static constexpr const std::size_t K3    = half::K3;
+        static constexpr const std::size_t C3    = half::C3;
+        static constexpr const std::size_t NF3   = half::NF3;
         static constexpr const std::size_t NV3_1 = NH2_1 / C2;
         static constexpr const std::size_t NV3_2 = NH2_2 / C2;
         static constexpr const std::size_t NH3_1 = NV3_1 - NF3 + 1;
@@ -525,117 +521,54 @@ void patches_train(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1
-                        , dll::weight_type<weight>, dll::batch_size<half::B1>
-                        , dll::momentum, dll::weight_decay<half::DT1>
-                        , dll::hidden<half::HT1>, dll::sparsity<half::SM1>
-                        , dll::dbn_only>::rbm_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only>::rbm_t>>::dbn_t;
 #elif defined(HALF_CRBM_PMP_2)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1
-                        , dll::weight_type<weight>, dll::batch_size<half::B1>
-                        , dll::momentum, dll::weight_decay<half::DT1>
-                        , dll::hidden<half::HT1>, dll::sparsity<half::SM1>
-                        , dll::dbn_only
-                        , dll::parallel_mode>::rbm_t
-                    , dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2, C2
-                        , dll::weight_type<weight>, dll::batch_size<half::B2>
-                        , dll::momentum, dll::weight_decay<half::DT2>
-                        , dll::hidden<half::HT2>, dll::sparsity<half::SM2>
-                        , dll::dbn_only
-                        , dll::parallel_mode>::rbm_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only, dll::parallel_mode>::rbm_t,
+                    dll::conv_rbm_mp_desc<
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::dbn_only, dll::parallel_mode>::rbm_t>>::dbn_t;
 #elif defined(HALF_CRBM_PMP_3)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1
-                        , dll::weight_type<weight>, dll::batch_size<half::B1>
-                        , dll::momentum, dll::weight_decay<half::DT1>
-                        , dll::hidden<half::HT1>, dll::sparsity<half::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2
-                        , dll::weight_type<weight>, dll::batch_size<half::B2>
-                        , dll::momentum, dll::weight_decay<half::DT2>
-                        , dll::hidden<half::HT2>, dll::sparsity<half::SM2>
-                        , dll::dbn_only>::rbm_t
-                    , dll::conv_rbm_mp_desc<
-                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, C3
-                        , dll::weight_type<weight>, dll::batch_size<half::B3>
-                        , dll::momentum, dll::weight_decay<half::DT3>
-                        , dll::hidden<half::HT3>, dll::sparsity<half::SM3>
-                        , dll::dbn_only>::rbm_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only>::rbm_t,
+                    dll::conv_rbm_mp_desc<
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::dbn_only>::rbm_t,
+                    dll::conv_rbm_mp_desc<
+                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, C3, dll::weight_type<weight>, dll::batch_size<half::B3>, dll::momentum, dll::weight_decay<half::DT3>, dll::hidden<half::HT3>, dll::sparsity<half::SM3>, dll::dbn_only>::rbm_t>>::dbn_t;
 #elif defined(HALF_CRBM_MP_1)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2
-                        , dll::weight_type<weight>, dll::batch_size<half::B1>
-                        , dll::momentum, dll::weight_decay<half::DT1>
-                        , dll::hidden<half::HT1>, dll::sparsity<half::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1,dll::weight_type<weight>>::layer_t
-                >, dll::memory,
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t>,
+                dll::memory,
+                >::dbn_t;
 #elif defined(HALF_CRBM_MP_2)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2
-                        , dll::weight_type<weight>, dll::batch_size<half::B1>
-                        , dll::momentum, dll::weight_decay<half::DT1>
-                        , dll::hidden<half::HT1>, dll::sparsity<half::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1,dll::weight_type<weight>>::layer_t
-                    , dll::conv_rbm_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2
-                        , dll::weight_type<weight>, dll::batch_size<half::B2>
-                        , dll::momentum, dll::weight_decay<half::DT2>
-                        , dll::hidden<half::HT2>, dll::sparsity<half::SM2>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K2,NH2_1,NH2_2,1,C2,C2,dll::weight_type<weight>>::layer_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
+                                                                                                               K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>>::dbn_t;
 #elif defined(HALF_CRBM_MP_3)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2
-                        , dll::weight_type<weight>, dll::batch_size<half::B1>
-                        , dll::momentum, dll::weight_decay<half::DT1>
-                        , dll::hidden<half::HT1>, dll::sparsity<half::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1,dll::weight_type<weight>>::layer_t
-                    , dll::conv_rbm_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2
-                        , dll::weight_type<weight>, dll::batch_size<half::B2>
-                        , dll::momentum, dll::weight_decay<half::DT2>
-                        , dll::hidden<half::HT2>, dll::sparsity<half::SM2>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K2,NH2_1,NH2_1,1,C2,C2,dll::weight_type<weight>>::layer_t
-                    , dll::conv_rbm_desc<
-                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2
-                        , dll::weight_type<weight>, dll::batch_size<half::B3>
-                        , dll::momentum, dll::weight_decay<half::DT3>
-                        , dll::hidden<half::HT3>, dll::sparsity<half::SM3>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K3,NH3_1,NH3_1,1,C3,C3,dll::weight_type<weight>>::layer_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
+                                                                                                               K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_1, 1, C2, C2, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
+                                                                                                               K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, dll::weight_type<weight>, dll::batch_size<half::B3>, dll::momentum, dll::weight_decay<half::DT3>, dll::hidden<half::HT3>, dll::sparsity<half::SM3>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K3, NH3_1, NH3_1, 1, C3, C3, dll::weight_type<weight>>::layer_t>>::dbn_t;
 #else
         static_assert(false, "No architecture has been selected");
 #endif
@@ -688,10 +621,10 @@ void patches_train(
         cdbn->display();
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        constexpr const auto patch_width = half::patch_width;
+        constexpr const auto patch_width  = half::patch_width;
         constexpr const auto patch_height = half::patch_height;
         constexpr const auto train_stride = half::train_stride;
-        constexpr const auto test_stride = half::test_stride;
+        constexpr const auto test_stride  = half::test_stride;
 
         std::cout << "patch_height=" << patch_height << std::endl;
         std::cout << "patch_width=" << patch_width << std::endl;
@@ -699,15 +632,15 @@ void patches_train(
         std::cout << "test_stride=" << test_stride << std::endl;
 
         //Pass information to the next passes (evaluation)
-        conf.patch_width = patch_width;
+        conf.patch_width  = patch_width;
         conf.train_stride = train_stride;
-        conf.test_stride = test_stride;
+        conf.test_stride  = test_stride;
 
         memory_debug("before training");
 
         const std::string file_name("method_2_half.dat");
 
-        if(conf.load || features){
+        if (conf.load || features) {
             cdbn->load(file_name);
         } else {
             std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
@@ -715,7 +648,7 @@ void patches_train(
 
             std::cout << "Generate patches ..." << std::endl;
 
-            for(auto& name : pretraining_image_names){
+            for (auto& name : pretraining_image_names) {
                 auto patches = mat_to_patches<cdbn_t>(conf, dataset.word_images.at(name), true);
                 std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
             }
@@ -736,7 +669,7 @@ void patches_train(
         std::cout << "Evaluate on training set" << std::endl;
         evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
 
-        if(!features){
+        if (!features) {
             std::cout << "Optimize parameters" << std::endl;
             optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
         } else {
@@ -768,28 +701,28 @@ void patches_train(
         cpp_unused(NH3_1);
         cpp_unused(NH3_2);
 #endif
-    } else if(conf.third){
+    } else if (conf.third) {
         std::cout << "Use a third of the resolution" << std::endl;
 
-        static constexpr const std::size_t K1 = third::K1;
-        static constexpr const std::size_t C1 = third::C1;
-        static constexpr const std::size_t NF1 = third::NF1;
+        static constexpr const std::size_t K1    = third::K1;
+        static constexpr const std::size_t C1    = third::C1;
+        static constexpr const std::size_t NF1   = third::NF1;
         static constexpr const std::size_t NV1_1 = third::patch_height;
         static constexpr const std::size_t NV1_2 = third::patch_width;
         static constexpr const std::size_t NH1_1 = NV1_1 - NF1 + 1;
         static constexpr const std::size_t NH1_2 = NV1_2 - NF1 + 1;
 
-        static constexpr const std::size_t K2 = third::K2;
-        static constexpr const std::size_t C2 = third::C2;
-        static constexpr const std::size_t NF2 = third::NF2;
+        static constexpr const std::size_t K2    = third::K2;
+        static constexpr const std::size_t C2    = third::C2;
+        static constexpr const std::size_t NF2   = third::NF2;
         static constexpr const std::size_t NV2_1 = NH1_1 / C1;
         static constexpr const std::size_t NV2_2 = NH1_2 / C1;
         static constexpr const std::size_t NH2_1 = NV2_1 - NF2 + 1;
         static constexpr const std::size_t NH2_2 = NV2_2 - NF2 + 1;
 
-        static constexpr const std::size_t K3 = third::K3;
-        static constexpr const std::size_t C3 = third::C3;
-        static constexpr const std::size_t NF3 = third::NF3;
+        static constexpr const std::size_t K3    = third::K3;
+        static constexpr const std::size_t C3    = third::C3;
+        static constexpr const std::size_t NF3   = third::NF3;
         static constexpr const std::size_t NV3_1 = NH2_1 / C2;
         static constexpr const std::size_t NV3_2 = NH2_2 / C2;
         static constexpr const std::size_t NH3_1 = NV3_1 - NF3 + 1;
@@ -800,169 +733,78 @@ void patches_train(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1
-                        , dll::weight_type<weight>, dll::batch_size<third::B1>
-                        , dll::momentum, dll::weight_decay<third::DT1>
-                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
-                        , dll::dbn_only>::rbm_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::dbn_only>::rbm_t>>::dbn_t;
 #elif defined(THIRD_CRBM_PMP_2)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1
-                        , dll::weight_type<weight>, dll::batch_size<third::B1>
-                        , dll::momentum, dll::weight_decay<third::DT1>
-                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2, C2
-                        , dll::weight_type<weight>, dll::batch_size<third::B2>
-                        , dll::momentum, dll::weight_decay<third::DT2>
-                        , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
-                        , dll::dbn_only>::rbm_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::dbn_only>::rbm_t,
+                    dll::conv_rbm_mp_desc<
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::dbn_only>::rbm_t>>::dbn_t;
 #elif defined(THIRD_CRBM_PMP_3)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1
-                        , dll::weight_type<weight>, dll::batch_size<third::B1>
-                        , dll::momentum, dll::weight_decay<third::DT1>
-                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2, C2
-                        , dll::weight_type<weight>, dll::batch_size<third::B2>
-                        , dll::momentum, dll::weight_decay<third::DT2>
-                        , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
-                        , dll::dbn_only>::rbm_t
-                    , dll::conv_rbm_mp_desc<
-                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, C3
-                        , dll::weight_type<weight>, dll::batch_size<third::B3>
-                        , dll::momentum, dll::weight_decay<third::DT3>
-                        , dll::hidden<third::HT3>, dll::sparsity<third::SM3>
-                        , dll::dbn_only>::rbm_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::dbn_only>::rbm_t,
+                    dll::conv_rbm_mp_desc<
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::dbn_only>::rbm_t,
+                    dll::conv_rbm_mp_desc<
+                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, C3, dll::weight_type<weight>, dll::batch_size<third::B3>, dll::momentum, dll::weight_decay<third::DT3>, dll::hidden<third::HT3>, dll::sparsity<third::SM3>, dll::dbn_only>::rbm_t>>::dbn_t;
 #elif defined(THIRD_CRBM_MP_1)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2
-                        , dll::weight_type<weight>, dll::batch_size<third::B1>
-                        , dll::momentum, dll::weight_decay<third::DT1>
-                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1,dll::weight_type<weight>>::layer_t
-                >, dll::memory
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t>,
+                dll::memory>::dbn_t;
 #elif defined(THIRD_CRBM_MP_2)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2
-                        , dll::weight_type<weight>, dll::batch_size<third::B1>
-                        , dll::momentum, dll::weight_decay<third::DT1>
-                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1,dll::weight_type<weight>>::layer_t
-                    , dll::conv_rbm_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2
-                        , dll::weight_type<weight>, dll::batch_size<third::B2>
-                        , dll::momentum, dll::weight_decay<third::DT2>
-                        , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K2,NH2_1,NH2_2,1,C2,C2,dll::weight_type<weight>>::layer_t
-                >, dll::memory
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
+                                                                                                               K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>,
+                dll::memory>::dbn_t;
 #elif defined(THIRD_CRBM_MP_3)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2
-                        , dll::weight_type<weight>, dll::batch_size<third::B1>
-                        , dll::momentum, dll::weight_decay<third::DT1>
-                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1,dll::weight_type<weight>>::layer_t
-                    , dll::conv_rbm_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2
-                        , dll::weight_type<weight>, dll::batch_size<third::B2>
-                        , dll::momentum, dll::weight_decay<third::DT2>
-                        , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K2,NH2_1,NH2_1,1,C2,C2,dll::weight_type<weight>>::layer_t
-                    , dll::conv_rbm_desc<
-                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2
-                        , dll::weight_type<weight>, dll::batch_size<third::B3>
-                        , dll::momentum, dll::weight_decay<third::DT3>
-                        , dll::hidden<third::HT3>, dll::sparsity<third::SM3>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K3,NH3_1,NH3_1,1,C3,C3,dll::weight_type<weight>>::layer_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
+                                                                                                               K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_1, 1, C2, C2, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
+                                                                                                               K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, dll::weight_type<weight>, dll::batch_size<third::B3>, dll::momentum, dll::weight_decay<third::DT3>, dll::hidden<third::HT3>, dll::sparsity<third::SM3>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K3, NH3_1, NH3_1, 1, C3, C3, dll::weight_type<weight>>::layer_t>>::dbn_t;
 #elif defined(THIRD_RBM_1)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::rbm_desc<
-                        NV1_1 * NV1_2 * 1, NF1
-                        , dll::weight_type<weight>, dll::batch_size<third::B1>
-                        , dll::momentum, dll::weight_decay<third::DT1>
-                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
-                        , dll::dbn_only>::rbm_t
-                >
-            >::dbn_t;
+                        NV1_1 * NV1_2 * 1, NF1, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::dbn_only>::rbm_t>>::dbn_t;
 #elif defined(THIRD_RBM_2)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::rbm_desc<
-                        NV1_1 * NV1_2 * 1, NF1
-                        , dll::weight_type<weight>, dll::batch_size<third::B1>
-                        , dll::momentum, dll::weight_decay<third::DT1>
-                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::rbm_desc<
-                        NF1, NF2
-                        , dll::weight_type<weight>, dll::batch_size<third::B2>
-                        , dll::momentum, dll::weight_decay<third::DT2>
-                        , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
-                        , dll::dbn_only>::rbm_t
-                >
-            >::dbn_t;
+                        NV1_1 * NV1_2 * 1, NF1, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::dbn_only>::rbm_t,
+                    dll::rbm_desc<
+                        NF1, NF2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::dbn_only>::rbm_t>>::dbn_t;
 #elif defined(THIRD_RBM_3)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::rbm_desc<
-                        NV1_1 * NV1_2 * 1, NF1
-                        , dll::weight_type<weight>, dll::batch_size<third::B1>
-                        , dll::momentum, dll::weight_decay<third::DT1>
-                        , dll::hidden<third::HT1>, dll::sparsity<third::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::rbm_desc<
-                        NF1, NF2
-                        , dll::weight_type<weight>, dll::batch_size<third::B2>
-                        , dll::momentum, dll::weight_decay<third::DT2>
-                        , dll::hidden<third::HT2>, dll::sparsity<third::SM2>
-                        , dll::dbn_only>::rbm_t
-                    , dll::rbm_desc<
-                        NF2, NF3
-                        , dll::weight_type<weight>, dll::batch_size<third::B3>
-                        , dll::momentum, dll::weight_decay<third::DT3>
-                        , dll::hidden<third::HT3>, dll::sparsity<third::SM3>
-                        , dll::dbn_only>::rbm_t
-                >
-            >::dbn_t;
+                        NV1_1 * NV1_2 * 1, NF1, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::dbn_only>::rbm_t,
+                    dll::rbm_desc<
+                        NF1, NF2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::dbn_only>::rbm_t,
+                    dll::rbm_desc<
+                        NF2, NF3, dll::weight_type<weight>, dll::batch_size<third::B3>, dll::momentum, dll::weight_decay<third::DT3>, dll::hidden<third::HT3>, dll::sparsity<third::SM3>, dll::dbn_only>::rbm_t>>::dbn_t;
 #else
         static_assert(false, "No architecture has been selected");
 #endif
@@ -973,9 +815,9 @@ void patches_train(
         constexpr const std::size_t L2 = 2;
         constexpr const std::size_t L3 = 4;
 #else
-        constexpr const std::size_t L1 = 0;
-        constexpr const std::size_t L2 = 1;
-        constexpr const std::size_t L3 = 2;
+        constexpr const std::size_t L1        = 0;
+        constexpr const std::size_t L2        = 1;
+        constexpr const std::size_t L3        = 2;
 #endif
 
         auto cdbn = std::make_unique<cdbn_t>();
@@ -1014,10 +856,10 @@ void patches_train(
         cdbn->display();
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        constexpr const auto patch_width = third::patch_width;
+        constexpr const auto patch_width  = third::patch_width;
         constexpr const auto patch_height = third::patch_height;
         constexpr const auto train_stride = third::train_stride;
-        constexpr const auto test_stride = third::test_stride;
+        constexpr const auto test_stride  = third::test_stride;
 
         std::cout << "patch_height=" << patch_height << std::endl;
         std::cout << "patch_width=" << patch_width << std::endl;
@@ -1025,14 +867,14 @@ void patches_train(
         std::cout << "test_stride=" << test_stride << std::endl;
 
         //Pass information to the next passes (evaluation)
-        conf.patch_width = patch_width;
+        conf.patch_width  = patch_width;
         conf.train_stride = train_stride;
-        conf.test_stride = test_stride;
+        conf.test_stride  = test_stride;
 
         const std::string file_name("method_2_third.dat");
 
         //Train the DBN
-        if(conf.load || features){
+        if (conf.load || features) {
             cdbn->load(file_name);
         } else {
             std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
@@ -1040,7 +882,7 @@ void patches_train(
 
             std::cout << "Generate patches ..." << std::endl;
 
-            for(auto& name : pretraining_image_names){
+            for (auto& name : pretraining_image_names) {
                 auto patches = mat_to_patches<cdbn_t>(conf, dataset.word_images.at(name), true);
                 std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
             }
@@ -1057,7 +899,7 @@ void patches_train(
         std::cout << "Evaluate on training set" << std::endl;
         evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
 
-        if(!features){
+        if (!features) {
             std::cout << "Optimize parameters" << std::endl;
             optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
         } else {
@@ -1099,25 +941,25 @@ void patches_train(
     } else {
         std::cout << "Use full resolution" << std::endl;
 
-        static constexpr const std::size_t K1 = full::K1;
-        static constexpr const std::size_t C1 = full::C1;
-        static constexpr const std::size_t NF1 = full::NF1;
+        static constexpr const std::size_t K1    = full::K1;
+        static constexpr const std::size_t C1    = full::C1;
+        static constexpr const std::size_t NF1   = full::NF1;
         static constexpr const std::size_t NV1_1 = full::patch_height;
         static constexpr const std::size_t NV1_2 = full::patch_width;
         static constexpr const std::size_t NH1_1 = NV1_1 - NF1 + 1;
         static constexpr const std::size_t NH1_2 = NV1_2 - NF1 + 1;
 
-        static constexpr const std::size_t K2 = full::K2;
-        static constexpr const std::size_t C2 = full::C2;
-        static constexpr const std::size_t NF2 = full::NF2;
+        static constexpr const std::size_t K2    = full::K2;
+        static constexpr const std::size_t C2    = full::C2;
+        static constexpr const std::size_t NF2   = full::NF2;
         static constexpr const std::size_t NV2_1 = NH1_1 / C1;
         static constexpr const std::size_t NV2_2 = NH1_2 / C1;
         static constexpr const std::size_t NH2_1 = NV2_1 - NF2 + 1;
         static constexpr const std::size_t NH2_2 = NV2_2 - NF2 + 1;
 
-        static constexpr const std::size_t K3 = full::K3;
-        static constexpr const std::size_t C3 = full::C3;
-        static constexpr const std::size_t NF3 = full::NF3;
+        static constexpr const std::size_t K3    = full::K3;
+        static constexpr const std::size_t C3    = full::C3;
+        static constexpr const std::size_t NF3   = full::NF3;
         static constexpr const std::size_t NV3_1 = NH2_1 / C2;
         static constexpr const std::size_t NV3_2 = NH2_2 / C2;
         static constexpr const std::size_t NH3_1 = NV3_1 - NF3 + 1;
@@ -1130,36 +972,19 @@ void patches_train(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1
-                        , dll::weight_type<weight>, dll::batch_size<full::B1>
-                        , dll::momentum, dll::weight_decay<full::DT1>
-                        , dll::hidden<full::HT1>, dll::sparsity<full::SM1>
-                        , dll::dbn_only>::rbm_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, dll::dbn_only>::rbm_t>>::dbn_t;
 #elif defined(FULL_CRBM_PMP_2)
         static constexpr const bool DBN_Patch = true;
 
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
-                      dll::patches_layer_padh_desc<full::patch_width, full::patch_height, 1, full::train_stride, 1, dll::weight_type<weight>>::layer_t
-                    , dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1
-                        , dll::weight_type<weight>, dll::batch_size<full::B1>
-                        , dll::momentum, dll::weight_decay<full::DT1>
-                        , dll::hidden<full::HT1>, dll::sparsity<full::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2, C2
-                        , dll::weight_type<weight>, dll::batch_size<full::B2>
-                        , dll::momentum, dll::weight_decay<full::DT2>
-                        , dll::hidden<full::HT2>, dll::sparsity<full::SM2>
-                        , dll::dbn_only>::rbm_t
-                >,
+                    dll::patches_layer_padh_desc<full::patch_width, full::patch_height, 1, full::train_stride, 1, dll::weight_type<weight>>::layer_t, dll::conv_rbm_mp_desc<
+                                                                                                                                                          1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, dll::dbn_only>::rbm_t,
+                    dll::conv_rbm_mp_desc<
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<full::B2>, dll::momentum, dll::weight_decay<full::DT2>, dll::hidden<full::HT2>, dll::sparsity<full::SM2>, dll::dbn_only>::rbm_t>,
                 dll::memory,
-                dll::batch_size<5>
-            >::dbn_t;
+                dll::batch_size<5>>::dbn_t;
 #elif defined(FULL_CRBM_PMP_3)
         static constexpr const bool DBN_Patch = false;
 
@@ -1167,25 +992,11 @@ void patches_train(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1
-                        , dll::weight_type<weight>, dll::batch_size<full::B1>
-                        , dll::momentum, dll::weight_decay<full::DT1>
-                        , dll::hidden<full::HT1>, dll::sparsity<full::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2, C2
-                        , dll::weight_type<weight>, dll::batch_size<full::B2>
-                        , dll::momentum, dll::weight_decay<full::DT2>
-                        , dll::hidden<full::HT2>, dll::sparsity<full::SM2>
-                        , dll::dbn_only>::rbm_t
-                    , dll::conv_rbm_mp_desc<
-                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, C3
-                        , dll::weight_type<weight>, dll::batch_size<full::B3>
-                        , dll::momentum, dll::weight_decay<full::DT3>
-                        , dll::hidden<full::HT3>, dll::sparsity<full::SM3>
-                        , dll::dbn_only>::rbm_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, dll::dbn_only>::rbm_t,
+                    dll::conv_rbm_mp_desc<
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<full::B2>, dll::momentum, dll::weight_decay<full::DT2>, dll::hidden<full::HT2>, dll::sparsity<full::SM2>, dll::dbn_only>::rbm_t,
+                    dll::conv_rbm_mp_desc<
+                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, C3, dll::weight_type<weight>, dll::batch_size<full::B3>, dll::momentum, dll::weight_decay<full::DT3>, dll::hidden<full::HT3>, dll::sparsity<full::SM3>, dll::dbn_only>::rbm_t>>::dbn_t;
 #elif defined(FULL_CRBM_MP_1)
         static constexpr const bool DBN_Patch = false;
 
@@ -1193,14 +1004,9 @@ void patches_train(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2
-                        , dll::weight_type<weight>, dll::batch_size<full::B1>
-                        , dll::momentum, dll::weight_decay<full::DT1>
-                        , dll::hidden<full::HT1>, dll::sparsity<full::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1,dll::weight_type<weight>>::layer_t
-                >, dll::memory
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t>,
+                dll::memory>::dbn_t;
 #elif defined(FULL_CRBM_MP_2)
         static constexpr const bool DBN_Patch = false;
 
@@ -1208,21 +1014,11 @@ void patches_train(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2
-                        , dll::weight_type<weight>, dll::batch_size<full::B1>
-                        , dll::momentum, dll::weight_decay<full::DT1>
-                        , dll::hidden<full::HT1>, dll::sparsity<full::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1,dll::weight_type<weight>>::layer_t
-                    , dll::conv_rbm_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2
-                        , dll::weight_type<weight>, dll::batch_size<full::B2>
-                        , dll::momentum, dll::weight_decay<full::DT2>
-                        , dll::hidden<full::HT2>, dll::sparsity<full::SM2>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K2,NH2_1,NH2_2,1,C2,C2,dll::weight_type<weight>>::layer_t
-                >, dll::memory
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
+                                                                                                               K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<full::B2>, dll::momentum, dll::weight_decay<full::DT2>, dll::hidden<full::HT2>, dll::sparsity<full::SM2>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>,
+                dll::memory>::dbn_t;
 #elif defined(FULL_CRBM_MP_3)
         static constexpr const bool DBN_Patch = false;
 
@@ -1230,28 +1026,12 @@ void patches_train(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2
-                        , dll::weight_type<weight>, dll::batch_size<full::B1>
-                        , dll::momentum, dll::weight_decay<full::DT1>
-                        , dll::hidden<full::HT1>, dll::sparsity<full::SM1>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K1,NH1_1,NH1_2,1,C1,C1,dll::weight_type<weight>>::layer_t
-                    , dll::conv_rbm_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1 , NH2_2
-                        , dll::weight_type<weight>, dll::batch_size<full::B2>
-                        , dll::momentum, dll::weight_decay<full::DT2>
-                        , dll::hidden<full::HT2>, dll::sparsity<full::SM2>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K2,NH2_1,NH2_1,1,C2,C2,dll::weight_type<weight>>::layer_t
-                    , dll::conv_rbm_desc<
-                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2
-                        , dll::weight_type<weight>, dll::batch_size<full::B3>
-                        , dll::momentum, dll::weight_decay<full::DT3>
-                        , dll::hidden<full::HT3>, dll::sparsity<full::SM3>
-                        , dll::dbn_only>::rbm_t
-                    , dll::mp_layer_3d_desc<K3,NH3_1,NH3_1,1,C3,C3,dll::weight_type<weight>>::layer_t
-                >
-            >::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
+                                                                                                               K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<full::B2>, dll::momentum, dll::weight_decay<full::DT2>, dll::hidden<full::HT2>, dll::sparsity<full::SM2>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_1, 1, C2, C2, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
+                                                                                                               K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, dll::weight_type<weight>, dll::batch_size<full::B3>, dll::momentum, dll::weight_decay<full::DT3>, dll::hidden<full::HT3>, dll::sparsity<full::SM3>, dll::dbn_only>::rbm_t,
+                    dll::mp_layer_3d_desc<K3, NH3_1, NH3_1, 1, C3, C3, dll::weight_type<weight>>::layer_t>>::dbn_t;
 #else
         static_assert(false, "No architecture has been selected");
 #endif
@@ -1305,10 +1085,10 @@ void patches_train(
         cdbn->display();
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        constexpr const auto patch_width = full::patch_width;
+        constexpr const auto patch_width  = full::patch_width;
         constexpr const auto patch_height = full::patch_height;
         constexpr const auto train_stride = full::train_stride;
-        constexpr const auto test_stride = full::test_stride;
+        constexpr const auto test_stride  = full::test_stride;
 
         std::cout << "patch_height=" << patch_height << std::endl;
         std::cout << "patch_width=" << patch_width << std::endl;
@@ -1316,14 +1096,14 @@ void patches_train(
         std::cout << "test_stride=" << test_stride << std::endl;
 
         //Pass information to the next passes (evaluation)
-        conf.patch_width = patch_width;
+        conf.patch_width  = patch_width;
         conf.train_stride = train_stride;
-        conf.test_stride = test_stride;
+        conf.test_stride  = test_stride;
 
         const std::string file_name("method_2_full.dat");
 
         //1. Pretraining
-        if(conf.load || features){
+        if (conf.load || features) {
             cdbn->load(file_name);
         } else {
 #ifdef FULL_CRBM_PMP_2
@@ -1332,7 +1112,7 @@ void patches_train(
 
             std::cout << "Generate images ..." << std::endl;
 
-            for(auto& name : pretraining_image_names){
+            for (auto& name : pretraining_image_names) {
                 training_images.push_back(mat_for_patches(conf, dataset.word_images.at(name)));
             }
 
@@ -1358,7 +1138,7 @@ void patches_train(
         std::cout << "Evaluate on training set" << std::endl;
         evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
 
-        if(!features){
+        if (!features) {
             std::cout << "Optimize parameters" << std::endl;
             optimize_parameters<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
         } else {
@@ -1366,7 +1146,6 @@ void patches_train(
             //TODO Here we should put the optimal parameters
             params.sc_band = 0.05;
         }
-
 
         std::cout << "Evaluate on validation set" << std::endl;
         evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
@@ -1395,8 +1174,8 @@ void patches_train(
 }
 
 void patches_features(
-        const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
-        names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
+    const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
+    names train_word_names, names train_image_names, names valid_image_names, names test_image_names) {
     std::cout << "Use method 2 (patches)" << std::endl;
 
     //Generate features and save them
