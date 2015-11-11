@@ -53,10 +53,10 @@ struct config {
 
     config() : scale_a(4096), scale_b(4096) {}
 
-    config(const config& config) = default;
-    config(config&& config) = default;
-    config& operator=(const config& config) = default;
-    config& operator=(config&& config) = default;
+    config(const config& config) noexcept = default;
+    config(config&& config) noexcept = default;
+    config& operator=(const config& config) noexcept = default;
+    config& operator=(config&& config) noexcept = default;
 };
 
 void print_usage();
