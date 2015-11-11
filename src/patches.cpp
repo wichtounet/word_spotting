@@ -30,6 +30,7 @@
 #include "utils.hpp"
 #include "reports.hpp"
 #include "dtw.hpp"        //Dynamic time warping
+#include "features.hpp"   //Features exporting
 
 #define LOCAL_MEAN_SCALING
 #include "scaling.hpp"      //Scaling functions
@@ -404,7 +405,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
     if(features){
         auto test_features_a = prepare_outputs<D_P>(pool, dataset, dbn, conf, test_image_names, training);
 
-        //TODO Save features
+        export_features(conf, test_image_names, test_features_a, ".1");
     } else {
         // 0. Select the keywords
 

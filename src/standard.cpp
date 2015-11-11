@@ -17,6 +17,7 @@
 #include "utils.hpp"
 #include "reports.hpp"
 #include "dtw.hpp"        //Dynamic time warping
+#include "features.hpp"   //Features exporting
 
 #define LOCAL_MEAN_SCALING
 #include "scaling.hpp"      //Scaling functions
@@ -228,23 +229,7 @@ void extract_features(const Dataset& dataset, config& conf, const std::vector<st
 
     scale(test_features, conf, training);
 
-    for(std::size_t t = 0; t < test_image_names.size(); ++t){
-        auto features_path = conf.data_full_path + test_image_names[t] + ".0";
-        decltype(auto) features = test_features[t];
-
-        std::ofstream os(features_path);
-
-        for(auto& f : features){
-            std::string comma;
-
-            for(auto& v : f){
-                os << comma << v;
-                comma = ";";
-            }
-
-            os << '\n';
-        }
-    }
+    export_features(conf, test_image_names, test_features, ".0");
 
     std::cout << "... done" << std::endl;
 }
