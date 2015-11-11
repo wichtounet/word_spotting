@@ -29,4 +29,21 @@ void export_features(config& conf, const std::vector<std::string>& images, Featu
     }
 }
 
+template<typename Features>
+void export_features_flat(config& conf, const std::vector<std::string>& images, Features& all_features, const std::string& suffix){
+    for(std::size_t t = 0; t < images.size(); ++t){
+        auto features_path = conf.data_full_path + images[t] + suffix;
+        decltype(auto) features = all_features[t];
+
+        std::ofstream os(features_path);
+
+        std::string comma;
+
+        for(auto& v : features){
+            os << comma << v;
+            comma = ";";
+        }
+    }
+}
+
 #endif

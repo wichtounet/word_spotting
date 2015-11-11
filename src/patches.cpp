@@ -412,7 +412,7 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
     if(features){
         auto test_features_a = prepare_outputs<DBN_Patch>(pool, dataset, dbn, conf, test_image_names, training);
 
-        export_features(conf, test_image_names, test_features_a, ".1");
+        export_features(conf, test_image_names, test_features_a, ".2");
     } else {
         // 0. Select the keywords
 

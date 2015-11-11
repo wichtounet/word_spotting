@@ -28,6 +28,7 @@
 #include "utils.hpp"
 #include "reports.hpp"
 #include "dtw.hpp"        //Dynamic time warping
+#include "features.hpp"   //Features export
 
 #define LOCAL_MEAN_SCALING
 #include "scaling.hpp"      //Scaling functions
@@ -55,11 +56,13 @@ std::vector<typename DBN::template layer_type<0>::input_one_t> read_images(const
 
 void holistic_train(
         const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
-        names train_word_names, names train_image_names, names /*valid_image_names*/, names test_image_names){
+        names train_word_names, names train_image_names, names valid_image_names, names test_image_names, bool features){
     std::cout << "Use method 1 (holistic)" << std::endl;
 
-    auto evaluate = [&dataset,&set,&conf](auto& dbn, auto& train_word_names, auto& test_image_names){
+    auto evaluate = [&dataset,&set,&conf](auto& dbn, auto& train_word_names, auto& test_image_names, bool features){
         using dbn_t = std::decay_t<decltype(*dbn)>;
+
+        std::cout << "Compute features" << std::endl;
 
         std::vector<typename dbn_t::output_t> test_features_a;
 
@@ -78,103 +81,107 @@ void holistic_train(
 
         std::cout << "... done" << std::endl;
 
-        std::cout << "Evaluate performance..." << std::endl;
+        if(features){
+            export_features_flat(conf, test_image_names, test_features_a, ".1");
+        } else {
+            std::cout << "Evaluate performance..." << std::endl;
 
-        std::size_t evaluated = 0;
+            std::size_t evaluated = 0;
 
-        std::array<double, MAX_N + 1> tp;
-        std::array<double, MAX_N + 1> fn;
-        std::array<double, MAX_N + 1> maps;
+            std::array<double, MAX_N + 1> tp;
+            std::array<double, MAX_N + 1> fn;
+            std::array<double, MAX_N + 1> maps;
 
-        std::fill(tp.begin(), tp.end(), 0.0);
-        std::fill(fn.begin(), fn.end(), 0.0);
-        std::fill(maps.begin(), maps.end(), 0.0);
+            std::fill(tp.begin(), tp.end(), 0.0);
+            std::fill(fn.begin(), fn.end(), 0.0);
+            std::fill(maps.begin(), maps.end(), 0.0);
 
-        for(auto& keyword : set.keywords){
-            std::string training_image;
-            for(auto& labels : dataset.word_labels){
-                if(keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()){
-                    training_image = labels.first;
-                    break;
-                }
-            }
-
-            //Make sure that there is a sample in the training set
-            if(training_image.empty()){
-                std::cout << "Skipped " << keyword << " since there are no example in the training set" << std::endl;
-                continue;
-            }
-
-            auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
-                [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
-
-            cpp_assert(total_positive > 0, "No example for one keyword");
-
-            ++evaluated;
-
-            auto ref_v = holistic_mat<dbn_t>(conf, dataset.word_images.at(training_image + ".png"));
-            auto ref_a = dbn->prepare_one_output();
-
-            dbn->activation_probabilities(ref_v, ref_a);
-
-            std::vector<std::pair<std::string, weight>> diffs_a;
-
-            for(std::size_t t = 0; t < test_image_names.size(); ++t){
-                decltype(auto) test_image = test_image_names[t];
-
-                auto diff_a = std::sqrt(etl::sum((ref_a - test_features_a[t]) >> (ref_a - test_features_a[t])));
-                diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
-            }
-
-            std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
-
-            for(std::size_t n = 1; n <= MAX_N; ++n){
-                int tp_n = 0;
-
-                for(std::size_t i = 0; i < n && i < diffs_a.size(); ++i){
-                    if(dataset.word_labels.at(diffs_a[i].first) == keyword){
-                        ++tp_n;
+            for(auto& keyword : set.keywords){
+                std::string training_image;
+                for(auto& labels : dataset.word_labels){
+                    if(keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()){
+                        training_image = labels.first;
+                        break;
                     }
                 }
 
-                tp[n] += tp_n;
-                fn[n] += total_positive - tp_n;
+                //Make sure that there is a sample in the training set
+                if(training_image.empty()){
+                    std::cout << "Skipped " << keyword << " since there are no example in the training set" << std::endl;
+                    continue;
+                }
 
-                double avep = 0.0;
+                auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
+                    [&dataset, &keyword](auto& i){ return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
 
-                if(tp_n > 0){
-                    for(std::size_t k = 1; k <= n; ++k){
-                        if(dataset.word_labels.at(diffs_a[k-1].first) == keyword){
-                            int tp_nn = 0;
+                cpp_assert(total_positive > 0, "No example for one keyword");
 
-                            for(std::size_t i = 0; i < k && i < diffs_a.size(); ++i){
-                                if(dataset.word_labels.at(diffs_a[i].first) == keyword){
-                                    ++tp_nn;
-                                }
-                            }
+                ++evaluated;
 
-                            avep += static_cast<double>(tp_nn) / k;
+                auto ref_v = holistic_mat<dbn_t>(conf, dataset.word_images.at(training_image + ".png"));
+                auto ref_a = dbn->prepare_one_output();
+
+                dbn->activation_probabilities(ref_v, ref_a);
+
+                std::vector<std::pair<std::string, weight>> diffs_a;
+
+                for(std::size_t t = 0; t < test_image_names.size(); ++t){
+                    decltype(auto) test_image = test_image_names[t];
+
+                    auto diff_a = std::sqrt(etl::sum((ref_a - test_features_a[t]) >> (ref_a - test_features_a[t])));
+                    diffs_a.emplace_back(std::string(test_image.begin(), test_image.end() - 4), diff_a);
+                }
+
+                std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b){ return a.second < b.second; });
+
+                for(std::size_t n = 1; n <= MAX_N; ++n){
+                    int tp_n = 0;
+
+                    for(std::size_t i = 0; i < n && i < diffs_a.size(); ++i){
+                        if(dataset.word_labels.at(diffs_a[i].first) == keyword){
+                            ++tp_n;
                         }
                     }
 
-                    avep /= tp_n;
+                    tp[n] += tp_n;
+                    fn[n] += total_positive - tp_n;
+
+                    double avep = 0.0;
+
+                    if(tp_n > 0){
+                        for(std::size_t k = 1; k <= n; ++k){
+                            if(dataset.word_labels.at(diffs_a[k-1].first) == keyword){
+                                int tp_nn = 0;
+
+                                for(std::size_t i = 0; i < k && i < diffs_a.size(); ++i){
+                                    if(dataset.word_labels.at(diffs_a[i].first) == keyword){
+                                        ++tp_nn;
+                                    }
+                                }
+
+                                avep += static_cast<double>(tp_nn) / k;
+                            }
+                        }
+
+                        avep /= tp_n;
+                    }
+
+                    maps[n] += avep;
                 }
-
-                maps[n] += avep;
             }
-        }
 
-        std::cout << "... done" << std::endl;
+            std::cout << "... done" << std::endl;
 
-        std::cout << evaluated << " keywords evaluated" << std::endl;
+            std::cout << evaluated << " keywords evaluated" << std::endl;
 
-        for(std::size_t n = 1; n <= MAX_N; ++n){
-            std::cout << "TP(" << n << ") = " << tp[n] << std::endl;
-            std::cout << "FP(" << n << ") = " << (n * set.keywords.size() - tp[n]) << std::endl;
-            std::cout << "FN(" << n << ") = " << fn[n] << std::endl;
-            std::cout << "Precision(" << n << ") = " << (tp[n] / (n * set.keywords.size())) << std::endl;
-            std::cout << "Recall(" << n << ") = " << (tp[n] / (tp[n] + fn[n])) << std::endl;
-            std::cout << "MAP(" << n << ") = " << (maps[n] / set.keywords.size()) << std::endl;
+            for(std::size_t n = 1; n <= MAX_N; ++n){
+                std::cout << "TP(" << n << ") = " << tp[n] << std::endl;
+                std::cout << "FP(" << n << ") = " << (n * set.keywords.size() - tp[n]) << std::endl;
+                std::cout << "FN(" << n << ") = " << fn[n] << std::endl;
+                std::cout << "Precision(" << n << ") = " << (tp[n] / (n * set.keywords.size())) << std::endl;
+                std::cout << "Recall(" << n << ") = " << (tp[n] / (tp[n] + fn[n])) << std::endl;
+                std::cout << "MAP(" << n << ") = " << (maps[n] / set.keywords.size()) << std::endl;
+            }
         }
     };
 
@@ -256,7 +263,7 @@ void holistic_train(
         //cdbn->template layer_get<0>().learning_rate /= 10;
         //cdbn->template layer_get<1>()->learning_rate *= 10;
 
-        if(conf.load){
+        if(conf.load || features){
             cdbn->load("method_1_half.dat");
         } else {
             cdbn->pretrain(training_images, 2);
@@ -264,10 +271,13 @@ void holistic_train(
         }
 
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate(cdbn, train_word_names, train_image_names);
+        evaluate(cdbn, train_word_names, train_image_names, features);
+
+        std::cout << "Evaluate on validation set" << std::endl;
+        evaluate(cdbn, train_word_names, valid_image_names, features);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate(cdbn, train_word_names, test_image_names);
+        evaluate(cdbn, train_word_names, test_image_names, features);
     } else if(conf.third){
         static constexpr const std::size_t NF = 13;
         static constexpr const std::size_t NF2 = 7;
@@ -341,7 +351,7 @@ void holistic_train(
 
             dll::visualize_rbm(cdbn->template layer_get<0>());
         } else {
-            if(conf.load){
+            if(conf.load || features){
                 cdbn->load(file_name);
             } else {
                 cdbn->pretrain(training_images, 10);
@@ -349,10 +359,13 @@ void holistic_train(
             }
 
             std::cout << "Evaluate on training set" << std::endl;
-            evaluate(cdbn, train_word_names, train_image_names);
+            evaluate(cdbn, train_word_names, train_image_names, features);
+
+            std::cout << "Evaluate on validation set" << std::endl;
+            evaluate(cdbn, train_word_names, valid_image_names, features);
 
             std::cout << "Evaluate on test set" << std::endl;
-            evaluate(cdbn, train_word_names, test_image_names);
+            evaluate(cdbn, train_word_names, test_image_names, features);
 
             if(conf.svm){
                 std::vector<std::vector<double>> training_samples(train_image_names.size());
@@ -489,7 +502,7 @@ void holistic_train(
         cdbn->template layer_get<2>().learning_rate /= 10;
         cdbn->template layer_get<2>().pbias_lambda *= 2;
 
-        if(conf.load){
+        if(conf.load || features){
             cdbn->load("method_1_quarter.dat");
         } else {
             cdbn->pretrain(training_images, 10);
@@ -497,10 +510,13 @@ void holistic_train(
         }
 
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate(cdbn, train_word_names, train_image_names);
+        evaluate(cdbn, train_word_names, train_image_names, features);
+
+        std::cout << "Evaluate on validation set" << std::endl;
+        evaluate(cdbn, train_word_names, valid_image_names, features);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate(cdbn, train_word_names, test_image_names);
+        evaluate(cdbn, train_word_names, test_image_names, features);
     } else {
         using cdbn_t =
             dll::dbn_desc<
@@ -526,7 +542,7 @@ void holistic_train(
 
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
-        if(conf.load){
+        if(conf.load || features){
             cdbn->load("method_1.dat");
         } else {
             cdbn->pretrain(training_images, 10);
@@ -534,18 +550,21 @@ void holistic_train(
         }
 
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate(cdbn, train_word_names, train_image_names);
+        evaluate(cdbn, train_word_names, train_image_names, features);
+
+        std::cout << "Evaluate on validation set" << std::endl;
+        evaluate(cdbn, train_word_names, valid_image_names, features);
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate(cdbn, train_word_names, test_image_names);
+        evaluate(cdbn, train_word_names, test_image_names, features);
     }
 }
 
 void holistic_features(
         const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
-        names train_word_names, names train_image_names, names /*valid_image_names*/, names test_image_names){
-    std::cout << "Use method 1 (holistic)" << std::endl;
-    std::cout << "Method 1 is disabled for now (needs check matrix dimensions" << std::endl;
+        names train_word_names, names train_image_names, names valid_image_names, names test_image_names){
+    //Export features
+    holistic_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names, true);
 
     return;
 }
