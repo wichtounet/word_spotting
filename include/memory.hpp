@@ -51,7 +51,7 @@ inline void memory_debug(const std::string& title){
 
 #else
 
-inline void memory_debug(const std::string&){}
+inline void memory_debug(const std::string& /*title*/){}
 
 #endif
 

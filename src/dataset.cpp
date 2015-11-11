@@ -80,7 +80,7 @@ void read_images(std::unordered_map<std::string, cv::Mat>& map, const std::strin
 
         std::string full_name(file_path + "/" + file_name);
 
-        map[file_name] = cv::imread(full_name.c_str(), CV_LOAD_IMAGE_ANYDEPTH);
+        map[file_name] = cv::imread(full_name, CV_LOAD_IMAGE_ANYDEPTH);
 
         if(!map[file_name].data){
             std::cout << "Impossible to read image " << full_name << std::endl;
