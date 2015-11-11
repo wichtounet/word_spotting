@@ -23,12 +23,8 @@ void generate_rel_files(
     std::ofstream global_relevance_stream(result_folder + "/global_rel_file");
     std::ofstream local_relevance_stream(result_folder + "/local_rel_file");
 
-    for(std::size_t k = 0; k < keywords.size(); ++k){
-        auto& keyword = keywords[k];
-
-        for(std::size_t t = 0; t < test_image_names.size(); ++t){
-            decltype(auto) test_image = test_image_names[t];
-
+    for(auto & keyword : keywords){
+        for(auto & test_image : test_image_names){
             std::string keyword_str;
             keyword_str = std::accumulate(keyword.begin(), keyword.end(), keyword_str);
 

@@ -372,7 +372,8 @@ void holistic_train(
                 std::vector<cdbn_t::output_one_t> training_features;
                 std::vector<std::size_t> training_labels(train_image_names.size());
 
-                for(std::size_t i = 0; i < train_image_names.size(); ++i){
+                for(auto & train_image_name : train_image_names){
+                    cpp_unused(train_image_name);
                     training_features.emplace_back(cdbn->prepare_one_output());
                 }
 

@@ -153,9 +153,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
 
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
 
-    for(std::size_t t = 0; t < test_image_names.size(); ++t){
-        decltype(auto) test_image = test_image_names[t];
-
+    for(auto & test_image : test_image_names){
         test_features.push_back(standard_features(dataset.word_images.at(test_image)));
     }
 
@@ -222,8 +220,7 @@ void extract_features(const Dataset& dataset, config& conf, const std::vector<st
 
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
 
-    for(std::size_t t = 0; t < test_image_names.size(); ++t){
-        decltype(auto) test_image = test_image_names[t];
+    for(auto & test_image : test_image_names){
         test_features.push_back(standard_features(dataset.word_images.at(test_image)));
     }
 

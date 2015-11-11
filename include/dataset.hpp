@@ -40,9 +40,7 @@ template<typename Dataset, typename Set>
 std::vector<std::vector<std::string>> select_keywords(const Dataset& dataset, const Set& set, names train_word_names, names test_image_names){
     std::vector<std::vector<std::string>> keywords;
 
-    for(std::size_t k = 0; k < set.keywords.size(); ++k){
-        auto& keyword = set.keywords[k];
-
+    for(auto & keyword : set.keywords){
         bool found = false;
 
         for(auto& labels : dataset.word_labels){
