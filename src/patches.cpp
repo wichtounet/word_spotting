@@ -1176,8 +1176,6 @@ void patches_train(
 void patches_features(
     const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
     names train_word_names, names train_image_names, names valid_image_names, names test_image_names) {
-    std::cout << "Use method 2 (patches)" << std::endl;
-
     //Generate features and save them
     patches_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names, true);
 }
