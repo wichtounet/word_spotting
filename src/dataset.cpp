@@ -139,17 +139,23 @@ void read_keywords_iam(std::vector<std::vector<std::string>>& list, const std::s
         std::string line_keywords;
         std::getline(stream, line_keywords);
 
+        if(line_keywords.empty()){
+            continue;
+        }
+
         std::string keywords(line_keywords.begin(), line_keywords.begin() + line_keywords.find(' '));
 
-        if (!keywords.empty()) {
-            list.emplace_back();
+        if(keywords.empty()){
+            continue;
+        }
 
-            std::istringstream ss(keywords);
-            std::string token;
+        list.emplace_back();
 
-            while (std::getline(ss, token, '-')) {
-                list.back().push_back(token);
-            }
+        std::istringstream ss(keywords);
+        std::string token;
+
+        while (std::getline(ss, token, '-')) {
+            list.back().push_back(token);
         }
     }
 }

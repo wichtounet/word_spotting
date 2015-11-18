@@ -40,6 +40,7 @@ struct config {
 
     bool washington = true;
     bool parzival   = false;
+    bool iam        = false;
 
     //The following values are set during execution
     std::size_t downscale    = 1;

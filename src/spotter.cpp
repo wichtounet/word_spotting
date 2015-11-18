@@ -53,25 +53,37 @@ void extract_names(Dataset& dataset, Set& set, string_vector& train_image_names,
     std::cout << test_image_names.size() << " test word images in set" << std::endl;
 }
 
-auto read_dataset(config& conf) {
+spot_dataset read_dataset(config& conf) {
     decltype(auto) dataset_path = conf.files[0];
     decltype(auto) cv_set = conf.files[1];
 
     std::cout << "Dataset: " << dataset_path << std::endl;
     std::cout << "    Set: " << cv_set << std::endl;
 
-    auto dataset = conf.washington ? read_washington(dataset_path) : read_parzival(dataset_path);
+    spot_dataset dataset;
+
+    if(conf.washington){
+        dataset = read_washington(dataset_path);
+    } else if(conf.parzival){
+        dataset = read_parzival(dataset_path);
+    } else if(conf.iam){
+        dataset = read_iam(dataset_path);
+    } else {
+        std::cerr << "Invalid configuration of the dataset" << std::endl;
+    }
 
     std::cout << dataset.line_images.size() << " line images loaded from the dataset" << std::endl;
     std::cout << dataset.word_images.size() << " word images loaded from the dataset" << std::endl;
 
     if (conf.washington) {
-        conf.cv_full_path   = dataset_path + "/sets/" + cv_set + "/";
-        conf.data_full_path = dataset_path + "/data/word_images_normalized/";
-    } else {
-        conf.cv_full_path   = dataset_path + "/sets1/";
-        conf.data_full_path = dataset_path + "/data/word_images_normalized/";
+        conf.cv_full_path = dataset_path + "/sets/" + cv_set + "/";
+    } else if (conf.parzival) {
+        conf.cv_full_path = dataset_path + "/sets1/";
+    } else if (conf.iam) {
+        conf.cv_full_path = dataset_path + "/sets/";
     }
+
+    conf.data_full_path = dataset_path + "/data/word_images_normalized/";
 
     return dataset;
 }
