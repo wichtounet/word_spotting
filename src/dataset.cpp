@@ -132,6 +132,28 @@ void read_keywords(std::vector<std::vector<std::string>>& list, const std::strin
     }
 }
 
+void read_keywords_iam(std::vector<std::vector<std::string>>& list, const std::string& path) {
+    std::ifstream stream(path);
+
+    while (!stream.eof()) {
+        std::string line_keywords;
+        std::getline(stream, line_keywords);
+
+        std::string keywords(line_keywords.begin(), line_keywords.begin() + line_keywords.find(' '));
+
+        if (!keywords.empty()) {
+            list.emplace_back();
+
+            std::istringstream ss(keywords);
+            std::string token;
+
+            while (std::getline(ss, token, '-')) {
+                list.back().push_back(token);
+            }
+        }
+    }
+}
+
 void load_sets_washington(spot_dataset& dataset, const std::string& path) {
     std::string file_path(path + "/sets");
 
@@ -161,6 +183,15 @@ void load_sets_parzival(spot_dataset& dataset, const std::string& path) {
     read_list(dataset.sets["cv1"].train_set, full_name + "/train.txt");
     read_list(dataset.sets["cv1"].validation_set, full_name + "/valid.txt");
     read_keywords(dataset.sets["cv1"].keywords, full_name + "/keywords.txt");
+}
+
+void load_sets_iam(spot_dataset& dataset, const std::string& path) {
+    std::string full_name(path + "/sets/");
+
+    read_list(dataset.sets["cv1"].test_set, full_name + "/test.txt");
+    read_list(dataset.sets["cv1"].train_set, full_name + "/train.txt");
+    read_list(dataset.sets["cv1"].validation_set, full_name + "/valid.txt");
+    read_keywords_iam(dataset.sets["cv1"].keywords, full_name + "/keywords.txt");
 }
 
 } //end of anonymous namespace
@@ -193,6 +224,22 @@ spot_dataset read_parzival(const std::string& path) {
     }
 
     load_sets_parzival(dataset, path);
+
+    return dataset;
+}
+
+spot_dataset read_iam(const std::string& path) {
+    spot_dataset dataset;
+
+    read_word_labels(dataset, path);
+    read_word_images(dataset, path);
+
+    if(dataset_read_lines){
+        read_line_transcriptions(dataset, path);
+        read_line_images(dataset, path);
+    }
+
+    load_sets_iam(dataset, path);
 
     return dataset;
 }
