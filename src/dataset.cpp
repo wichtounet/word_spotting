@@ -11,6 +11,7 @@
 #include <dirent.h>
 
 #include "dataset.hpp"
+#include "config.hpp"
 
 namespace {
 
@@ -168,10 +169,12 @@ spot_dataset read_washington(const std::string& path) {
     spot_dataset dataset;
 
     read_word_labels(dataset, path);
-    read_line_transcriptions(dataset, path);
-
-    read_line_images(dataset, path);
     read_word_images(dataset, path);
+
+    if(dataset_read_lines){
+        read_line_transcriptions(dataset, path);
+        read_line_images(dataset, path);
+    }
 
     load_sets_washington(dataset, path);
 
@@ -184,11 +187,40 @@ spot_dataset read_parzival(const std::string& path) {
     read_word_labels(dataset, path);
     read_word_images(dataset, path);
 
-    //Note: This is disabled to save some time and memory
-    //read_line_transcriptions(dataset, path);
-    //read_line_images(dataset, path);
+    if(dataset_read_lines){
+        read_line_transcriptions(dataset, path);
+        read_line_images(dataset, path);
+    }
 
     load_sets_parzival(dataset, path);
 
     return dataset;
+}
+
+std::vector<std::vector<std::string>> select_keywords(const spot_dataset& dataset, const spot_dataset_set& set, names train_word_names, names test_image_names) {
+    std::vector<std::vector<std::string>> keywords;
+
+    for (auto& keyword : set.keywords) {
+        bool found = false;
+
+        for (auto& labels : dataset.word_labels) {
+            if (keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()) {
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            auto total_test = std::count_if(test_image_names.begin(), test_image_names.end(),
+                                            [&dataset, &keyword](auto& i) { return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
+
+            if (total_test > 0) {
+                keywords.push_back(keyword);
+            }
+        }
+    }
+
+    std::cout << "Selected " << keywords.size() << " keyword out of " << set.keywords.size() << std::endl;
+
+    return keywords;
 }
