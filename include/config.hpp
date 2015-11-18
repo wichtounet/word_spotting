@@ -17,6 +17,7 @@ static constexpr const std::size_t HEIGHT = 120;
 static constexpr const bool generate_graphs = false;
 
 constexpr const bool dataset_read_lines = false;
+
 constexpr const std::size_t MAX_N = 25;
 
 using weight = float;
