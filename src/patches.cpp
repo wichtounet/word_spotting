@@ -19,9 +19,12 @@
 #include "dll/dbn.hpp"
 #include "dll/avgp_layer.hpp"
 #include "dll/mp_layer.hpp"
-//#include "dll/ocv_visualizer.hpp"
 #include "dll/patches_layer.hpp"
 #include "dll/patches_layer_pad.hpp"
+
+#ifndef OPENCV_23
+#include "dll/ocv_visualizer.hpp"
+#endif
 
 #include "nice_svm.hpp"
 

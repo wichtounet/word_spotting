@@ -19,7 +19,10 @@
 #include "dll/dbn.hpp"
 #include "dll/avgp_layer.hpp"
 #include "dll/mp_layer.hpp"
+
+#ifndef OPENCV_23
 #include "dll/ocv_visualizer.hpp"
+#endif
 
 #include "nice_svm.hpp"
 
@@ -311,7 +314,9 @@ void holistic_train(
         if (conf.view) {
             cdbn->load(file_name);
 
+#ifndef OPENCV_23
             dll::visualize_rbm(cdbn->template layer_get<0>());
+#endif
         } else {
             if (conf.load || features) {
                 cdbn->load(file_name);
