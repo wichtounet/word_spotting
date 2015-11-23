@@ -590,6 +590,10 @@ void patches_train(
 
         auto cdbn = std::make_unique<cdbn_t>();
 
+        if(conf.iam){
+            cdbn->memory_mode = true;
+        }
+
         // Level 1
         half::rate_0(cdbn->template layer_get<L1>().learning_rate);
         half::momentum_0(cdbn->template layer_get<L1>().initial_momentum, cdbn->template layer_get<L1>().final_momentum);
@@ -822,6 +826,10 @@ void patches_train(
 
         auto cdbn = std::make_unique<cdbn_t>();
 
+        if(conf.iam){
+            cdbn->memory_mode = true;
+        }
+
         // Level 1
         third::rate_0(cdbn->template layer_get<L1>().learning_rate);
         third::momentum_0(cdbn->template layer_get<L1>().initial_momentum, cdbn->template layer_get<L1>().final_momentum);
@@ -1053,6 +1061,10 @@ void patches_train(
 #endif
 
         auto cdbn = std::make_unique<cdbn_t>();
+
+        if(conf.iam){
+            cdbn->memory_mode = true;
+        }
 
         // Level 1
         full::rate_0(cdbn->template layer_get<L1>().learning_rate);
