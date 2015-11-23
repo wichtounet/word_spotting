@@ -99,7 +99,7 @@ done
 for machine in ${!machines[@]}; do
     (
     sshpass -p "$password" scp config_${machine}.hpp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/include/${config_file}
-    sshpass -p "$password" ssh ${user}@${machines[machine]} 'cd /home/wicht/dev/word_spotting; make release_debug;'
+    sshpass -p "$password" ssh ${user}@${machines[machine]} 'cd /home/wicht/dev/word_spotting; make clean; make release_debug;'
     ) &
 done
 
