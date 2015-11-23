@@ -59,7 +59,7 @@ if [ "$5" == "parzival" ]; then
     dataset="parzival"
 fi
 
-if [ "$4" == "iam" ]; then
+if [ "$5" == "iam" ]; then
     dataset_option="-iam"
     dataset="iam"
 fi
