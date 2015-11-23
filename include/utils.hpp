@@ -73,6 +73,9 @@ typename DBN::template layer_type<0>::input_one_t holistic_mat(const config& con
             }
         }
     }
+#else
+    cpp_unused(conf);
+    cpp_unused(image);
 #endif
 
     return training_image;
