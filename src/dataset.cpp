@@ -192,12 +192,25 @@ void load_sets_parzival(spot_dataset& dataset, const std::string& path) {
 }
 
 void load_sets_iam(spot_dataset& dataset, const std::string& path) {
-    std::string full_name(path + "/sets/");
+    std::string file_path(path + "/sets");
 
-    read_list(dataset.sets["cv1"].test_set, full_name + "/test.txt");
-    read_list(dataset.sets["cv1"].train_set, full_name + "/train.txt");
-    read_list(dataset.sets["cv1"].validation_set, full_name + "/valid.txt");
-    read_keywords_iam(dataset.sets["cv1"].keywords, full_name + "/keywords.txt");
+    struct dirent* entry;
+    auto dir = opendir(file_path.c_str());
+
+    while ((entry = readdir(dir))) {
+        std::string file_name(entry->d_name);
+
+        if (file_name.size() <= 2) {
+            continue;
+        }
+
+        std::string full_name(file_path + "/" + file_name);
+
+        read_list(dataset.sets[file_name].test_set, full_name + "/test.txt");
+        read_list(dataset.sets[file_name].train_set, full_name + "/train.txt");
+        read_list(dataset.sets[file_name].validation_set, full_name + "/valid.txt");
+        read_keywords_iam(dataset.sets[file_name].keywords, full_name + "/keywords.txt");
+    }
 }
 
 } //end of anonymous namespace
