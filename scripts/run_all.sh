@@ -156,4 +156,4 @@ wait
 
 echo "All machines have finished"
 cd ..
-bash ./summary.sh ${stamp}
+bash ./scripts/summary.sh ${stamp}
