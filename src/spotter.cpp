@@ -15,6 +15,9 @@
 #include "holistic.hpp" //Method 1
 #include "patches.hpp"  //Method 2
 
+//Method-Agnostic commands
+#include "evaluate_features.hpp" //evaluate_patches command
+
 namespace {
 
 using string_vector = std::vector<std::string>;
@@ -175,6 +178,8 @@ int command_evaluate_features(config& conf) {
 
     //TODO At this point, we need to pass the features to DTW but we ned to match them to images first for evaluation
     //     Format them just like evaluation does before DTW
+
+    evaluate_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
 
     return 0;
 }
