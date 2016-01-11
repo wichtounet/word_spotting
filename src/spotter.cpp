@@ -152,6 +152,34 @@ int command_features(config& conf) {
     return 0;
 }
 
+int command_evaluate_features(config& conf) {
+    if (conf.files.size() < 2) {
+        std::cout << "evaluate_features needs the path to the dataset and the cv set to use" << std::endl;
+        return -1;
+    }
+
+    auto dataset = read_dataset(conf);
+
+    decltype(auto) cv_set = conf.files[1];
+
+    if (!dataset.sets.count(cv_set)) {
+        std::cout << "The subset \"" << cv_set << "\" does not exist" << std::endl;
+        return -1;
+    }
+
+    auto& set = dataset.sets[cv_set];
+
+    string_vector train_image_names, train_word_names, test_image_names, valid_image_names;
+
+    extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
+
+    //TODO At this point, we need to pass the features to DTW but we ned to match them to images first for evaluation
+    //     Format them just like evaluation does before DTW
+
+    return 0;
+}
+
+
 } //end of anonymous namespace
 
 int main(int argc, char** argv) {
@@ -187,6 +215,8 @@ int main(int argc, char** argv) {
         return command_train(conf);
     } else if (conf.command == "features") {
         return command_features(conf);
+    } else if (conf.command == "evaluate_features") {
+        return command_evaluate_features(conf);
     }
 
     print_usage();
