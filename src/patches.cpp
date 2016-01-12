@@ -32,8 +32,9 @@
 #include "standard.hpp"
 #include "utils.hpp"
 #include "reports.hpp"
-#include "dtw.hpp"      //Dynamic time warping
-#include "features.hpp" //Features exporting
+#include "dtw.hpp"        //Dynamic time warping
+#include "features.hpp"   //Features exporting
+#include "evaluation.hpp" //evaluation utilities
 
 #define LOCAL_MEAN_SCALING
 #include "scaling.hpp" //Scaling functions
@@ -180,19 +181,6 @@ features_t<DBN_Patch, DBN> prepare_outputs(
     std::cout << "... done" << std::endl;
 
     return test_features_a;
-}
-
-template <typename Dataset>
-std::vector<std::string> select_training_images(const Dataset& dataset, names keyword, names train_names) {
-    std::vector<std::string> training_images;
-
-    for (auto& labels : dataset.word_labels) {
-        if (keyword == labels.second && std::find(train_names.begin(), train_names.end(), labels.first) != train_names.end()) {
-            training_images.push_back(labels.first);
-        }
-    }
-
-    return training_images;
 }
 
 template <bool DBN_Patch, typename Dataset, typename DBN>
