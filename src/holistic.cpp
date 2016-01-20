@@ -250,9 +250,6 @@ void holistic_train(
 
         std::cout << "Final test features:" << test_image_names.size() * cdbn->output_size() * div << "MB" << std::endl;
 
-        //cdbn->template layer_get<0>().learning_rate /= 10;
-        //cdbn->template layer_get<1>()->learning_rate *= 10;
-
         if (conf.load || features) {
             cdbn->load("method_1_half.dat");
         } else {
@@ -302,8 +299,6 @@ void holistic_train(
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
         cdbn->template layer_get<0>().learning_rate /= 100;
-        //cdbn->template layer_get<0>().pbias_lambda *= 4;
-
         cdbn->template layer_get<2>().learning_rate /= 10;
         cdbn->template layer_get<4>().learning_rate /= 10;
         cdbn->template layer_get<4>().pbias_lambda *= 2;
