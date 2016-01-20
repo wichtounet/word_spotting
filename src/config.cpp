@@ -16,10 +16,10 @@ void print_usage() {
     std::cout << " * features" << std::endl;
     std::cout << " * evaluate" << std::endl;
     std::cout << "Supported options: " << std::endl;
-    std::cout << " -0 : Method 1" << std::endl;
+    std::cout << " -0 : Method 0 [Bunke2001]" << std::endl;
     std::cout << " -1 : Method 1" << std::endl;
     std::cout << " -2 : Method 2" << std::endl;
-    std::cout << " -3 : Method 3" << std::endl;
+    std::cout << " -3 : Method 3 [Manmatha2007]" << std::endl;
     std::cout << " -half : Takes half resolution images only" << std::endl;
     std::cout << " -quarter : Takes quarter resolution images only" << std::endl;
     std::cout << " -third : Takes third resolution images only" << std::endl;
