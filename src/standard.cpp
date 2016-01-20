@@ -24,7 +24,7 @@
 
 namespace {
 
-std::vector<etl::dyn_vector<weight>> standard_features(const cv::Mat& clean_image) {
+std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& clean_image) {
     std::vector<etl::dyn_vector<weight>> features;
 
     const auto width  = static_cast<std::size_t>(clean_image.size().width);
@@ -78,24 +78,99 @@ std::vector<etl::dyn_vector<weight>> standard_features(const cv::Mat& clean_imag
         gravity /= height;
         moment /= (height * height);
 
-        features.emplace_back(9);
+        if(conf.method == Method::Standard){
+            features.emplace_back(9);
 
-        auto& f = features.back();
+            auto& f = features.back();
 
-        f[0] = black;
-        f[1] = gravity;
-        f[2] = moment;
-        f[3] = lower;
-        f[4] = upper;
-        f[5] = 0.0;
-        f[6] = 0.0;
-        f[7] = transitions;
-        f[8] = inner_black;
+            f[0] = black;
+            f[1] = gravity;
+            f[2] = moment;
+            f[3] = lower;
+            f[4] = upper;
+            f[5] = 0.0;
+            f[6] = 0.0;
+            f[7] = transitions;
+            f[8] = inner_black;
+        } else if(conf.method == Method::Manmatha){
+            features.emplace_back(4);
+
+            auto& f = features.back();
+
+            f[0] = black; //Number of black pixels
+            f[1] = upper;
+            f[2] = lower;
+            f[3] = transitions;
+        }
     }
 
-    for (std::size_t i = 0; i < width - 1; ++i) {
-        features[i][5] = features[i + 1][1] - features[i][1];
-        features[i][6] = features[i + 1][2] - features[i][2];
+    if(conf.method == Method::Standard){
+        for (std::size_t i = 0; i < width - 1; ++i) {
+            features[i][5] = features[i + 1][1] - features[i][1];
+            features[i][6] = features[i + 1][2] - features[i][2];
+        }
+    } else if (conf.method == Method::Manmatha){
+        //Interpolate contour gaps
+
+        //1. Fill the gap starting from column 0 (if any)
+
+        if(features[0][1] == 0.0 && features[0][2] == 0.0){
+            for (std::size_t i = 1; i < width; ++i) {
+                if(!(features[i][1] == 0.0 && features[i][2] == 0.0)){
+                    auto upper = features[i][1];
+                    auto lower = features[i][2];
+
+                    while(i-- > 0){
+                        features[i][1] = upper;
+                        features[i][2] = lower;
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        //2. Fill the gap starting from the end (if any)
+
+        if(features[width - 1][1] == 0.0 && features[width - 1][2] == 0.0){
+            for (std::size_t i = width - 1; i > 0; --i) {
+                if(!(features[i][1] == 0.0 && features[i][2] == 0.0)){
+                    auto upper = features[i][1];
+                    auto lower = features[i][2];
+
+                    while(i++ < width - 1){
+                        features[i][1] = upper;
+                        features[i][2] = lower;
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        //3. Fill the middle gaps
+
+        for (std::size_t i = 1; i < width - 1; ++i) {
+            if(features[i][1] == 0.0 && features[i][2] == 0.0){
+                std::size_t end = i;
+                for (std::size_t j = i; j < width; ++j) {
+                    if(!(features[j][1] == 0.0 && features[j][2] == 0.0)){
+                        end = j;
+                        break;
+                    }
+                }
+
+                auto upper_diff = features[end][1] - features[i - 1][1];
+                auto lower_diff = features[end][2] - features[i - 1][2];
+
+                auto step = 1.0 / (end - i + 1);
+
+                for(std::size_t j = i; j < end; ++j){
+                    features[j][1] = features[i - 1][1] + upper_diff * step * (j - i + 1);
+                    features[j][2] = features[i - 1][2] + lower_diff * step * (j - i + 1);
+                }
+            }
+        }
     }
 
 #ifdef LOCAL_LINEAR_SCALING
@@ -154,7 +229,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
 
     for (auto& test_image : test_image_names) {
-        test_features.push_back(standard_features(dataset.word_images.at(test_image)));
+        test_features.push_back(standard_features(conf, dataset.word_images.at(test_image)));
     }
 
     scale(test_features, conf, training);
@@ -180,7 +255,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
 
         ++evaluated;
 
-        auto ref_a = standard_features(dataset.word_images.at(training_image + ".png"));
+        auto ref_a = standard_features(conf, dataset.word_images.at(training_image + ".png"));
 
 #if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
         for (std::size_t i = 0; i < ref_a.size(); ++i) {
@@ -221,7 +296,7 @@ void extract_features(const Dataset& dataset, config& conf, const std::vector<st
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
 
     for (auto& test_image : test_image_names) {
-        test_features.push_back(standard_features(dataset.word_images.at(test_image)));
+        test_features.push_back(standard_features(conf, dataset.word_images.at(test_image)));
     }
 
     scale(test_features, conf, training);
@@ -236,7 +311,6 @@ void extract_features(const Dataset& dataset, config& conf, const std::vector<st
 void standard_train(
     const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
     names train_word_names, names train_image_names, names valid_image_names, names test_image_names) {
-    std::cout << "Use method 0 (Standard Features + DTW)" << std::endl;
 
     std::cout << "Evaluate on training set" << std::endl;
     evaluate_dtw(dataset, set, conf, train_word_names, train_image_names, true);
@@ -251,7 +325,6 @@ void standard_train(
 void standard_features(
     const spot_dataset& dataset, const spot_dataset_set& /*set*/, config& conf,
     names /*train_word_names*/, names train_image_names, names valid_image_names, names test_image_names) {
-    std::cout << "Use method 0 (Standard Features + DTW)" << std::endl;
 
     std::cout << "Extract features on training set" << std::endl;
     extract_features(dataset, conf, train_image_names, true);
