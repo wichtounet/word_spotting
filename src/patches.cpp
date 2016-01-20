@@ -424,7 +424,6 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 void patches_train(
     const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
     names train_word_names, names train_image_names, names valid_image_names, names test_image_names, bool features) {
-    std::cout << "Use method 2 (patches)" << std::endl;
 
     auto pretraining_image_names = train_image_names;
 

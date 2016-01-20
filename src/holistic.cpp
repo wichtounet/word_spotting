@@ -60,7 +60,6 @@ std::vector<typename DBN::template layer_type<0>::input_one_t> read_images(const
 void holistic_train(
     const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
     names train_word_names, names train_image_names, names valid_image_names, names test_image_names, bool features) {
-    std::cout << "Use method 1 (holistic)" << std::endl;
 
     auto evaluate   = [&dataset, &set, &conf](auto& dbn, auto& train_word_names, auto& test_image_names, bool features) {
         using dbn_t = std::decay_t<decltype(*dbn)>;

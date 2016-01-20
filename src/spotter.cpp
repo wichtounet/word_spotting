@@ -60,8 +60,8 @@ spot_dataset read_dataset(config& conf) {
     decltype(auto) dataset_path = conf.files[0];
     decltype(auto) cv_set = conf.files[1];
 
-    std::cout << "Dataset: " << dataset_path << std::endl;
-    std::cout << "    Set: " << cv_set << std::endl;
+    std::cout << " Dataset: " << dataset_path << std::endl;
+    std::cout << "     Set: " << cv_set << std::endl;
 
     spot_dataset dataset;
 
@@ -212,6 +212,8 @@ int main(int argc, char** argv) {
     } else if (conf.quarter) {
         conf.downscale = 4;
     }
+
+    std::cout << "  Method: " << static_cast<std::size_t>(conf.method) << std::endl;
 
     if (conf.command == "evaluate") {
         conf.load = true;

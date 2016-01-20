@@ -22,7 +22,7 @@ constexpr const std::size_t MAX_N = 25;
 
 using weight = float;
 
-enum class Method {
+enum class Method : std::size_t {
     Standard,
     Holistic,
     Patches,
