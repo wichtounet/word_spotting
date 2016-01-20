@@ -112,12 +112,17 @@ int command_train(config& conf) {
 
     extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
 
-    if (conf.method_0) {
-        standard_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
-    } else if (conf.method_1) {
-        holistic_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
-    } else if (conf.method_2) {
-        patches_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+    switch (conf.method) {
+        case Method::Standard:
+        case Method::Manmatha:
+            standard_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+            break;
+        case Method::Holistic:
+            holistic_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+            break;
+        case Method::Patches:
+            patches_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+            break;
     }
 
     return 0;
@@ -144,12 +149,17 @@ int command_features(config& conf) {
 
     extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
 
-    if (conf.method_0) {
-        standard_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
-    } else if (conf.method_1) {
-        holistic_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
-    } else if (conf.method_2) {
-        patches_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+    switch (conf.method) {
+        case Method::Standard:
+        case Method::Manmatha:
+            standard_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+            break;
+        case Method::Holistic:
+            holistic_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+            break;
+        case Method::Patches:
+            patches_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+            break;
     }
 
     return 0;
@@ -194,16 +204,6 @@ int main(int argc, char** argv) {
     }
 
     auto conf = parse_args(argc, argv);
-
-    if (!conf.method_0 && !conf.method_1 && !conf.method_2) {
-        std::cout << "error: One method must be selected" << std::endl;
-        print_usage();
-        return -1;
-    } else if ((conf.method_0 ? 1 : 0) + (conf.method_1 ? 1 : 0) + (conf.method_2 ? 1 : 0) > 1) {
-        std::cout << "error: Only one method must be selected" << std::endl;
-        print_usage();
-        return -1;
-    }
 
     if (conf.half) {
         conf.downscale = 2;

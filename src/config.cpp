@@ -16,8 +16,10 @@ void print_usage() {
     std::cout << " * features" << std::endl;
     std::cout << " * evaluate" << std::endl;
     std::cout << "Supported options: " << std::endl;
+    std::cout << " -0 : Method 1" << std::endl;
     std::cout << " -1 : Method 1" << std::endl;
     std::cout << " -2 : Method 2" << std::endl;
+    std::cout << " -3 : Method 3" << std::endl;
     std::cout << " -half : Takes half resolution images only" << std::endl;
     std::cout << " -quarter : Takes quarter resolution images only" << std::endl;
     std::cout << " -third : Takes third resolution images only" << std::endl;
@@ -39,11 +41,13 @@ config parse_args(int argc, char** argv) {
     std::size_t i = 0;
     for (; i < conf.args.size(); ++i) {
         if (conf.args[i] == "-0") {
-            conf.method_0 = true;
+            conf.method = Method::Standard;
         } else if (conf.args[i] == "-1") {
-            conf.method_1 = true;
+            conf.method = Method::Holistic;
         } else if (conf.args[i] == "-2") {
-            conf.method_2 = true;
+            conf.method = Method::Patches;
+        } else if (conf.args[i] == "-3") {
+            conf.method = Method::Manmatha;
         } else if (conf.args[i] == "-full") {
             //Simply here for consistency sake
         } else if (conf.args[i] == "-half") {

@@ -36,11 +36,11 @@
 namespace {
 
 std::string get_suffix(config& conf){
-    if(conf.method_0){
+    if(conf.method == Method::Standard){
         return ".0";
-    } else if(conf.method_1){
+    } else if(conf.method == Method::Holistic){
         return ".1";
-    } else if(conf.method_2){
+    } else if(conf.method == Method::Patches){
         if(conf.half){
             return STRINGIFY(SUFFIX_CAT(SUFFIX, HALF_LEVELS));
         } else if(conf.third){
@@ -48,6 +48,8 @@ std::string get_suffix(config& conf){
         } else {
             return STRINGIFY(SUFFIX_CAT(SUFFIX, FULL_LEVELS));
         }
+    } else if(conf.method == Method::Patches){
+        return ".2";
     }
 
     return ".invalid";
