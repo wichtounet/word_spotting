@@ -896,6 +896,7 @@ void patches_train(
         cpp_unused(L3);
         cpp_unused(NH3_1);
         cpp_unused(NH3_2);
+        cpp_unused(shuffle_3);
 #endif
     } else {
         std::cout << "Use full resolution" << std::endl;
