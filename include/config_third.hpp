@@ -34,6 +34,7 @@ constexpr const std::size_t B1           = 64;
 constexpr const dll::unit_type HT1       = dll::unit_type::BINARY;
 constexpr const dll::decay_type DT1      = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM1 = dll::sparsity_method::LEE;
+constexpr const bool shuffle_1           = false;
 
 constexpr const std::size_t NF2          = 3;
 constexpr const std::size_t K2           = 8;
@@ -42,6 +43,7 @@ constexpr const std::size_t B2           = 64;
 constexpr const dll::unit_type HT2       = dll::unit_type::BINARY;
 constexpr const dll::decay_type DT2      = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM2 = dll::sparsity_method::LEE;
+constexpr const bool shuffle_2           = false;
 
 constexpr const std::size_t NF3          = 3;
 constexpr const std::size_t K3           = 48;
@@ -50,6 +52,7 @@ constexpr const std::size_t B3           = 64;
 constexpr const dll::unit_type HT3       = dll::unit_type::BINARY;
 constexpr const dll::decay_type DT3      = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM3 = dll::sparsity_method::NONE;
+constexpr const bool shuffle_3           = false;
 
 const auto rate_0 = [](weight& value) { value = 0.1 * value; };
 const auto rate_1 = [](weight& value) { value = 0.1 * value; };
