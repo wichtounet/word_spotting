@@ -116,6 +116,7 @@ int command_train(config& conf) {
         case Method::Bunke2001:
         case Method::Rath2007:
         case Method::Rath2003:
+        case Method::Rodriguez2008:
             standard_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
             break;
         case Method::Holistic:
@@ -154,6 +155,7 @@ int command_features(config& conf) {
         case Method::Bunke2001:
         case Method::Rath2007:
         case Method::Rath2003:
+        case Method::Rodriguez2008:
             standard_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
             break;
         case Method::Holistic:

@@ -28,13 +28,13 @@ namespace {
 const bool interpolate = false;
 
 std::vector<etl::dyn_vector<weight>> standard_features_rath_2003(const cv::Mat& clean_image) {
+    const auto width  = static_cast<std::size_t>(clean_image.size().width);
+
     std::vector<etl::dyn_vector<weight>> features;
 
     for (std::size_t i = 0; i < width; ++i) {
         features.emplace_back(45);
     }
-
-    const auto width  = static_cast<std::size_t>(clean_image.size().width);
 
     // Convert image to float
     cv::Mat clean_image_float(clean_image.size(), CV_64F);
@@ -105,9 +105,27 @@ std::vector<etl::dyn_vector<weight>> standard_features_rath_2003(const cv::Mat& 
     return features;
 }
 
+std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::Mat& clean_image) {
+    std::vector<etl::dyn_vector<weight>> features;
+
+    //TODO
+
+#ifdef LOCAL_LINEAR_SCALING
+    local_linear_feature_scaling(features);
+#endif
+
+#ifdef LOCAL_MEAN_SCALING
+    local_mean_feature_scaling(features);
+#endif
+
+    return features;
+}
+
 std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& clean_image) {
     if(conf.method == Method::Rath2003){
         return standard_features_rath_2003(clean_image);
+    } else if(conf.method == Method::Rodriguez2008){
+        return standard_features_rodriguez_2008(clean_image);
     }
 
     std::vector<etl::dyn_vector<weight>> features;
