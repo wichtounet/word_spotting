@@ -25,6 +25,8 @@
 
 namespace {
 
+const bool interpolate = false;
+
 std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& clean_image) {
     std::vector<etl::dyn_vector<weight>> features;
 
@@ -110,7 +112,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
             features[i][5] = features[i + 1][1] - features[i][1];
             features[i][6] = features[i + 1][2] - features[i][2];
         }
-    } else if (conf.method == Method::Manmatha){
+    } else if (conf.method == Method::Manmatha && interpolate){
         //Interpolate contour gaps
 
         //1. Fill the gap starting from column 0 (if any)
