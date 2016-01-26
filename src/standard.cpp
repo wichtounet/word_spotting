@@ -106,7 +106,139 @@ std::vector<etl::dyn_vector<weight>> standard_features_rath_2003(const cv::Mat& 
 }
 
 std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::Mat& clean_image) {
+    const auto height  = static_cast<std::size_t>(clean_image.size().height);
+    const auto width  = static_cast<std::size_t>(clean_image.size().width);
+
     std::vector<etl::dyn_vector<weight>> features;
+
+    for (std::size_t i = 0; i < width; ++i) {
+        features.emplace_back(128);
+    }
+
+    // 0. Convert image to float
+    cv::Mat clean_image_float(clean_image.size(), CV_64F);
+    clean_image.convertTo(clean_image_float, clean_image_float.type());
+
+    // 1. Compute the smoothed image
+    cv::Mat L;
+    cv::GaussianBlur(clean_image_float, L, cv::Size(0, 0), 4.0, 4.0);
+
+    //2. Compute vertical and horizontal gradients
+    cv::Mat Gx(clean_image.size(), CV_64F);
+    cv::Mat Gy(clean_image.size(), CV_64F);
+
+    const auto outside = 1;
+    auto* L_ptr = L.data;
+    auto* Gx_ptr = Gx.data;
+    auto* Gy_ptr = Gy.data;
+
+    for (std::size_t y = 0; y < height; ++y) {
+        Gx_ptr[y * Gx.step + 0] = L_ptr[y * L.step + 1] - outside;
+
+        for (std::size_t x = 1; x < width - 1; ++x) {
+            Gx_ptr[y * Gx.step + x] = L_ptr[y * L.step + x + 1] - L_ptr[y * L.step + x - 1];
+        }
+
+        Gx_ptr[y * Gx.step + width - 1] = outside - L_ptr[y * L.step + width - 1 - 1];
+    }
+
+    for (std::size_t y = 1; y < height - 1; ++y) {
+        for (std::size_t x = 0; x < width; ++x) {
+            Gy_ptr[y * Gy.step + x] = L_ptr[(y + 1) * L.step + x] - L_ptr[(y - 1) * L.step + x];
+        }
+    }
+
+    for (std::size_t x = 0; x < width; ++x) {
+        Gy_ptr[0 * Gy.step + x] = L_ptr[1 * L.step + x] - outside;
+        Gy_ptr[(height - 1) * Gy.step + x] = outside - L_ptr[(height - 1 - 1) * L.step + x];
+    }
+
+    // 3. Compute magnitude and orientations of the gradients
+    cv::Mat m(clean_image.size(), CV_64F);
+    cv::Mat o(clean_image.size(), CV_64F);
+
+    auto* m_ptr = m.data;
+    auto* o_ptr = o.data;
+
+    for (std::size_t y = 0; y < height; ++y) {
+        for (std::size_t x = 0; x < width - 0; ++x) {
+            auto gx = Gx_ptr[y * Gx.step + x];
+            auto gy = Gy_ptr[y * Gy.step + x];
+
+            m_ptr[y * m.step + x] = std::sqrt(gx * gx + gy * gy);
+            o_ptr[y * m.step + x] = std::atan2(gx, gy);
+        }
+    }
+
+    // 4. Sliding window
+
+    cpp_assert(height % 2 == 0, "Rodriguez2008 has only been implemented for even windows");
+
+    if(width > height){
+        const std::size_t w     = height;    //Square window
+        const std::size_t left  = w / 2;     // Left context
+        const std::size_t right = w / 2 - 1; // Right context
+
+        for (std::size_t x = left + 1; x < width - right; ++x) {
+            auto first = x - left;
+            auto last  = x + right;
+
+            // Compute the upper and lower contours inside the window
+
+            std::size_t lower = 0;
+            std::size_t upper = 0;
+
+            for(std::size_t i = first; i < last; ++i){
+                std::size_t local_lower = 0;
+                for (std::size_t y = height - 1; y > 0; --y) {
+                    if (clean_image.at<uint8_t>(y, i) == 0.0) {
+                        local_lower = y;
+                        break;
+                    }
+                }
+
+                std::size_t local_upper = 0;
+                for (std::size_t y = 0; y < height; ++y) {
+                    if (clean_image.at<uint8_t>(y, i) == 0.0) {
+                        local_upper = y;
+                        break;
+                    }
+                }
+
+                if(i == first){
+                    lower = local_lower;
+                    upper = local_upper;
+                } else if(!(local_lower == 0 && local_upper == 0)) {
+                    lower = std::max(lower, local_lower);
+                    upper = std::min(upper, local_upper);
+                }
+            }
+
+            // Compute dimensions of the cells
+
+            std::size_t height = lower - upper;
+            std::size_t cell_width = w / 4;
+            std::size_t cell_height = height / 4;
+
+            std::cout << cell_width << "c" << cell_height << std::endl;
+
+            // Iterate through the cells (4x4)
+
+            for (std::size_t cx = 0; cx < 4; ++cx) {
+                for (std::size_t cy = 0; cy < 4; ++cy) {
+                    auto x_start = first + cx * cell_width;
+                    auto y_start = upper + cx * cell_height;
+
+
+
+
+                }
+            }
+        }
+    } else {
+        std::cout << "Improve algo" << std::endl;
+    }
+
 
     //TODO
 
