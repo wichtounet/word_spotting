@@ -111,10 +111,6 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
 
     std::vector<etl::dyn_vector<weight>> features;
 
-    for (std::size_t i = 0; i < width; ++i) {
-        features.emplace_back(128);
-    }
-
     // 0. Convert image to float
     cv::Mat clean_image_float(clean_image.size(), CV_64F);
     clean_image.convertTo(clean_image_float, clean_image_float.type());
@@ -128,45 +124,39 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
     cv::Mat Gy(clean_image.size(), CV_64F);
 
     const auto outside = 1;
-    auto* L_ptr = L.data;
-    auto* Gx_ptr = Gx.data;
-    auto* Gy_ptr = Gy.data;
 
     for (std::size_t y = 0; y < height; ++y) {
-        Gx_ptr[y * Gx.step + 0] = L_ptr[y * L.step + 1] - outside;
+        Gx.at<double>(y , 0) = L.at<double>(y, 1) - outside;
 
         for (std::size_t x = 1; x < width - 1; ++x) {
-            Gx_ptr[y * Gx.step + x] = L_ptr[y * L.step + x + 1] - L_ptr[y * L.step + x - 1];
+            Gx.at<double>(y , x) = L.at<double>(y, x + 1) - L.at<double>(y, x - 1);
         }
 
-        Gx_ptr[y * Gx.step + width - 1] = outside - L_ptr[y * L.step + width - 1 - 1];
+        Gx.at<double>(y , width - 1) = outside - L.at<double>(y, width - 1 - 1);
     }
 
     for (std::size_t y = 1; y < height - 1; ++y) {
         for (std::size_t x = 0; x < width; ++x) {
-            Gy_ptr[y * Gy.step + x] = L_ptr[(y + 1) * L.step + x] - L_ptr[(y - 1) * L.step + x];
+            Gy.at<double>(y, x) = L.at<double>((y + 1), x) - L.at<double>((y - 1), x);
         }
     }
 
     for (std::size_t x = 0; x < width; ++x) {
-        Gy_ptr[0 * Gy.step + x] = L_ptr[1 * L.step + x] - outside;
-        Gy_ptr[(height - 1) * Gy.step + x] = outside - L_ptr[(height - 1 - 1) * L.step + x];
+        Gy.at<double>(0, x) = L.at<double>(1, x) - outside;
+        Gy.at<double>((height - 1), x) = outside - L.at<double>((height - 1 - 1), x);
     }
 
     // 3. Compute magnitude and orientations of the gradients
     cv::Mat m(clean_image.size(), CV_64F);
     cv::Mat o(clean_image.size(), CV_64F);
 
-    auto* m_ptr = m.data;
-    auto* o_ptr = o.data;
-
     for (std::size_t y = 0; y < height; ++y) {
         for (std::size_t x = 0; x < width - 0; ++x) {
-            auto gx = Gx_ptr[y * Gx.step + x];
-            auto gy = Gy_ptr[y * Gy.step + x];
+            auto gx = Gx.at<double>(y , x);
+            auto gy = Gy.at<double>(y , x);
 
-            m_ptr[y * m.step + x] = std::sqrt(gx * gx + gy * gy);
-            o_ptr[y * m.step + x] = std::atan2(gx, gy);
+            m.at<double>(y, x) = std::sqrt(gx * gx + gy * gy);
+            o.at<double>(y, x) = std::atan2(gx, gy);
         }
     }
 
@@ -187,6 +177,8 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
 
             std::size_t lower = 0;
             std::size_t upper = 0;
+
+            features.emplace_back(128);
 
             for(std::size_t i = first; i < last; ++i){
                 std::size_t local_lower = 0;
@@ -220,23 +212,48 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
             std::size_t cell_width = w / 4;
             std::size_t cell_height = height / 4;
 
-            std::cout << cell_width << "c" << cell_height << std::endl;
-
             // Iterate through the cells (4x4)
 
-            for (std::size_t cx = 0; cx < 4; ++cx) {
-                for (std::size_t cy = 0; cy < 4; ++cy) {
+            for (std::size_t cy = 0; cy < 4; ++cy) {
+                for (std::size_t cx = 0; cx < 4; ++cx) {
                     auto x_start = first + cx * cell_width;
                     auto y_start = upper + cx * cell_height;
 
+                    constexpr const std::size_t T = 8;
 
+                    std::array<double, T> bins;
+                    bins.fill(0.0);
 
+                    // Attribute each magnitude to a bin
 
+                    for(std::size_t yy = y_start; yy < y_start + cell_height; ++yy){
+                        for(std::size_t xx = x_start; xx < x_start + cell_width; ++xx){
+                            auto magnitude = m.at<double>(yy, xx);
+                            auto angle = o.at<double>(yy, xx);
+
+                            std::size_t bin = std::size_t((angle + M_PI) / (M_PI / 4.0)) % 8;
+                            std::size_t next_bin = (bin + 1) % 8;
+
+                            auto inside_angle = (angle + M_PI) - bin * (M_PI / 4.0);
+                            auto bin_contrib = ((M_PI / 4.0) - inside_angle) / (M_PI / 4.0);
+                            auto next_contrib = inside_angle / (M_PI / 4.0);
+
+                            bins[bin] += bin_contrib * magnitude;
+                            bins[next_bin] += next_contrib * magnitude;
+                        }
+                    }
+
+                    for(std::size_t t = 0; t < T; ++t){
+                        features.back()[cy * 4 * T + cx * T + t] = bins[t];
+                    }
                 }
             }
         }
     } else {
         std::cout << "Improve algo" << std::endl;
+
+        features.emplace_back(128);
+        features.back() = 0.0;
     }
 
 
