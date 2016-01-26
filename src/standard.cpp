@@ -27,7 +27,89 @@ namespace {
 
 const bool interpolate = false;
 
+std::vector<etl::dyn_vector<weight>> standard_features_rath_2003(const cv::Mat& clean_image) {
+    std::vector<etl::dyn_vector<weight>> features;
+
+    for (std::size_t i = 0; i < width; ++i) {
+        features.emplace_back(45);
+    }
+
+    const auto width  = static_cast<std::size_t>(clean_image.size().width);
+
+    // Convert image to float
+    cv::Mat clean_image_float(clean_image.size(), CV_64F);
+    clean_image.convertTo(clean_image_float, clean_image_float.type());
+
+    // 1. Gaussian Smoothing
+
+    cv::Mat gaussian_kernel = cv::Mat::ones(13, 13, CV_64F);
+    cv::Mat gaussian_kernel_dx = cv::Mat::ones(13, 13, CV_64F);
+    cv::Mat gaussian_kernel_dy = cv::Mat::ones(13, 13, CV_64F);
+
+    auto step = gaussian_kernel.step;
+    auto* kernel = gaussian_kernel.data;
+    auto* kernel_dx = gaussian_kernel_dx.data;
+    auto* kernel_dy = gaussian_kernel_dy.data;
+
+    double sigma = 4.0;
+    double sigma2 = sigma * sigma;
+    double sigma4 = sigma2 * sigma2;
+
+    for (std::size_t i = 0; i < 13; ++i) {
+        for (std::size_t j = 0; j < 13; ++j) {
+            kernel[i * step + j]    = (1.0 / (2.0 * 3.14 * sigma2)) * std::exp(-1.0 * ((i * i + j * j) / (2.0 * sigma2)));
+            kernel_dx[i * step + j] = -1.0 * ((i * std::exp(-((i * i + j * j) / (2.0 * sigma2)))) / (2.0 * 3.14 * sigma4));
+            kernel_dy[i * step + j] = -1.0 * ((j * std::exp(-((i * i + j * j) / (2.0 * sigma2)))) / (2.0 * 3.14 * sigma4));
+        }
+    }
+
+    // 1. Gaussian Smoothing
+
+    cv::Mat gaussian_blurred;
+    cv::filter2D(clean_image_float, gaussian_blurred, -1, gaussian_kernel);
+    cv::Mat gaussian_blurred_scaled(cv::Size(width, 15), gaussian_blurred.type());
+    cv::resize(gaussian_blurred, gaussian_blurred_scaled, gaussian_blurred_scaled.size(), cv::INTER_AREA);
+
+    // 2. Gaussian horizontal partial derivative
+
+    cv::Mat gaussian_blurred_dx;
+    cv::filter2D(clean_image_float, gaussian_blurred_dx, -1, gaussian_kernel_dx);
+    cv::Mat gaussian_blurred_dx_scaled(cv::Size(width, 15), gaussian_blurred_dx.type());
+    cv::resize(gaussian_blurred_dx, gaussian_blurred_dx_scaled, gaussian_blurred_dx_scaled.size(), cv::INTER_AREA);
+
+    // 3. Gaussian vertical partial derivative
+
+    cv::Mat gaussian_blurred_dy;
+    cv::filter2D(clean_image_float, gaussian_blurred_dy, -1, gaussian_kernel_dy);
+    cv::Mat gaussian_blurred_dy_scaled(cv::Size(width, 15), gaussian_blurred_dy.type());
+    cv::resize(gaussian_blurred_dy, gaussian_blurred_dy_scaled, gaussian_blurred_dy_scaled.size(), cv::INTER_AREA);
+
+    // 4. Merge the feature set
+
+    for (std::size_t i = 0; i < width; ++i) {
+        for (std::size_t j = 0; j < 15; ++j) {
+            features[i][j] = gaussian_blurred_scaled.at<double>(j, i);
+            features[i][15+j] = gaussian_blurred_dx_scaled.at<double>(j, i);
+            features[i][30+j] = gaussian_blurred_dy_scaled.at<double>(j, i);
+        }
+    }
+
+#ifdef LOCAL_LINEAR_SCALING
+    local_linear_feature_scaling(features);
+#endif
+
+#ifdef LOCAL_MEAN_SCALING
+    local_mean_feature_scaling(features);
+#endif
+
+    return features;
+}
+
 std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& clean_image) {
+    if(conf.method == Method::Rath2003){
+        return standard_features_rath_2003(clean_image);
+    }
+
     std::vector<etl::dyn_vector<weight>> features;
 
     const auto width  = static_cast<std::size_t>(clean_image.size().width);
