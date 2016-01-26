@@ -113,8 +113,8 @@ int command_train(config& conf) {
     extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
 
     switch (conf.method) {
-        case Method::Standard:
-        case Method::Manmatha:
+        case Method::Bunke2001:
+        case Method::Rath2007:
         case Method::Rath2003:
             standard_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
             break;
@@ -151,8 +151,8 @@ int command_features(config& conf) {
     extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
 
     switch (conf.method) {
-        case Method::Standard:
-        case Method::Manmatha:
+        case Method::Bunke2001:
+        case Method::Rath2007:
         case Method::Rath2003:
             standard_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
             break;

@@ -81,7 +81,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         gravity /= height;
         moment /= (height * height);
 
-        if(conf.method == Method::Standard){
+        if(conf.method == Method::Bunke2001){
             features.emplace_back(9);
 
             auto& f = features.back();
@@ -95,7 +95,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
             f[6] = 0.0;
             f[7] = transitions;
             f[8] = inner_black;
-        } else if(conf.method == Method::Manmatha){
+        } else if(conf.method == Method::Rath2007){
             features.emplace_back(4);
 
             auto& f = features.back();
@@ -107,12 +107,12 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         }
     }
 
-    if(conf.method == Method::Standard){
+    if(conf.method == Method::Bunke2001){
         for (std::size_t i = 0; i < width - 1; ++i) {
             features[i][5] = features[i + 1][1] - features[i][1];
             features[i][6] = features[i + 1][2] - features[i][2];
         }
-    } else if (conf.method == Method::Manmatha && interpolate){
+    } else if (conf.method == Method::Rath2007 && interpolate){
         //Interpolate contour gaps
 
         //1. Fill the gap starting from column 0 (if any)

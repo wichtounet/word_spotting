@@ -36,20 +36,21 @@
 namespace {
 
 std::string get_suffix(config& conf){
-    if(conf.method == Method::Standard){
-        return ".0";
-    } else if(conf.method == Method::Holistic){
-        return ".1";
-    } else if(conf.method == Method::Patches){
-        if(conf.half){
-            return STRINGIFY(SUFFIX_CAT(SUFFIX, HALF_LEVELS));
-        } else if(conf.third){
-            return STRINGIFY(SUFFIX_CAT(SUFFIX, THIRD_LEVELS));
-        } else {
-            return STRINGIFY(SUFFIX_CAT(SUFFIX, FULL_LEVELS));
-        }
-    } else if(conf.method == Method::Patches){
-        return ".2";
+    switch (conf.method) {
+        case Method::Bunke2001:
+        case Method::Rath2007:
+        case Method::Rath2003:
+            return ".0";
+        case Method::Holistic:
+            return ".1";
+        case Method::Patches:
+            if(conf.half){
+                return STRINGIFY(SUFFIX_CAT(SUFFIX, HALF_LEVELS));
+            } else if(conf.third){
+                return STRINGIFY(SUFFIX_CAT(SUFFIX, THIRD_LEVELS));
+            } else {
+                return STRINGIFY(SUFFIX_CAT(SUFFIX, FULL_LEVELS));
+            }
     }
 
     return ".invalid";

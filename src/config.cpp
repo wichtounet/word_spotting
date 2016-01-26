@@ -42,13 +42,15 @@ config parse_args(int argc, char** argv) {
     std::size_t i = 0;
     for (; i < conf.args.size(); ++i) {
         if (conf.args[i] == "-0") {
-            conf.method = Method::Standard;
+            conf.method = Method::Bunke2001;
         } else if (conf.args[i] == "-1") {
             conf.method = Method::Holistic;
         } else if (conf.args[i] == "-2") {
             conf.method = Method::Patches;
         } else if (conf.args[i] == "-3") {
-            conf.method = Method::Manmatha;
+            conf.method = Method::Rath2007;
+        } else if (conf.args[i] == "-4") {
+            conf.method = Method::Rath2003;
         } else if (conf.args[i] == "-full") {
             //Simply here for consistency sake
         } else if (conf.args[i] == "-half") {
