@@ -26,7 +26,8 @@ enum class Method : std::size_t {
     Standard,
     Holistic,
     Patches,
-    Manmatha
+    Manmatha,
+    Rath2003
 };
 
 struct config {

@@ -20,6 +20,7 @@ void print_usage() {
     std::cout << " -1 : Method 1 (holistic)" << std::endl;
     std::cout << " -2 : Method 2 (patches)" << std::endl;
     std::cout << " -3 : Method 3 [Rath2007]" << std::endl;
+    std::cout << " -4 : Method 4 [Rath2003]" << std::endl;
     std::cout << " -half : Takes half resolution images only" << std::endl;
     std::cout << " -quarter : Takes quarter resolution images only" << std::endl;
     std::cout << " -third : Takes third resolution images only" << std::endl;

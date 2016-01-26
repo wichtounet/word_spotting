@@ -115,6 +115,7 @@ int command_train(config& conf) {
     switch (conf.method) {
         case Method::Standard:
         case Method::Manmatha:
+        case Method::Rath2003:
             standard_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
             break;
         case Method::Holistic:
@@ -152,6 +153,7 @@ int command_features(config& conf) {
     switch (conf.method) {
         case Method::Standard:
         case Method::Manmatha:
+        case Method::Rath2003:
             standard_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
             break;
         case Method::Holistic:
