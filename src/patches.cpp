@@ -44,8 +44,6 @@
 
 namespace {
 
-using thread_pool = cpp::default_thread_pool<>;
-
 template <typename DBN>
 struct patch_iterator : std::iterator<std::input_iterator_tag, typename DBN::template layer_type<0>::input_one_t> {
     using value_t = typename DBN::template layer_type<0>::input_one_t;
@@ -108,10 +106,6 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, typename DBN::tem
         ++(*this);
         return it;
     }
-};
-
-struct parameters {
-    double sc_band;
 };
 
 template <bool DBN_Patch, typename DBN>
@@ -231,38 +225,6 @@ features_t<DBN_Patch, DBN> compute_reference(
                             });
 
     return ref_a;
-}
-
-template <typename Dataset, typename Ref, typename Features>
-std::vector<std::pair<std::string, weight>> compute_distances(
-    thread_pool& pool, const Dataset& dataset, Features& test_features_a, Ref& ref_a,
-    names training_images, names test_image_names, parameters parameters) {
-    std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
-
-    cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
-                            [&](auto& test_image, std::size_t t) {
-                                auto t_size = dataset.word_images.at(test_image).size().width;
-
-                                double best_diff_a = 100000000.0;
-
-                                for (std::size_t i = 0; i < ref_a.size(); ++i) {
-                                    auto ref_size = dataset.word_images.at(training_images[i] + ".png").size().width;
-
-                                    double diff_a;
-                                    auto ratio = static_cast<double>(ref_size) / t_size;
-                                    if (ratio > 2.0 || ratio < 0.5) {
-                                        diff_a = 100000000.0;
-                                    } else {
-                                        diff_a = dtw_distance(ref_a[i], test_features_a[t], true, parameters.sc_band);
-                                    }
-
-                                    best_diff_a = std::min(best_diff_a, diff_a);
-                                }
-
-                                diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
-                            });
-
-    return diffs_a;
 }
 
 template <bool DBN_Patch, typename TF, typename KV, typename Dataset, typename DBN>

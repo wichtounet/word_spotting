@@ -16,8 +16,9 @@
 #include "standard.hpp"
 #include "utils.hpp"
 #include "reports.hpp"
-#include "dtw.hpp"      //Dynamic time warping
-#include "features.hpp" //Features exporting
+#include "dtw.hpp"        //Dynamic time warping
+#include "features.hpp"   //Features exporting
+#include "evaluation.hpp" //Global evaluation functions
 
 #define LOCAL_MEAN_SCALING
 #include "scaling.hpp" //Scaling functions
@@ -208,24 +209,8 @@ void scale(std::vector<std::vector<etl::dyn_vector<weight>>>& test_features, con
 #endif
 }
 
-template <typename Dataset, typename Set>
-void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names, bool training) {
-    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
-
-    auto result_folder = select_folder("./dtw_results/");
-
-    generate_rel_files(result_folder, dataset, test_image_names, keywords);
-
-    std::cout << "Evaluate performance..." << std::endl;
-
-    std::size_t evaluated = 0;
-
-    std::vector<double> eer(keywords.size());
-    std::vector<double> ap(keywords.size());
-
-    std::ofstream global_top_stream(result_folder + "/global_top_file");
-    std::ofstream local_top_stream(result_folder + "/local_top_file");
-
+template <typename Dataset>
+std::vector<std::vector<etl::dyn_vector<weight>>> prepare_outputs(const Dataset& dataset, config& conf, names test_image_names, bool training){
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
 
     for (auto& test_image : test_image_names) {
@@ -234,53 +219,94 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, const st
 
     scale(test_features, conf, training);
 
-    cpp::default_thread_pool<> pool;
+    return test_features;
+}
 
-    for (std::size_t k = 0; k < keywords.size(); ++k) {
-        auto& keyword = keywords[k];
+template <typename Dataset>
+std::vector<std::vector<etl::dyn_vector<weight>>> compute_reference(thread_pool& pool, const Dataset& dataset, const config& conf, names training_images) {
+    std::vector<std::vector<etl::dyn_vector<weight>>> ref_a(training_images.size());
 
-        std::string training_image;
-        for (auto& labels : dataset.word_labels) {
-            if (keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()) {
-                training_image = labels.first;
-                break;
-            }
-        }
+    cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(), [&](auto& training_image, std::size_t e) {
+        ref_a[e] = standard_features(conf, dataset.word_images.at(training_image + ".png"));
 
-        //Make sure that there is a sample in the training set
-        if (training_image.empty()) {
-            std::cout << "Skipped " << keyword << " since there are no example in the training set" << std::endl;
-            continue;
-        }
+#ifdef GLOBAL_MEAN_SCALING
+        auto scale = global_mean_scaling(ref_a[e], conf, false);
+#endif
 
-        ++evaluated;
-
-        auto ref_a = standard_features(conf, dataset.word_images.at(training_image + ".png"));
+#ifdef GLOBAL_LINEAR_SCALING
+        auto scale = global_linear_scaling(ref_a[e], conf, false);
+#endif
 
 #if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
         for (std::size_t i = 0; i < ref_a.size(); ++i) {
             for (std::size_t f = 0; f < ref_a[i].size(); ++f) {
-                ref_a[i][f] = scale(ref_a[i][f], conf.scale_a[f], conf.scale_b[f]);
+                ref_a[e][i][f] = scale(ref_a[i][f], conf.scale_a[f], conf.scale_b[f]);
             }
         }
 #endif
+    });
 
-        std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
+    return ref_a;
+}
 
-        cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
-                                [&](auto& test_image, std::size_t t) {
-                                    decltype(auto) test_a = test_features[t];
+template <typename Dataset, typename Set>
+void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names train_word_names, names test_image_names, bool training) {
+    thread_pool pool;
 
-                                    double diff_a = dtw_distance(ref_a, test_a, true);
-                                    diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), diff_a);
-                                });
+    parameters parameters;
+    parameters.sc_band = 0.11;
 
-        update_stats(k, result_folder, dataset, keyword, diffs_a, eer, ap, global_top_stream, local_top_stream, test_image_names);
+    // 0. Select the keywords
+
+    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+
+    // 1. Select a folder
+
+    auto result_folder = select_folder("./dtw_results/");
+
+    // 2. Generate the rel files
+
+    generate_rel_files(result_folder, dataset, test_image_names, keywords);
+
+    // 3. Prepare all the outputs
+
+    auto test_features = prepare_outputs(dataset, conf, test_image_names, training);
+
+    // 4. Evaluate the performances
+
+    std::cout << "Evaluate performance..." << std::endl;
+
+    std::vector<double> eer(keywords.size());
+    std::vector<double> ap(keywords.size());
+
+    std::ofstream global_top_stream(result_folder + "/global_top_file");
+    std::ofstream local_top_stream(result_folder + "/local_top_file");
+
+    for (std::size_t k = 0; k < keywords.size(); ++k) {
+        auto& keyword = keywords[k];
+
+        // a) Select the training images
+
+        auto training_images = select_training_images(dataset, keyword, train_word_names);
+
+        // b) Compute the reference features
+
+        auto ref = compute_reference(pool, dataset, conf, training_images);
+
+        // c) Compute the distances
+
+        auto diffs = compute_distances(pool, dataset, test_features, ref, training_images, test_image_names, parameters);
+
+        // d) Update the local stats
+
+        update_stats(k, result_folder, dataset, keyword, diffs, eer, ap, global_top_stream, local_top_stream, test_image_names);
     }
 
     std::cout << "... done" << std::endl;
 
-    std::cout << evaluated << " keywords evaluated" << std::endl;
+    // 5. Finalize the results
+
+    std::cout << keywords.size() << " keywords evaluated" << std::endl;
 
     double mean_eer = std::accumulate(eer.begin(), eer.end(), 0.0) / eer.size();
     double mean_ap  = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
