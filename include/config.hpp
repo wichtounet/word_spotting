@@ -28,7 +28,8 @@ enum class Method : std::size_t {
     Patches,
     Rath2007,
     Rath2003,
-    Rodriguez2008
+    Rodriguez2008,
+    Vinciarelli2004,
 };
 
 struct config {

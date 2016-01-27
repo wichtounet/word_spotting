@@ -22,6 +22,7 @@ void print_usage() {
     std::cout << " -3 : Method 3 [Rath2007]" << std::endl;
     std::cout << " -4 : Method 4 [Rath2003]" << std::endl;
     std::cout << " -5 : Method 5 [Rodriguez2008]" << std::endl;
+    std::cout << " -6 : Method 6 [Vinciarelli2004]" << std::endl;
     std::cout << " -half : Takes half resolution images only" << std::endl;
     std::cout << " -quarter : Takes quarter resolution images only" << std::endl;
     std::cout << " -third : Takes third resolution images only" << std::endl;
@@ -55,6 +56,8 @@ config parse_args(int argc, char** argv) {
             conf.method = Method::Rath2003;
         } else if (conf.args[i] == "-5") {
             conf.method = Method::Rodriguez2008;
+        } else if (conf.args[i] == "-6") {
+            conf.method = Method::Vinciarelli2004;
         } else if (conf.args[i] == "-full") {
             //Simply here for consistency sake
         } else if (conf.args[i] == "-half") {

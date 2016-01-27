@@ -301,11 +301,37 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
     return features;
 }
 
+std::vector<etl::dyn_vector<weight>> standard_features_vinciarelli_2004(const cv::Mat& clean_image) {
+    const auto height  = static_cast<std::size_t>(clean_image.size().height);
+    const auto width  = static_cast<std::size_t>(clean_image.size().width);
+
+    const std::size_t w     = height;    //Square window
+    const std::size_t left  = w / 2;     // Left context
+    const std::size_t right = w / 2 - 1; // Right context
+
+    std::vector<etl::dyn_vector<weight>> features;
+
+
+    // Feature scaling
+
+#ifdef LOCAL_LINEAR_SCALING
+    local_linear_feature_scaling(features);
+#endif
+
+#ifdef LOCAL_MEAN_SCALING
+    local_mean_feature_scaling(features);
+#endif
+
+    return features;
+}
+
 std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& clean_image) {
     if(conf.method == Method::Rath2003){
         return standard_features_rath_2003(clean_image);
     } else if(conf.method == Method::Rodriguez2008){
         return standard_features_rodriguez_2008(clean_image);
+    } else if(conf.method == Method::Vinciarelli2004){
+        return standard_features_vinciarelli_2004(clean_image);
     }
 
     std::vector<etl::dyn_vector<weight>> features;

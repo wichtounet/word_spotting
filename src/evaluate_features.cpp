@@ -41,6 +41,7 @@ std::string get_suffix(config& conf){
         case Method::Rath2007:
         case Method::Rath2003:
         case Method::Rodriguez2008:
+        case Method::Vinciarelli2004:
             return ".0";
         case Method::Holistic:
             return ".1";
