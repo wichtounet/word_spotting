@@ -780,13 +780,15 @@ void standard_train(
     const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
     names train_word_names, names train_image_names, names valid_image_names, names test_image_names) {
 
-    if(!conf.notrain){
+    if (!conf.notrain) {
         std::cout << "Evaluate on training set" << std::endl;
         evaluate_dtw(dataset, set, conf, train_word_names, train_image_names, true);
     }
 
-    std::cout << "Evaluate on validation set" << std::endl;
-    evaluate_dtw(dataset, set, conf, train_word_names, valid_image_names, false);
+    if (!conf.novalid) {
+        std::cout << "Evaluate on validation set" << std::endl;
+        evaluate_dtw(dataset, set, conf, train_word_names, valid_image_names, false);
+    }
 
     std::cout << "Evaluate on test set" << std::endl;
     evaluate_dtw(dataset, set, conf, train_word_names, test_image_names, false);
