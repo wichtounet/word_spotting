@@ -234,6 +234,9 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
             }
         }
 
+        upper = upper > 0 ? upper - 1 : upper;
+        lower = lower < height - 1 ? lower + 1 : lower;
+
         // Compute dimensions of the cells
 
         const std::size_t height = lower - upper;
