@@ -489,12 +489,12 @@ void scale(std::vector<std::vector<etl::dyn_vector<weight>>>& test_features, con
 }
 
 template <typename Dataset>
-std::vector<std::vector<etl::dyn_vector<weight>>> prepare_outputs(const Dataset& dataset, config& conf, names test_image_names, bool training){
-    std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
+std::vector<std::vector<etl::dyn_vector<weight>>> prepare_outputs(thread_pool& pool, const Dataset& dataset, config& conf, names test_image_names, bool training){
+    std::vector<std::vector<etl::dyn_vector<weight>>> test_features(test_image_names.size());
 
-    for (auto& test_image : test_image_names) {
-        test_features.push_back(standard_features(conf, dataset.word_images.at(test_image)));
-    }
+    cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t e){
+        test_features[e] = standard_features(conf, dataset.word_images.at(test_image));
+    });
 
     scale(test_features, conf, training);
 
@@ -560,7 +560,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names tr
 
     // 3. Prepare all the outputs
 
-    auto test_features = prepare_outputs(dataset, conf, test_image_names, training);
+    auto test_features = prepare_outputs(pool, dataset, conf, test_image_names, training);
 
     // 4. Evaluate the performances
 
