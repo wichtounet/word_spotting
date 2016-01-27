@@ -239,9 +239,9 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
 
         // Compute dimensions of the cells
 
-        const std::size_t height = lower - upper;
+        const std::size_t grid_height = lower - upper;
         const std::size_t cell_width = w / M;
-        const std::size_t cell_height = height / N;
+        const std::size_t cell_height = grid_height / N;
 
         // Iterate through the cells (4x4)
 
@@ -311,6 +311,112 @@ std::vector<etl::dyn_vector<weight>> standard_features_vinciarelli_2004(const cv
 
     std::vector<etl::dyn_vector<weight>> features;
 
+    // 1. Convert image to float
+    cv::Mat clean_image_float(clean_image.size(), CV_64F);
+    clean_image.convertTo(clean_image_float, clean_image_float.type());
+
+    // 2. Enlarge the image to avoid boundary effects
+
+    cv::Mat L(cv::Size(width + height, height), CV_64F);
+
+    L = cv::Scalar(1.0);
+
+    clean_image_float.copyTo(L(cv::Rect(left , 0, width, height)));
+
+    //Sliding window
+
+    cpp_assert(height % 2 == 0, "Vinciarelli2004 has only been implemented for even windows");
+
+    constexpr const std::size_t M = 4; //Number of cells
+    constexpr const std::size_t N = 4; //Number of cells
+
+    for (std::size_t real_x = 0; real_x < width; ++real_x) {
+        const std::size_t real_first = std::max(static_cast<int>(real_x) - static_cast<int>(left), 0);
+        const std::size_t real_last  = std::min(real_x + right, width);
+
+        // Compute the upper and lower contours inside the window
+
+        std::size_t lower = 0;
+        std::size_t upper = 0;
+
+        features.emplace_back(M * N);
+
+        for(std::size_t i = real_first; i < real_last; ++i){
+            std::size_t local_lower = 0;
+            for (std::size_t y = height - 1; y > 0; --y) {
+                if (clean_image.at<uint8_t>(y, i) == 0.0) {
+                    local_lower = y;
+                    break;
+                }
+            }
+
+            std::size_t local_upper = 0;
+            for (std::size_t y = 0; y < height; ++y) {
+                if (clean_image.at<uint8_t>(y, i) == 0.0) {
+                    local_upper = y;
+                    break;
+                }
+            }
+
+            if(i == real_first){
+                lower = local_lower;
+                upper = local_upper;
+            } else if(!(local_lower == 0 && local_upper == 0)) {
+                lower = std::max(lower, local_lower);
+                upper = std::min(upper, local_upper);
+            }
+        }
+
+        upper = upper > 0 ? upper - 1 : upper;
+        lower = lower < height - 1 ? lower + 1 : lower;
+
+        // Compute dimensions of the cells
+
+        const std::size_t grid_height = lower - upper;
+        const std::size_t cell_width = w / M;
+        const std::size_t cell_height = grid_height / N;
+
+        // Compute the total sum of pixels in the window
+
+        double total_sum = 0.0;
+
+        //TODO These loops can be simplified
+        for (std::size_t cy = 0; cy < N; ++cy) {
+            for (std::size_t cx = 0; cx < M; ++cx) {
+                const auto x_start = real_x + cx * cell_width;
+                const auto y_start = upper + cy * cell_height;
+
+                for(std::size_t yy = y_start; yy < y_start + cell_height; ++yy){
+                    auto* L_ptr = L.ptr<double>(yy);
+
+                    for(std::size_t xx = x_start; xx < x_start + cell_width; ++xx){
+                        total_sum += L_ptr[xx];
+                    }
+                }
+            }
+        }
+
+        // Iterate through the cells (4x4)
+
+        for (std::size_t cy = 0; cy < N; ++cy) {
+            for (std::size_t cx = 0; cx < M; ++cx) {
+                const auto x_start = real_x + cx * cell_width;
+                const auto y_start = upper + cy * cell_height;
+
+                double sum = 0.0;
+
+                for(std::size_t yy = y_start; yy < y_start + cell_height; ++yy){
+                    auto* L_ptr = L.ptr<double>(yy);
+
+                    for(std::size_t xx = x_start; xx < x_start + cell_width; ++xx){
+                        sum += L_ptr[xx];
+                    }
+                }
+
+                features.back()[cy * N + cx] = sum / total_sum;
+            }
+        }
+    }
 
     // Feature scaling
 
