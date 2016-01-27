@@ -248,7 +248,7 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
         for (std::size_t cy = 0; cy < N; ++cy) {
             for (std::size_t cx = 0; cx < M; ++cx) {
                 const auto x_start = real_x + cx * cell_width;
-                const auto y_start = upper + cx * cell_height;
+                const auto y_start = upper + cy * cell_height;
 
                 std::array<double, T> bins;
                 bins.fill(0.0);
