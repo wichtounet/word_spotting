@@ -305,9 +305,9 @@ std::vector<etl::dyn_vector<weight>> standard_features_vinciarelli_2004(const cv
     const auto height  = static_cast<std::size_t>(clean_image.size().height);
     const auto width  = static_cast<std::size_t>(clean_image.size().width);
 
-    const std::size_t w     = height / 2; //Rectangular window
-    const std::size_t left  = w / 2;      // Left context
-    const std::size_t right = w / 2 - 1;  // Right context
+    const std::size_t w     = height;    //Square window
+    const std::size_t left  = w / 2;     // Left context
+    const std::size_t right = w / 2 - 1; // Right context
 
     std::vector<etl::dyn_vector<weight>> features;
 
@@ -429,15 +429,21 @@ std::vector<etl::dyn_vector<weight>> standard_features_vinciarelli_2004(const cv
         }
     }
 
+    // Frame normalization
+
+    for (std::size_t real_x = 0; real_x < width; ++real_x) {
+        features[real_x] *= (1.0 / etl::sum(features[real_x]));
+    }
+
     // Feature scaling
 
-#ifdef LOCAL_LINEAR_SCALING
-    local_linear_feature_scaling(features);
-#endif
+//#ifdef LOCAL_LINEAR_SCALING
+    //local_linear_feature_scaling(features);
+//#endif
 
-#ifdef LOCAL_MEAN_SCALING
-    local_mean_feature_scaling(features);
-#endif
+//#ifdef LOCAL_MEAN_SCALING
+    //local_mean_feature_scaling(features);
+//#endif
 
     return features;
 }
