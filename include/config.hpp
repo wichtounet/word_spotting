@@ -30,6 +30,7 @@ enum class Method : std::size_t {
     Rath2003,
     Rodriguez2008,
     Vinciarelli2004,
+    Terasawa2009,
 };
 
 struct config {
