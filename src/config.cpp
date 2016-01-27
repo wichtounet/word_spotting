@@ -28,6 +28,7 @@ void print_usage() {
     std::cout << " -svm : Use a SVM" << std::endl;
     std::cout << " -view : Load the DBN and visualize its weights" << std::endl;
     std::cout << " -sub : Takes only a subset of the dataset to train (holistic only)" << std::endl;
+    std::cout << " -notrain : No evaluation on training set" << std::endl;
     std::cout << " -washington : The dataset is Washington [default]" << std::endl;
     std::cout << " -parzival : The dataset is Parzival" << std::endl;
     std::cout << " -iam : The dataset is IAM" << std::endl;
@@ -72,6 +73,8 @@ config parse_args(int argc, char** argv) {
             conf.sub = true;
         } else if (conf.args[i] == "-all") {
             conf.all = true;
+        } else if (conf.args[i] == "-notrain") {
+            conf.notrain = true;
         } else if (conf.args[i] == "-washington") {
             conf.washington = true;
             conf.parzival   = false;
