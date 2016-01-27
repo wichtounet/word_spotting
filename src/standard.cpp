@@ -305,13 +305,14 @@ std::vector<etl::dyn_vector<weight>> standard_features_vinciarelli_2004(const cv
     const auto height  = static_cast<std::size_t>(clean_image.size().height);
     const auto width  = static_cast<std::size_t>(clean_image.size().width);
 
-    const std::size_t w     = height;    //Square window
-    const std::size_t left  = w / 2;     // Left context
-    const std::size_t right = w / 2 - 1; // Right context
+    const std::size_t w     = height / 2; //Rectangular window
+    const std::size_t left  = w / 2;      // Left context
+    const std::size_t right = w / 2 - 1;  // Right context
 
     std::vector<etl::dyn_vector<weight>> features;
 
     // 1. Convert image to float
+
     cv::Mat clean_image_float(clean_image.size(), CV_64F);
     clean_image.convertTo(clean_image_float, clean_image_float.type());
 
@@ -323,7 +324,17 @@ std::vector<etl::dyn_vector<weight>> standard_features_vinciarelli_2004(const cv
 
     clean_image_float.copyTo(L(cv::Rect(left , 0, width, height)));
 
-    //Sliding window
+    // 3. Invert the image (for sums)
+
+    for (std::size_t y = 0; y < static_cast<std::size_t>(L.size().height); ++y) {
+        auto* L_ptr = L.ptr<double>(y);
+
+        for (std::size_t x = 0; x < static_cast<std::size_t>(L.size().width); ++x) {
+            L_ptr[x] = 1.0 - L_ptr[x];
+        }
+    }
+
+    // 4. Sliding window
 
     cpp_assert(height % 2 == 0, "Vinciarelli2004 has only been implemented for even windows");
 
