@@ -127,7 +127,7 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
     cv::Mat sGx(clean_image.size(), CV_64F);
     cv::Mat sGy(clean_image.size(), CV_64F);
 
-    const auto outside = 1;
+    const auto outside = 1.0;
 
     for (std::size_t y = 0; y < height; ++y) {
         auto* sGx_ptr = sGx.ptr<double>(y);
