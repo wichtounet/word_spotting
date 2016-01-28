@@ -534,7 +534,7 @@ std::vector<etl::dyn_vector<weight>> standard_features_terasawa_2009(const cv::M
 
     // 5. Sliding window
 
-    cpp_assert(height % 2 == 0, "Terasaway2009 has only been implemented for even windows");
+    cpp_assert(height % 2 == 0, "Terasawa2009 has only been implemented for even windows");
 
     constexpr const std::size_t M           = 4;       //Number of cells in horizontal
     constexpr const std::size_t N           = 4;       //Number of cells in vertical
