@@ -263,12 +263,12 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
                         auto magnitude = m_ptr[xx];
                         auto angle = o_ptr[xx] + M_PI; //In the range [0, 2pi]
 
-                        std::size_t bin = std::size_t(angle / (M_PI / 4.0)) % T;
+                        std::size_t bin = std::size_t(angle / (2.0 * M_PI / T)) % T;
                         std::size_t next_bin = (bin + 1) % T;
 
-                        auto inside_angle = angle - bin * (M_PI / 4.0);
-                        auto bin_contrib = ((M_PI / 4.0) - inside_angle) / (M_PI / 4.0);
-                        auto next_contrib = inside_angle / (M_PI / 4.0);
+                        auto inside_angle = angle - bin * (2.0 * M_PI / T);
+                        auto bin_contrib = ((2.0 * M_PI / T) - inside_angle) / (2.0 * M_PI / T);
+                        auto next_contrib = inside_angle / (2.0 * M_PI / T);
 
                         bins[bin] += bin_contrib * magnitude;
                         bins[next_bin] += next_contrib * magnitude;
@@ -448,6 +448,199 @@ std::vector<etl::dyn_vector<weight>> standard_features_vinciarelli_2004(const cv
     return features;
 }
 
+std::vector<etl::dyn_vector<weight>> standard_features_terasawa_2009(const cv::Mat& clean_image) {
+    const auto height  = static_cast<std::size_t>(clean_image.size().height);
+    const auto width  = static_cast<std::size_t>(clean_image.size().width);
+
+    const std::size_t w     = 16;        //
+    const std::size_t left  = w / 2;     // Left context
+    //const std::size_t right = w / 2 - 1; // Right context
+
+    std::vector<etl::dyn_vector<weight>> features;
+
+    // 0. Convert image to float
+    cv::Mat clean_image_float(clean_image.size(), CV_64F);
+    clean_image.convertTo(clean_image_float, clean_image_float.type());
+
+    // 1. Compute the smoothed image
+    cv::Mat L;
+    cv::GaussianBlur(clean_image_float, L, cv::Size(0, 0), 4.0, 4.0);
+
+    //2. Compute vertical and horizontal gradients
+    cv::Mat sGx(clean_image.size(), CV_64F);
+    cv::Mat sGy(clean_image.size(), CV_64F);
+
+    const auto outside = 1.0;
+
+    for (std::size_t y = 0; y < height; ++y) {
+        auto* sGx_ptr = sGx.ptr<double>(y);
+        auto* L_ptr   = L.ptr<double>(y);
+
+        sGx_ptr[0] = L_ptr[1] - outside;
+
+        for (std::size_t x = 1; x < width - 1; ++x) {
+            sGx_ptr[x] = L_ptr[x + 1] - L_ptr[x - 1];
+        }
+
+        sGx_ptr[width - 1] = outside - L_ptr[width - 1 - 1];
+    }
+
+    for (std::size_t y = 1; y < height - 1; ++y) {
+        auto* sGy_ptr = sGy.ptr<double>(y);
+        auto* Ll_ptr  = L.ptr<double>(y + 1);
+        auto* Lr_ptr  = L.ptr<double>(y - 1);
+
+        for (std::size_t x = 0; x < width; ++x) {
+            sGy_ptr[x] = Ll_ptr[x] - Lr_ptr[x];
+        }
+    }
+
+    for (std::size_t x = 0; x < width; ++x) {
+        sGy.at<double>(0, x) = L.at<double>(1, x) - outside;
+        sGy.at<double>(height - 1, x) = outside - L.at<double>(height - 1 - 1, x);
+    }
+
+    // 3. Enlarge the gradients to avoid boundary effects
+
+    cv::Mat Gx(cv::Size(width + height, height), CV_64F);
+    cv::Mat Gy(cv::Size(width + height, height), CV_64F);
+
+    Gx = cv::Scalar(0.0);
+    Gy = cv::Scalar(0.0);
+
+    sGx.copyTo(Gx(cv::Rect(left , 0, width, height)));
+    sGy.copyTo(Gy(cv::Rect(left , 0, width, height)));
+
+    // 4. Compute magnitude and orientations of the gradients
+
+    cv::Mat m(Gx.size(), CV_64F);
+    cv::Mat o(Gx.size(), CV_64F);
+
+    for (std::size_t y = 0; y < static_cast<std::size_t>(Gx.size().height); ++y) {
+        auto* Gx_ptr = Gx.ptr<double>(y);
+        auto* Gy_ptr = Gy.ptr<double>(y);
+
+        auto* m_ptr = m.ptr<double>(y);
+        auto* o_ptr = o.ptr<double>(y);
+
+        for (std::size_t x = 0; x < static_cast<std::size_t>(Gx.size().width); ++x) {
+            auto gx = Gx_ptr[x];
+            auto gy = Gy_ptr[x];
+
+            m_ptr[x] = std::sqrt(gx * gx + gy * gy);
+            o_ptr[x] = std::atan2(gx, gy);
+        }
+    }
+
+    // 5. Sliding window
+
+    cpp_assert(height % 2 == 0, "Terasaway2009 has only been implemented for even windows");
+
+    constexpr const std::size_t M           = 4;       //Number of cells in horizontal
+    constexpr const std::size_t N           = 4;       //Number of cells in vertical
+    constexpr const std::size_t T           = 16;      //Number of bins
+    constexpr const std::size_t B           = N - 1;   //Number of blocks
+    constexpr const std::size_t BM          = M;       //Number of horizontal cells per block
+    constexpr const std::size_t BN          = 2;       //Number of vertical cells per block
+    constexpr const std::size_t CELLS_BLOCK = BM * BN; //Number of cells per block
+
+    for (std::size_t real_x = 0; real_x < width; ++real_x) {
+        features.emplace_back(B * CELLS_BLOCK * T);
+
+        // Compute dimensions of the cells
+
+        const std::size_t cell_width = w / M;
+        const std::size_t cell_height = height / N;
+
+        // Iterate through the blocks
+
+        for(std::size_t by = 0; by < B; ++by){
+            std::array<double, CELLS_BLOCK * T> block_bins;
+            block_bins.fill(0.0);
+
+            for (std::size_t cy = 0; cy < BN; ++cy) {
+                for (std::size_t cx = 0; cx < M; ++cx) {
+                    auto real_cy = by + cy;
+
+                    const auto x_start = real_x + cx * cell_width;
+                    const auto y_start = real_cy * cell_height;
+
+                    std::array<double, T> bins;
+                    bins.fill(0.0);
+
+                    // Attribute each magnitude to a bin
+
+                    for(std::size_t yy = y_start; yy < y_start + cell_height; ++yy){
+                        auto* m_ptr = m.ptr<double>(yy);
+                        auto* o_ptr = o.ptr<double>(yy);
+
+                        for(std::size_t xx = x_start; xx < x_start + cell_width; ++xx){
+                            auto magnitude = m_ptr[xx];
+                            auto angle = o_ptr[xx] + M_PI; //In the range [0, 2pi]
+
+                            std::size_t bin = std::size_t(angle / (2 * M_PI / T)) % T;
+                            std::size_t next_bin = (bin + 1) % T;
+
+                            auto inside_angle = angle - bin * (2.0 * M_PI / T);
+                            auto bin_contrib = ((2.0 * M_PI / T) - inside_angle) / (2.0 * M_PI / T);
+                            auto next_contrib = inside_angle / (2.0 * M_PI / T);
+
+                            bins[bin] += bin_contrib * magnitude;
+                            bins[next_bin] += next_contrib * magnitude;
+                        }
+                    }
+
+                    //Accumulate for the whole block
+
+                    for(std::size_t t = 0; t < T; ++t){
+                        block_bins[cy * BN * T + cx * T + t] += bins[t];
+                    }
+                }
+            }
+
+            // Normalize the block
+
+            constexpr const double epsilon = 16.0; //TODO Check that fucking value
+
+            double norm = 0.0;
+
+            for(auto v : block_bins){
+                norm += v * v;
+            }
+
+            auto normalizer = std::sqrt(norm + epsilon * epsilon);
+
+            for(auto& v : block_bins){
+                v /= normalizer;
+            }
+
+            // Add the normalized block to the features
+
+            for(std::size_t t = 0; t < CELLS_BLOCK * T; ++t){
+                features.back()[by * CELLS_BLOCK * T + t] = block_bins[t];
+            }
+        }
+    }
+
+    // Frame normalization
+
+    //for (std::size_t real_x = 0; real_x < width; ++real_x) {
+        //features[real_x] *= (1.0 / etl::sum(features[real_x]));
+    //}
+
+    // Feature scaling
+
+//#ifdef LOCAL_LINEAR_SCALING
+    //local_linear_feature_scaling(features);
+//#endif
+
+//#ifdef LOCAL_MEAN_SCALING
+    //local_mean_feature_scaling(features);
+//#endif
+
+    return features;
+}
+
 std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& clean_image) {
     if(conf.method == Method::Rath2003){
         return standard_features_rath_2003(clean_image);
@@ -455,6 +648,8 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         return standard_features_rodriguez_2008(clean_image);
     } else if(conf.method == Method::Vinciarelli2004){
         return standard_features_vinciarelli_2004(clean_image);
+    } else if(conf.method == Method::Terasawa2009){
+        return standard_features_terasawa_2009(clean_image);
     }
 
     std::vector<etl::dyn_vector<weight>> features;
