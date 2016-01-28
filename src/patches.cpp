@@ -140,6 +140,7 @@ features_t<DBN_Patch, DBN> prepare_outputs(
                 for(auto& patch : patches){
                     f(vec).push_back(f(dbn).prepare_one_output());
                     f(dbn).activation_probabilities(patch, vec.back());
+                    //vec.back() /= etl::sum(vec.back()); //Local Frame normalization
                 } });
 
 #ifdef LOCAL_LINEAR_SCALING
@@ -197,6 +198,7 @@ features_t<DBN_Patch, DBN> compute_reference(
                 for(std::size_t i = 0; i < patches.size(); ++i){
                     ref_a[e].push_back(f(dbn).prepare_one_output());
                     f(dbn).activation_probabilities(patches[i], ref_a[e][i]);
+                    // ref_a[e][i] /= etl::sum(ref_a[e][i]); // Local Frame Normalization
                 } });
 
 #ifdef LOCAL_LINEAR_SCALING
