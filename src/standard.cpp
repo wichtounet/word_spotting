@@ -40,7 +40,7 @@ std::vector<etl::dyn_vector<weight>> standard_features_rath_2003(const cv::Mat& 
     cv::Mat clean_image_float(clean_image.size(), CV_64F);
     clean_image.convertTo(clean_image_float, clean_image_float.type());
 
-    // 1. Gaussian Smoothing
+    // 1. Build the kernels
 
     cv::Mat gaussian_kernel = cv::Mat::ones(13, 13, CV_64F);
     cv::Mat gaussian_kernel_dx = cv::Mat::ones(13, 13, CV_64F);
@@ -57,9 +57,9 @@ std::vector<etl::dyn_vector<weight>> standard_features_rath_2003(const cv::Mat& 
 
     for (std::size_t i = 0; i < 13; ++i) {
         for (std::size_t j = 0; j < 13; ++j) {
-            kernel[i * step + j]    = (1.0 / (2.0 * 3.14 * sigma2)) * std::exp(-1.0 * ((i * i + j * j) / (2.0 * sigma2)));
-            kernel_dx[i * step + j] = -1.0 * ((i * std::exp(-((i * i + j * j) / (2.0 * sigma2)))) / (2.0 * 3.14 * sigma4));
-            kernel_dy[i * step + j] = -1.0 * ((j * std::exp(-((i * i + j * j) / (2.0 * sigma2)))) / (2.0 * 3.14 * sigma4));
+            kernel[i * step + j]    = (1.0 / (2.0 * M_PI * sigma2)) * std::exp(-1.0 * ((i * i + j * j) / (2.0 * sigma2)));
+            kernel_dx[i * step + j] = -1.0 * ((i * std::exp(-((i * i + j * j) / (2.0 * sigma2)))) / (2.0 * M_PI * sigma4));
+            kernel_dy[i * step + j] = -1.0 * ((j * std::exp(-((i * i + j * j) / (2.0 * sigma2)))) / (2.0 * M_PI * sigma4));
         }
     }
 
