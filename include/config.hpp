@@ -33,6 +33,8 @@ enum class Method : std::size_t {
     Terasawa2009,
 };
 
+std::string method_to_string(Method method);
+
 struct config {
     std::vector<std::string> args;
     std::vector<std::string> files;

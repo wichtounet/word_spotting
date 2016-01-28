@@ -56,6 +56,8 @@ std::string get_suffix(config& conf){
             }
     }
 
+    cpp_unreachable("Unhandled method");
+
     return ".invalid";
 }
 

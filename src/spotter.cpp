@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
         conf.downscale = 4;
     }
 
-    std::cout << "  Method: " << static_cast<std::size_t>(conf.method) << std::endl;
+    std::cout << "  Method: " << method_to_string(conf.method) << std::endl;
 
     if (conf.command == "evaluate") {
         conf.load = true;

@@ -7,6 +7,7 @@
 
 #include <iostream>
 
+#include "cpp_utils/assert.hpp"
 #include "config.hpp"
 
 void print_usage() {
@@ -108,4 +109,29 @@ config parse_args(int argc, char** argv) {
     }
 
     return conf;
+}
+
+std::string method_to_string(Method method){
+    switch (method) {
+        case Method::Bunke2001:
+            return "Bunke2001";
+        case Method::Holistic:
+            return "Holistic";
+        case Method::Patches:
+            return "Patches";
+        case Method::Rath2007:
+            return "Rath2007";
+        case Method::Rath2003:
+            return "Rath2003";
+        case Method::Rodriguez2008:
+            return "Rodriguez2008";
+        case Method::Vinciarelli2004:
+            return "Vinciarelli2004";
+        case Method::Terasawa2009:
+            return "Terasawa2009";
+    }
+
+    cpp_unreachable("Unhandled method");
+
+    return "invalid_method";
 }
