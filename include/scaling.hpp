@@ -13,8 +13,8 @@ void local_linear_feature_scaling(std::vector<Features>& features) {
     const auto width = features.size();
 
     for (std::size_t f = 0; f < features.back().size(); ++f) {
-        double A = features[0][f];
-        double B = features[0][f];
+        auto A = features[0][f];
+        auto B = features[0][f];
 
         for (std::size_t i = 1; i < width; ++i) {
             A = std::min(A, features[i][f]);
