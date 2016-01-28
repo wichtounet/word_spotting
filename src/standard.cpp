@@ -121,7 +121,7 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
 
     // 1. Compute the smoothed image
     cv::Mat L;
-    cv::GaussianBlur(clean_image_float, L, cv::Size(0, 0), 4.0, 4.0);
+    cv::GaussianBlur(clean_image_float, L, cv::Size(0, 0), 3.0, 3.0);
 
     //2. Compute vertical and horizontal gradients
     cv::Mat sGx(clean_image.size(), CV_64F);
@@ -464,7 +464,7 @@ std::vector<etl::dyn_vector<weight>> standard_features_terasawa_2009(const cv::M
 
     // 1. Compute the smoothed image
     cv::Mat L;
-    cv::GaussianBlur(clean_image_float, L, cv::Size(0, 0), 4.0, 4.0);
+    cv::GaussianBlur(clean_image_float, L, cv::Size(0, 0), 3.0, 3.0);
 
     //2. Compute vertical and horizontal gradients
     cv::Mat sGx(clean_image.size(), CV_64F);
