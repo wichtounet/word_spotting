@@ -429,22 +429,6 @@ std::vector<etl::dyn_vector<weight>> standard_features_vinciarelli_2004(const cv
         }
     }
 
-    // Frame normalization
-
-    for (std::size_t real_x = 0; real_x < width; ++real_x) {
-        features[real_x] *= (1.0 / etl::sum(features[real_x]));
-    }
-
-    // Feature scaling
-
-//#ifdef LOCAL_LINEAR_SCALING
-    //local_linear_feature_scaling(features);
-//#endif
-
-//#ifdef LOCAL_MEAN_SCALING
-    //local_mean_feature_scaling(features);
-//#endif
-
     return features;
 }
 
