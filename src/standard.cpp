@@ -778,7 +778,7 @@ void scale(std::vector<std::vector<etl::dyn_vector<weight>>>& test_features, con
     auto scale = global_linear_scaling(test_features, conf, training);
 #endif
 
-#if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
+#ifdef GLOBAL_SCALING
     for (std::size_t t = 0; t < test_features.size(); ++t) {
         for (std::size_t i = 0; i < test_features[t].size(); ++i) {
             for (std::size_t f = 0; f < test_features.back().back().size(); ++f) {
@@ -821,7 +821,7 @@ std::vector<std::vector<etl::dyn_vector<weight>>> compute_reference(thread_pool&
         auto scale = global_linear_scaling(ref_a[e], conf, false);
 #endif
 
-#if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
+#ifdef GLOBAL_SCALING
         for (std::size_t i = 0; i < ref_a.size(); ++i) {
             for (std::size_t f = 0; f < ref_a[i].size(); ++f) {
                 ref_a[e][i][f] = scale(ref_a[i][f], conf.scale_a[f], conf.scale_b[f]);

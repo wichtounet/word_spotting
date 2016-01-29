@@ -160,7 +160,7 @@ features_t<DBN_Patch, DBN> prepare_outputs(
     auto scale = global_linear_scaling(test_features_a, conf, training);
 #endif
 
-#if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
+#ifdef GLOBAL_SCALING
     for (std::size_t t = 0; t < test_features_a.size(); ++t) {
         for (std::size_t i = 0; i < test_features_a[t].size(); ++i) {
             for (std::size_t f = 0; f < test_features_a.back().back().size(); ++f) {
@@ -217,7 +217,7 @@ features_t<DBN_Patch, DBN> compute_reference(
                                 auto scale = global_linear_scaling(ref_a[e], conf, false);
 #endif
 
-#if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
+#ifdef GLOBAL_SCALING
                                 for (std::size_t i = 0; i < ref_a.size(); ++i) {
                                     for (std::size_t f = 0; f < ref_a[i].size(); ++f) {
                                         ref_a[e][i][f] = scale(ref_a[i][f], conf.scale_a[f], conf.scale_b[f]);

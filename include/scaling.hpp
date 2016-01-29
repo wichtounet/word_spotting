@@ -8,6 +8,11 @@
 #ifndef WORD_SPOTTER_SCALING_HPP
 #define WORD_SPOTTER_SCALING_HPP
 
+#if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
+#define GLOBAL_SCALING true
+constexpr const global_scaling = true;
+#endif
+
 template <typename Features>
 void local_linear_feature_scaling(std::vector<Features>& features) {
     const auto width = features.size();
