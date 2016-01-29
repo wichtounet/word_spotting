@@ -10,9 +10,9 @@
 
 #if defined(GLOBAL_MEAN_SCALING) || defined(GLOBAL_LINEAR_SCALING)
 #define GLOBAL_SCALING true
-constexpr const global_scaling = true;
+constexpr const bool global_scaling = true;
 #else
-constexpr const global_scaling = false;
+constexpr const bool global_scaling = false;
 #endif
 
 template <typename Features>
