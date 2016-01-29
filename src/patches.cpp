@@ -828,20 +828,24 @@ void patches_train(
         parameters params;
         params.sc_band = 0.1;
 
-        std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
-
-        if (!features) {
-            std::cout << "Optimize parameters" << std::endl;
-            optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
-        } else {
-            std::cout << "Switch to optimal parameters" << std::endl;
-            //TODO Here we should put the optimal parameters
-            params.sc_band = 0.05;
+        if(global_scaling || features || !(conf.load && conf.notrain)){
+            std::cout << "Evaluate on training set" << std::endl;
+            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
         }
 
-        std::cout << "Evaluate on validation set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
+        if (features || conf.load) {
+            std::cout << "Switch to optimal parameters" << std::endl;
+            params.sc_band = 0.05;
+            std::cout << "\tsc_band: " << params.sc_band << std::endl;
+        } else {
+            std::cout << "Optimize parameters" << std::endl;
+            optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        }
+
+        if(features || !(conf.load && conf.novalid)){
+            std::cout << "Evaluate on validation set" << std::endl;
+            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
+        }
 
         std::cout << "Evaluate on test set" << std::endl;
         evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
@@ -1073,20 +1077,24 @@ void patches_train(
         parameters params;
         params.sc_band = 0.1;
 
-        std::cout << "Evaluate on training set" << std::endl;
-        evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
-
-        if (!features) {
-            std::cout << "Optimize parameters" << std::endl;
-            optimize_parameters<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
-        } else {
-            std::cout << "Switch to optimal parameters" << std::endl;
-            //TODO Here we should put the optimal parameters
-            params.sc_band = 0.05;
+        if(global_scaling || features || !(conf.load && conf.notrain)){
+            std::cout << "Evaluate on training set" << std::endl;
+            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
         }
 
-        std::cout << "Evaluate on validation set" << std::endl;
-        evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
+        if (features || conf.load) {
+            std::cout << "Switch to optimal parameters" << std::endl;
+            params.sc_band = 0.05;
+            std::cout << "\tsc_band: " << params.sc_band << std::endl;
+        } else {
+            std::cout << "Optimize parameters" << std::endl;
+            optimize_parameters<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        }
+
+        if(features || !(conf.load && conf.novalid)){
+            std::cout << "Evaluate on validation set" << std::endl;
+            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
+        }
 
         std::cout << "Evaluate on test set" << std::endl;
         evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
