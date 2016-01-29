@@ -57,3 +57,19 @@
 #if !defined(HALF_LEVELS) || !defined(THIRD_LEVELS) || !defined(FULL_LEVELS)
 static_assert(false, "Invalid configuration");
 #endif
+
+#define silence_l2_warnings() \
+    cpp_unused(K2);           \
+    cpp_unused(C2);           \
+    cpp_unused(L2);           \
+    cpp_unused(NH2_1);        \
+    cpp_unused(NH2_2);        \
+    cpp_unused(shuffle_2);
+
+#define silence_l3_warnings() \
+    cpp_unused(K3);           \
+    cpp_unused(C3);           \
+    cpp_unused(L3);           \
+    cpp_unused(NH3_1);        \
+    cpp_unused(NH3_2);        \
+    cpp_unused(shuffle_3);

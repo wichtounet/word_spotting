@@ -608,23 +608,11 @@ void patches_train(
         evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
 
 #if HALF_LEVELS < 2
-        //Silence some warnings
-        cpp_unused(K2);
-        cpp_unused(C2);
-        cpp_unused(L2);
-        cpp_unused(NH2_1);
-        cpp_unused(NH2_2);
-        cpp_unused(shuffle_2);
+        silence_l2_warnings();
 #endif
 
 #if HALF_LEVELS < 3
-        //Silence some warnings
-        cpp_unused(K3);
-        cpp_unused(C3);
-        cpp_unused(L3);
-        cpp_unused(NH3_1);
-        cpp_unused(NH3_2);
-        cpp_unused(shuffle_3);
+        silence_l3_warnings();
 #endif
     } else if (conf.third) {
         std::cout << "Use a third of the resolution" << std::endl;
@@ -858,23 +846,11 @@ void patches_train(
 #endif
 
 #if THIRD_LEVELS < 2
-        //Silence some warnings
-        cpp_unused(K2);
-        cpp_unused(C2);
-        cpp_unused(L2);
-        cpp_unused(NH2_1);
-        cpp_unused(NH2_2);
-        cpp_unused(shuffle_2);
+        silence_l2_warnings();
 #endif
 
 #if THIRD_LEVELS < 3
-        //Silence some warnings
-        cpp_unused(K3);
-        cpp_unused(C3);
-        cpp_unused(L3);
-        cpp_unused(NH3_1);
-        cpp_unused(NH3_2);
-        cpp_unused(shuffle_3);
+        silence_l3_warnings();
 #endif
     } else {
         std::cout << "Use full resolution" << std::endl;
@@ -1103,23 +1079,11 @@ void patches_train(
         evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
 
 #if FULL_LEVELS < 2
-        //Silence some warnings
-        cpp_unused(K2);
-        cpp_unused(C2);
-        cpp_unused(L2);
-        cpp_unused(NH2_1);
-        cpp_unused(NH2_2);
-        cpp_unused(shuffle_2);
+        silence_l2_warnings();
 #endif
 
 #if FULL_LEVELS < 3
-        //Silence some warnings
-        cpp_unused(K3);
-        cpp_unused(C3);
-        cpp_unused(L3);
-        cpp_unused(NH3_1);
-        cpp_unused(NH3_2);
-        cpp_unused(shuffle_3);
+        silence_l3_warnings();
 #endif
     }
 }
