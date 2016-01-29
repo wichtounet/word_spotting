@@ -404,60 +404,63 @@ void patches_train(
     if (conf.half) {
         std::cout << "Use a half of the resolution" << std::endl;
 
-        static constexpr const std::size_t K1    = half::K1;
-        static constexpr const std::size_t C1    = half::C1;
-        static constexpr const std::size_t NF1   = half::NF1;
-        static constexpr const std::size_t NV1_1 = half::patch_height;
-        static constexpr const std::size_t NV1_2 = half::patch_width;
-        static constexpr const std::size_t NH1_1 = NV1_1 - NF1 + 1;
-        static constexpr const std::size_t NH1_2 = NV1_2 - NF1 + 1;
+        static constexpr const std::size_t K1        = half::K1;
+        static constexpr const std::size_t C1        = half::C1;
+        static constexpr const std::size_t NF1       = half::NF1;
+        static constexpr const std::size_t NV1_1     = half::patch_height;
+        static constexpr const std::size_t NV1_2     = half::patch_width;
+        static constexpr const std::size_t NH1_1     = NV1_1 - NF1 + 1;
+        static constexpr const std::size_t NH1_2     = NV1_2 - NF1 + 1;
+        static constexpr const std::size_t shuffle_1 = half::shuffle_1;
 
-        static constexpr const std::size_t K2    = half::K2;
-        static constexpr const std::size_t C2    = half::C2;
-        static constexpr const std::size_t NF2   = half::NF2;
-        static constexpr const std::size_t NV2_1 = NH1_1 / C1;
-        static constexpr const std::size_t NV2_2 = NH1_2 / C1;
-        static constexpr const std::size_t NH2_1 = NV2_1 - NF2 + 1;
-        static constexpr const std::size_t NH2_2 = NV2_2 - NF2 + 1;
+        static constexpr const std::size_t K2        = half::K2;
+        static constexpr const std::size_t C2        = half::C2;
+        static constexpr const std::size_t NF2       = half::NF2;
+        static constexpr const std::size_t NV2_1     = NH1_1 / C1;
+        static constexpr const std::size_t NV2_2     = NH1_2 / C1;
+        static constexpr const std::size_t NH2_1     = NV2_1 - NF2 + 1;
+        static constexpr const std::size_t NH2_2     = NV2_2 - NF2 + 1;
+        static constexpr const std::size_t shuffle_2 = half::shuffle_2;
 
-        static constexpr const std::size_t K3    = half::K3;
-        static constexpr const std::size_t C3    = half::C3;
-        static constexpr const std::size_t NF3   = half::NF3;
-        static constexpr const std::size_t NV3_1 = NH2_1 / C2;
-        static constexpr const std::size_t NV3_2 = NH2_2 / C2;
-        static constexpr const std::size_t NH3_1 = NV3_1 - NF3 + 1;
-        static constexpr const std::size_t NH3_2 = NV3_2 - NF3 + 1;
+        static constexpr const std::size_t K3        = half::K3;
+        static constexpr const std::size_t C3        = half::C3;
+        static constexpr const std::size_t NF3       = half::NF3;
+        static constexpr const std::size_t NV3_1     = NH2_1 / C2;
+        static constexpr const std::size_t NV3_2     = NH2_2 / C2;
+        static constexpr const std::size_t NH3_1     = NV3_1 - NF3 + 1;
+        static constexpr const std::size_t NH3_2     = NV3_2 - NF3 + 1;
+        static constexpr const std::size_t shuffle_3 = half::shuffle_3;
 
 #if defined(HALF_CRBM_PMP_1)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only>::layer_t>>::dbn_t;
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t>>::dbn_t;
 #elif defined(HALF_CRBM_PMP_2)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only, dll::parallel_mode>::layer_t,
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
                     dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::dbn_only, dll::parallel_mode>::layer_t>>::dbn_t;
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t>>::dbn_t;
 #elif defined(HALF_CRBM_PMP_3)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only>::layer_t,
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
                     dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::dbn_only>::layer_t,
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
                     dll::conv_rbm_mp_desc<
-                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, C3, dll::weight_type<weight>, dll::batch_size<half::B3>, dll::momentum, dll::weight_decay<half::DT3>, dll::hidden<half::HT3>, dll::sparsity<half::SM3>, dll::dbn_only>::layer_t>>::dbn_t;
+                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, C3, dll::weight_type<weight>, dll::batch_size<half::B3>, dll::momentum, dll::weight_decay<half::DT3>, dll::hidden<half::HT3>, dll::sparsity<half::SM3>, dll::shuffle_cond<shuffle_3>, dll::dbn_only>::layer_t>>::dbn_t;
 #elif defined(HALF_CRBM_MP_1)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only>::layer_t,
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
                     dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t>,
                 dll::memory,
                 >::dbn_t;
@@ -466,20 +469,20 @@ void patches_train(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only>::layer_t,
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
                     dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
-                                                                                                               K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::dbn_only>::layer_t,
+                                                                                                               K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
                     dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>>::dbn_t;
 #elif defined(HALF_CRBM_MP_3)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::dbn_only>::layer_t,
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
                     dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
-                                                                                                               K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::dbn_only>::layer_t,
+                                                                                                               K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
                     dll::mp_layer_3d_desc<K2, NH2_1, NH2_1, 1, C2, C2, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
-                                                                                                               K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, dll::weight_type<weight>, dll::batch_size<half::B3>, dll::momentum, dll::weight_decay<half::DT3>, dll::hidden<half::HT3>, dll::sparsity<half::SM3>, dll::dbn_only>::layer_t,
+                                                                                                               K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, dll::weight_type<weight>, dll::batch_size<half::B3>, dll::momentum, dll::weight_decay<half::DT3>, dll::hidden<half::HT3>, dll::sparsity<half::SM3>, dll::shuffle_cond<shuffle_3>, dll::dbn_only>::layer_t,
                     dll::mp_layer_3d_desc<K3, NH3_1, NH3_1, 1, C3, C3, dll::weight_type<weight>>::layer_t>>::dbn_t;
 #else
         static_assert(false, "No architecture has been selected");
@@ -585,13 +588,13 @@ void patches_train(
         std::cout << "Evaluate on training set" << std::endl;
         evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
 
-        if (!features) {
+        if (!features && !conf.load) {
             std::cout << "Optimize parameters" << std::endl;
             optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
         } else {
             std::cout << "Switch to optimal parameters" << std::endl;
-            //TODO Here we should put the optimal parameters
-            params.sc_band = 0.05;
+            params.sc_band = 0.06;
+            std::cout << "\tsc_band: " << params.sc_band << std::endl;
         }
 
         std::cout << "Evaluate on validation set" << std::endl;
@@ -607,6 +610,7 @@ void patches_train(
         cpp_unused(L2);
         cpp_unused(NH2_1);
         cpp_unused(NH2_2);
+        cpp_unused(shuffle_2);
 #endif
 
 #if HALF_LEVELS < 3
@@ -616,6 +620,7 @@ void patches_train(
         cpp_unused(L3);
         cpp_unused(NH3_1);
         cpp_unused(NH3_2);
+        cpp_unused(shuffle_3);
 #endif
     } else if (conf.third) {
         std::cout << "Use a third of the resolution" << std::endl;
@@ -851,6 +856,7 @@ void patches_train(
         cpp_unused(L2);
         cpp_unused(NH2_1);
         cpp_unused(NH2_2);
+        cpp_unused(shuffle_2);
 #endif
 
 #if THIRD_LEVELS < 3
