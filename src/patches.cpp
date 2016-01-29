@@ -404,32 +404,7 @@ void patches_train(
     if (conf.half) {
         std::cout << "Use a half of the resolution" << std::endl;
 
-        static constexpr const std::size_t K1        = half::K1;
-        static constexpr const std::size_t C1        = half::C1;
-        static constexpr const std::size_t NF1       = half::NF1;
-        static constexpr const std::size_t NV1_1     = half::patch_height;
-        static constexpr const std::size_t NV1_2     = half::patch_width;
-        static constexpr const std::size_t NH1_1     = NV1_1 - NF1 + 1;
-        static constexpr const std::size_t NH1_2     = NV1_2 - NF1 + 1;
-        static constexpr const std::size_t shuffle_1 = half::shuffle_1;
-
-        static constexpr const std::size_t K2        = half::K2;
-        static constexpr const std::size_t C2        = half::C2;
-        static constexpr const std::size_t NF2       = half::NF2;
-        static constexpr const std::size_t NV2_1     = NH1_1 / C1;
-        static constexpr const std::size_t NV2_2     = NH1_2 / C1;
-        static constexpr const std::size_t NH2_1     = NV2_1 - NF2 + 1;
-        static constexpr const std::size_t NH2_2     = NV2_2 - NF2 + 1;
-        static constexpr const std::size_t shuffle_2 = half::shuffle_2;
-
-        static constexpr const std::size_t K3        = half::K3;
-        static constexpr const std::size_t C3        = half::C3;
-        static constexpr const std::size_t NF3       = half::NF3;
-        static constexpr const std::size_t NV3_1     = NH2_1 / C2;
-        static constexpr const std::size_t NV3_2     = NH2_2 / C2;
-        static constexpr const std::size_t NH3_1     = NV3_1 - NF3 + 1;
-        static constexpr const std::size_t NH3_2     = NV3_2 - NF3 + 1;
-        static constexpr const std::size_t shuffle_3 = half::shuffle_3;
+        copy_from_namespace(half)
 
 #if defined(HALF_CRBM_PMP_1)
         using cdbn_t =
@@ -617,32 +592,7 @@ void patches_train(
     } else if (conf.third) {
         std::cout << "Use a third of the resolution" << std::endl;
 
-        static constexpr const std::size_t K1        = third::K1;
-        static constexpr const std::size_t C1        = third::C1;
-        static constexpr const std::size_t NF1       = third::NF1;
-        static constexpr const std::size_t NV1_1     = third::patch_height;
-        static constexpr const std::size_t NV1_2     = third::patch_width;
-        static constexpr const std::size_t NH1_1     = NV1_1 - NF1 + 1;
-        static constexpr const std::size_t NH1_2     = NV1_2 - NF1 + 1;
-        static constexpr const std::size_t shuffle_1 = third::shuffle_1;
-
-        static constexpr const std::size_t K2        = third::K2;
-        static constexpr const std::size_t C2        = third::C2;
-        static constexpr const std::size_t NF2       = third::NF2;
-        static constexpr const std::size_t NV2_1     = NH1_1 / C1;
-        static constexpr const std::size_t NV2_2     = NH1_2 / C1;
-        static constexpr const std::size_t NH2_1     = NV2_1 - NF2 + 1;
-        static constexpr const std::size_t NH2_2     = NV2_2 - NF2 + 1;
-        static constexpr const std::size_t shuffle_2 = third::shuffle_2;
-
-        static constexpr const std::size_t K3        = third::K3;
-        static constexpr const std::size_t C3        = third::C3;
-        static constexpr const std::size_t NF3       = third::NF3;
-        static constexpr const std::size_t NV3_1     = NH2_1 / C2;
-        static constexpr const std::size_t NV3_2     = NH2_2 / C2;
-        static constexpr const std::size_t NH3_1     = NV3_1 - NF3 + 1;
-        static constexpr const std::size_t NH3_2     = NV3_2 - NF3 + 1;
-        static constexpr const std::size_t shuffle_3 = third::shuffle_3;
+        copy_from_namespace(third)
 
 #if defined(THIRD_CRBM_PMP_1)
         using cdbn_t =
@@ -855,32 +805,7 @@ void patches_train(
     } else {
         std::cout << "Use full resolution" << std::endl;
 
-        static constexpr const std::size_t K1    = full::K1;
-        static constexpr const std::size_t C1    = full::C1;
-        static constexpr const std::size_t NF1   = full::NF1;
-        static constexpr const std::size_t NV1_1 = full::patch_height;
-        static constexpr const std::size_t NV1_2 = full::patch_width;
-        static constexpr const std::size_t NH1_1 = NV1_1 - NF1 + 1;
-        static constexpr const std::size_t NH1_2 = NV1_2 - NF1 + 1;
-        static constexpr const bool shuffle_1    = full::shuffle_1;
-
-        static constexpr const std::size_t K2    = full::K2;
-        static constexpr const std::size_t C2    = full::C2;
-        static constexpr const std::size_t NF2   = full::NF2;
-        static constexpr const std::size_t NV2_1 = NH1_1 / C1;
-        static constexpr const std::size_t NV2_2 = NH1_2 / C1;
-        static constexpr const std::size_t NH2_1 = NV2_1 - NF2 + 1;
-        static constexpr const std::size_t NH2_2 = NV2_2 - NF2 + 1;
-        static constexpr const bool shuffle_2    = full::shuffle_2;
-
-        static constexpr const std::size_t K3    = full::K3;
-        static constexpr const std::size_t C3    = full::C3;
-        static constexpr const std::size_t NF3   = full::NF3;
-        static constexpr const std::size_t NV3_1 = NH2_1 / C2;
-        static constexpr const std::size_t NV3_2 = NH2_2 / C2;
-        static constexpr const std::size_t NH3_1 = NV3_1 - NF3 + 1;
-        static constexpr const std::size_t NH3_2 = NV3_2 - NF3 + 1;
-        static constexpr const bool shuffle_3    = full::shuffle_3;
+        copy_from_namespace(full)
 
 #if defined(FULL_CRBM_PMP_1)
         static constexpr const bool DBN_Patch = false;
