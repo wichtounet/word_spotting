@@ -58,7 +58,7 @@ typename DBN::template layer_type<0>::input_one_t holistic_mat(const config& con
 
     image.copyTo(normalized(cv::Rect((WIDTH - image.size().width) / 2, 0, image.size().width, HEIGHT)));
 
-    cv::Mat scaled_normalized(cv::Size(std::max(1UL, WIDTH / conf.downscale), std::max(1UL, HEIGHT / conf.downscale)), CV_8U);
+    cv::Mat scaled_normalized(cv::Size(std::max(1UL, WIDTH), std::max(1UL, HEIGHT / conf.downscale)), CV_8U);
     cv::resize(normalized, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
     cv::adaptiveThreshold(scaled_normalized, normalized, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
 
