@@ -80,8 +80,6 @@ void print_usage();
 
 config parse_args(int argc, char** argv);
 
-#define LOCAL_MEAN_SCALING
-
 static_assert(WIDTH % 2 == 0, "Width must be divisible by 2");
 static_assert(HEIGHT % 2 == 0, "Height must be divisible by 2");
 
