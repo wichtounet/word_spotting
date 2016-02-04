@@ -36,6 +36,7 @@
 #include "features.hpp"   //Features exporting
 #include "evaluation.hpp" //evaluation utilities
 
+//#define LOCAL_LINEAR_SCALING
 #define LOCAL_MEAN_SCALING
 #include "scaling.hpp" //Scaling functions
 
@@ -139,8 +140,28 @@ features_t<DBN_Patch, DBN> prepare_outputs(
 
                 for(auto& patch : patches){
                     f(vec).push_back(f(dbn).prepare_one_output());
-                    f(dbn).activation_probabilities(patch, vec.back());
-                    //vec.back() /= etl::sum(vec.back()); //Local Frame normalization
+                    auto& features = vec.back();
+                    f(dbn).activation_probabilities(patch, features);
+
+#ifdef LOCAL_FRAME_NORMALIZATION
+                    for(std::size_t i = 0; i < etl::dim<0>(features); ++i){
+                        features(i) /= etl::sum(features(i));
+                    }
+#endif
+
+#ifdef LOCAL_L2_NORMALIZATION
+                    for(std::size_t i = 0; i < etl::dim<0>(features); ++i){
+                        features(i) /= std::sqrt(etl::sum(features(i) + features(i)) + 16.0 * 16.0);
+                    }
+#endif
+
+#ifdef GLOBAL_L2_NORMALIZATION
+                    features /= std::sqrt(etl::sum(features + features) + 16.0 * 16.0);
+#endif
+
+#ifdef GLOBAL_FRAME_NORMALIZATION
+                    features /= etl::sum(features);
+#endif
                 } });
 
 #ifdef LOCAL_LINEAR_SCALING
