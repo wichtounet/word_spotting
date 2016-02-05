@@ -165,8 +165,10 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
     Gx = cv::Scalar(0.0);
     Gy = cv::Scalar(0.0);
 
+#ifndef OPENCV_23
     sGx.copyTo(Gx(cv::Rect(left , 0, width, height)));
     sGy.copyTo(Gy(cv::Rect(left , 0, width, height)));
+#endif
 
     // 4. Compute magnitude and orientations of the gradients
 
@@ -312,7 +314,9 @@ std::vector<etl::dyn_vector<weight>> standard_features_vinciarelli_2004(const cv
 
     L = cv::Scalar(1.0);
 
+#ifndef OPENCV_23
     clean_image_float.copyTo(L(cv::Rect(left , 0, width, height)));
+#endif
 
     // 3. Invert the image (for sums)
 
@@ -482,8 +486,10 @@ std::vector<etl::dyn_vector<weight>> standard_features_terasawa_2009(const cv::M
     Gx = cv::Scalar(0.0);
     Gy = cv::Scalar(0.0);
 
+#ifndef OPENCV_23
     sGx.copyTo(Gx(cv::Rect(left , 0, width, height)));
     sGy.copyTo(Gy(cv::Rect(left , 0, width, height)));
+#endif
 
     // 4. Compute magnitude and orientations of the gradients
 
