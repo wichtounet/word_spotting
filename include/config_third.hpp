@@ -54,7 +54,7 @@ constexpr const dll::decay_type DT3      = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM3 = dll::sparsity_method::NONE;
 constexpr const bool shuffle_3           = true;
 
-const auto rate_0 = [](weight& value) { value = 0.08 * value; };
+const auto rate_0 = [](weight& value) { value = 0.1 * value; };
 const auto rate_1 = [](weight& value) { value = 0.1 * value; };
 const auto rate_2 = [](weight& value) { value = 1.0 * value; };
 
