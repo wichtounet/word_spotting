@@ -659,8 +659,8 @@ void patches_train(
                     dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
                     dll::conv_rbm_desc<
                         K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>,
-                dll::memory>::dbn_t;
+                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
+                /*, dll::memory*/>::dbn_t;
 #elif defined(THIRD_CRBM_MP_3)
         using cdbn_t =
             dll::dbn_desc<

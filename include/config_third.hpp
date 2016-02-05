@@ -13,11 +13,11 @@ namespace third {
 //#define THIRD_RBM_3       //Three layers of RBM
 
 //#define THIRD_CRBM_PMP_1    //One layer of CRBM with Probabilistic Max Pooling (C1)
-#define THIRD_CRBM_PMP_2 //Two layers of CRBM with Probabilistic Max Pooling (C1/C2)
+//#define THIRD_CRBM_PMP_2 //Two layers of CRBM with Probabilistic Max Pooling (C1/C2)
 //#define THIRD_CRBM_PMP_3    //Three layers of CRBM with Probabilistic Max Pooling (C1/C2/C3)
 
 //#define THIRD_CRBM_MP_1  //One layers of CRBM with Max Pooling after each layer (C1)
-//#define THIRD_CRBM_MP_2  //Two layers of CRBM with Max Pooling after each layer (C1/C2)
+#define THIRD_CRBM_MP_2  //Two layers of CRBM with Max Pooling after each layer (C1/C2)
 //#define THIRD_CRBM_MP_3  //Three layers of CRBM with Max Pooling after each layer (C1/C2/C3)
 
 constexpr const std::size_t patch_height = 40; //Should not be changed
@@ -54,7 +54,7 @@ constexpr const dll::decay_type DT3      = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM3 = dll::sparsity_method::NONE;
 constexpr const bool shuffle_3           = true;
 
-const auto rate_0 = [](weight& value) { value = 0.1 * value; };
+const auto rate_0 = [](weight& value) { value = 0.08 * value; };
 const auto rate_1 = [](weight& value) { value = 0.1 * value; };
 const auto rate_2 = [](weight& value) { value = 1.0 * value; };
 
@@ -74,9 +74,15 @@ const auto pbias_0 = [](weight& value) { value = 1.0 * value; };
 const auto pbias_1 = [](weight& value) { value = 1.0 * value; };
 const auto pbias_2 = [](weight& value) { value = 1.0 * value; };
 
+#ifdef THIRD_CRBM_MP_2
+const auto pbias_lambda_0 = [](weight& value) { value = 10.0 * value; };
+const auto pbias_lambda_1 = [](weight& value) { value = 10.0 * value; };
+const auto pbias_lambda_2 = [](weight& value) { value = 1.0 * value; };
+#else
 const auto pbias_lambda_0 = [](weight& value) { value = 1.0 * value; };
 const auto pbias_lambda_1 = [](weight& value) { value = 1.0 * value; };
 const auto pbias_lambda_2 = [](weight& value) { value = 1.0 * value; };
+#endif
 
 const auto sparsity_target_0 = [](weight& value) { value = 10.0 * value; };
 const auto sparsity_target_1 = [](weight& value) { value = 1.0 * value; };
