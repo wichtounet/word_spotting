@@ -109,8 +109,8 @@ std::vector<typename DBN::template layer_type<0>::input_one_t> mat_to_patches(co
     //This is not efficient, but we need this because of the ANCIENT retarded grid machines
     //clean_image.copyTo(final_image(cv::Rect(left , 0, real_width, real_height)));
 
-    for(std::size_t x = 0; x < real_width; ++x){
-        for(std::size_t y = 0; y < real_height; ++y){
+    for (std::size_t y = 0; y < real_height; ++y) {
+        for (std::size_t x = 0; x < real_width; ++x) {
             final_image.at<uint8_t>(y, x + left) = clean_image.at<uint8_t>(y, x);
         }
     }
