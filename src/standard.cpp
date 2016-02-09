@@ -314,6 +314,7 @@ std::vector<etl::dyn_vector<weight>> standard_features_vinciarelli_2004(const cv
 
     L = cv::Scalar(1.0);
 
+    //To avoid compilation errors (will not run)
 #ifndef OPENCV_23
     clean_image_float.copyTo(L(cv::Rect(left , 0, width, height)));
 #endif
@@ -486,6 +487,7 @@ std::vector<etl::dyn_vector<weight>> standard_features_terasawa_2009(const cv::M
     Gx = cv::Scalar(0.0);
     Gy = cv::Scalar(0.0);
 
+    //To avoid compilation errors (will not run)
 #ifndef OPENCV_23
     sGx.copyTo(Gx(cv::Rect(left , 0, width, height)));
     sGy.copyTo(Gy(cv::Rect(left , 0, width, height)));

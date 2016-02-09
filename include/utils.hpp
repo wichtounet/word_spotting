@@ -106,14 +106,16 @@ std::vector<typename DBN::template layer_type<0>::input_one_t> mat_to_patches(co
     cv::Mat final_image(cv::Size(real_width + patch_width, real_height), CV_8U);
     final_image = cv::Scalar(1.0);
 
+#ifdef OPENCV_23
     //This is not efficient, but we need this because of the ANCIENT retarded grid machines
-    //clean_image.copyTo(final_image(cv::Rect(left , 0, real_width, real_height)));
-
     for (std::size_t y = 0; y < real_height; ++y) {
         for (std::size_t x = 0; x < real_width; ++x) {
             final_image.at<uint8_t>(y, x + left) = clean_image.at<uint8_t>(y, x);
         }
     }
+#else
+    clean_image.copyTo(final_image(cv::Rect(left , 0, real_width, real_height)));
+#endif
 
     std::vector<image_t> patches;
 
