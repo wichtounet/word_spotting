@@ -165,6 +165,7 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
     Gx = cv::Scalar(0.0);
     Gy = cv::Scalar(0.0);
 
+    //To avoid compilation errors (will not run)
 #ifndef OPENCV_23
     sGx.copyTo(Gx(cv::Rect(left , 0, width, height)));
     sGy.copyTo(Gy(cv::Rect(left , 0, width, height)));
