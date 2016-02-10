@@ -17,7 +17,7 @@ void print_usage() {
     std::cout << " * features" << std::endl;
     std::cout << " * evaluate" << std::endl;
     std::cout << "Supported options: " << std::endl;
-    std::cout << " -0 : Method 0 [Bunke2001]" << std::endl;
+    std::cout << " -0 : Method 0 [Marti2001]" << std::endl;
     std::cout << " -1 : Method 1 (holistic)" << std::endl;
     std::cout << " -2 : Method 2 (patches)" << std::endl;
     std::cout << " -3 : Method 3 [Rath2007]" << std::endl;
@@ -48,7 +48,7 @@ config parse_args(int argc, char** argv) {
     std::size_t i = 0;
     for (; i < conf.args.size(); ++i) {
         if (conf.args[i] == "-0") {
-            conf.method = Method::Bunke2001;
+            conf.method = Method::Marti2001;
         } else if (conf.args[i] == "-1") {
             conf.method = Method::Holistic;
         } else if (conf.args[i] == "-2") {
@@ -113,8 +113,8 @@ config parse_args(int argc, char** argv) {
 
 std::string method_to_string(Method method){
     switch (method) {
-        case Method::Bunke2001:
-            return "Bunke2001";
+        case Method::Marti2001:
+            return "Marti2001";
         case Method::Holistic:
             return "Holistic";
         case Method::Patches:

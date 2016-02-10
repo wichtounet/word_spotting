@@ -672,7 +672,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         gravity /= height;
         moment /= (height * height);
 
-        if(conf.method == Method::Bunke2001){
+        if(conf.method == Method::Marti2001){
             features.emplace_back(9);
 
             auto& f = features.back();
@@ -698,7 +698,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
         }
     }
 
-    if(conf.method == Method::Bunke2001){
+    if(conf.method == Method::Marti2001){
         for (std::size_t i = 0; i < width - 1; ++i) {
             features[i][5] = features[i + 1][1] - features[i][1];
             features[i][6] = features[i + 1][2] - features[i][2];

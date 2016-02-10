@@ -37,7 +37,7 @@ namespace {
 
 std::string get_suffix(config& conf){
     switch (conf.method) {
-        case Method::Bunke2001:
+        case Method::Marti2001:
         case Method::Rath2007:
         case Method::Rath2003:
         case Method::Rodriguez2008:

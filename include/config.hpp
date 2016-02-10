@@ -23,7 +23,7 @@ constexpr const std::size_t MAX_N = 25;
 using weight = float;
 
 enum class Method : std::size_t {
-    Bunke2001,
+    Marti2001,
     Holistic,
     Patches,
     Rath2007,
@@ -39,7 +39,7 @@ struct config {
     std::vector<std::string> args;
     std::vector<std::string> files;
     std::string command;
-    Method method = Method::Bunke2001;
+    Method method = Method::Marti2001;
     bool half     = false;
     bool quarter  = false;
     bool third    = false;

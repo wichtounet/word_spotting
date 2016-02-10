@@ -113,7 +113,7 @@ int command_train(config& conf) {
     extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
 
     switch (conf.method) {
-        case Method::Bunke2001:
+        case Method::Marti2001:
         case Method::Rath2007:
         case Method::Rath2003:
         case Method::Rodriguez2008:
@@ -154,7 +154,7 @@ int command_features(config& conf) {
     extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
 
     switch (conf.method) {
-        case Method::Bunke2001:
+        case Method::Marti2001:
         case Method::Rath2007:
         case Method::Rath2003:
         case Method::Rodriguez2008:
