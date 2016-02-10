@@ -223,7 +223,7 @@ void holistic_train(
                         dll::dbn_only
                         //, dll::sparsity<dll::sparsity_method::LEE>
                         >::layer_t>,
-                dll::memory>::dbn_t;
+                dll::batch_mode>::dbn_t;
 
         auto training_images = read_images<cdbn_t>(dataset, conf, train_image_names);
 
@@ -288,7 +288,7 @@ void holistic_train(
                                                                                                         30, 104, 14, 30, 104 + 1 - NF2, 14 + 1 - NF2, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum, dll::weight_decay<dll::decay_type::L2>, dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t,
                     dll::mp_layer_3d_desc<30, 98, 8, 1, 2, 2, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
                                                                                                       30, 49, 4, 30, 49 + 1 - NF3, 4 + 1 - NF3, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum, dll::weight_decay<dll::decay_type::L2>, dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t>,
-                dll::memory>::dbn_t;
+                dll::batch_mode>::dbn_t;
 
         auto training_images = read_images<cdbn_t>(dataset, conf, train_image_names);
 
@@ -433,7 +433,7 @@ void holistic_train(
                         //, dll::weight_decay<dll::decay_type::L2>
                         ,
                         dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t>,
-                dll::memory>::dbn_t;
+                dll::batch_mode>::dbn_t;
 
         auto training_images = read_images<cdbn_t>(dataset, conf, train_image_names);
 
@@ -476,7 +476,7 @@ void holistic_train(
                         //, 2                                //Probabilistic max pooling (2x2)
                         ,
                         dll::batch_size<25>, dll::verbose, dll::momentum, dll::weight_type<weight>, dll::weight_decay<dll::decay_type::L2>>::layer_t>,
-                dll::memory>::dbn_t;
+                dll::batch_mode>::dbn_t;
 
         auto training_images = read_images<cdbn_t>(dataset, conf, train_image_names);
 
