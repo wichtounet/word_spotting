@@ -842,7 +842,7 @@ std::vector<std::vector<etl::dyn_vector<weight>>> compute_reference(thread_pool&
     return ref_a;
 }
 
-parameters get_parameters(config& conf){
+parameters get_parameters(config& /*conf*/){
     parameters parameters;
 
     parameters.sc_band = 0.1;
