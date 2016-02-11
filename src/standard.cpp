@@ -845,11 +845,7 @@ std::vector<std::vector<etl::dyn_vector<weight>>> compute_reference(thread_pool&
 parameters get_parameters(config& conf){
     parameters parameters;
 
-    if(conf.method == Method::Rodriguez2008){
-        parameters.sc_band = 0.09;
-    } else {
-        parameters.sc_band = 0.11;
-    }
+    parameters.sc_band = 0.1;
 
     return parameters;
 }
