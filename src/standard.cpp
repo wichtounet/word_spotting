@@ -20,7 +20,7 @@
 #include "features.hpp"   //Features exporting
 #include "evaluation.hpp" //Global evaluation functions
 
-#define LOCAL_MEAN_SCALING
+#define LOCAL_LINEAR_SCALING
 #include "scaling.hpp" //Scaling functions
 
 namespace {
@@ -290,6 +290,14 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
     for (std::size_t real_x = 0; real_x < width; ++real_x) {
         features[real_x] *= (1.0 / etl::sum(features[real_x]));
     }
+
+#ifdef LOCAL_MEAN_SCALING
+    local_linear_feature_scaling(features);
+#endif
+
+#ifdef LOCAL_MEAN_SCALING
+    local_linear_feature_scaling(features);
+#endif
 
     return features;
 }
