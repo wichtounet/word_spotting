@@ -425,7 +425,7 @@ void patches_train(
     if (conf.half) {
         std::cout << "Use a half of the resolution" << std::endl;
 
-        copy_from_namespace(half)
+        copy_from_namespace(half);
 
 #if defined(HALF_CRBM_PMP_1)
         using cdbn_t =
@@ -616,7 +616,7 @@ void patches_train(
     } else if (conf.third) {
         std::cout << "Use a third of the resolution" << std::endl;
 
-        copy_from_namespace(third)
+        copy_from_namespace(third);
 
 #if defined(THIRD_CRBM_PMP_1)
         using cdbn_t =
@@ -843,7 +843,11 @@ void patches_train(
     } else {
         std::cout << "Use full resolution" << std::endl;
 
-        copy_from_namespace(full)
+        copy_from_namespace(full);
+
+        // Shuffle is not supported now for "full"
+        cpp_unused(shuffle_1);
+        cpp_unused(shuffle_2);
 
 #if defined(FULL_CRBM_PMP_1)
         static constexpr const bool DBN_Patch = false;

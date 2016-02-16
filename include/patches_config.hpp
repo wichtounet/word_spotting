@@ -98,4 +98,4 @@ static_assert(false, "Invalid configuration");
     static constexpr const std::size_t NV3_2     = NH2_2 / C2;       \
     static constexpr const std::size_t NH3_1     = NV3_1 - NF3 + 1;  \
     static constexpr const std::size_t NH3_2     = NV3_2 - NF3 + 1;  \
-    static constexpr const std::size_t shuffle_3 = ns::shuffle_3;
+    static constexpr const std::size_t shuffle_3 = ns::shuffle_3
