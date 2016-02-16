@@ -22,7 +22,7 @@
 #define THIRD_LEVELS 1
 #endif
 
-#if defined(THIRD_CRBM_PMP_2) || defined(THIRD_CRBM_MP_2) || defined(THIRD_RBM_2)
+#if defined(THIRD_CRBM_PMP_2) || defined(THIRD_CRBM_MP_2) || defined(THIRD_RBM_2) || defined(THIRD_COMPLEX_2)
 #define THIRD_LEVELS 2
 #endif
 

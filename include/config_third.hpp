@@ -1,3 +1,4 @@
+//=======================================================================
 // Distributed under the MIT License.
 // (See accompanying file LICENSE or copy at
 //  http://opensource.org/licenses/MIT)
@@ -13,12 +14,14 @@ namespace third {
 //#define THIRD_RBM_3       //Three layers of RBM
 
 //#define THIRD_CRBM_PMP_1    //One layer of CRBM with Probabilistic Max Pooling (C1)
-#define THIRD_CRBM_PMP_2 //Two layers of CRBM with Probabilistic Max Pooling (C1/C2)
+//#define THIRD_CRBM_PMP_2 //Two layers of CRBM with Probabilistic Max Pooling (C1/C2)
 //#define THIRD_CRBM_PMP_3    //Three layers of CRBM with Probabilistic Max Pooling (C1/C2/C3)
 
 //#define THIRD_CRBM_MP_1  //One layers of CRBM with Max Pooling after each layer (C1)
 //#define THIRD_CRBM_MP_2  //Two layers of CRBM with Max Pooling after each layer (C1/C2)
 //#define THIRD_CRBM_MP_3  //Three layers of CRBM with Max Pooling after each layer (C1/C2/C3)
+
+#define THIRD_COMPLEX_2  //Architecture to play around
 
 constexpr const std::size_t patch_height = 40; //Should not be changed
 constexpr const std::size_t patch_width  = 20;
