@@ -422,6 +422,17 @@ void patches_train(
         std::copy(test_image_names.begin(), test_image_names.end(), std::back_inserter(pretraining_image_names));
     }
 
+    if(conf.sub){
+        std::cout << "Use only 100 images from pretraining" << std::endl;
+
+        static std::random_device rd;
+        static std::mt19937_64 g(rd());
+
+        std::shuffle(pretraining_image_names.begin(), pretraining_image_names.end(), g);
+
+        pretraining_image_names.resize(100);
+    }
+
     if (conf.half) {
         std::cout << "Use a half of the resolution" << std::endl;
 
