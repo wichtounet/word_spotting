@@ -30,7 +30,7 @@ void print_usage() {
     std::cout << " -third : Takes third resolution images only" << std::endl;
     std::cout << " -svm : Use a SVM" << std::endl;
     std::cout << " -view : Load the DBN and visualize its weights" << std::endl;
-    std::cout << " -sub : Takes only a subset of the dataset to train (holistic only)" << std::endl;
+    std::cout << " -sub : Takes only a subset of the dataset to train (holistic/patches only)" << std::endl;
     std::cout << " -notrain : No evaluation on the training set" << std::endl;
     std::cout << " -novalid : No evaluation on the validation set" << std::endl;
     std::cout << " -washington : The dataset is Washington [default]" << std::endl;
