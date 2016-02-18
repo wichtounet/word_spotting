@@ -46,6 +46,7 @@ struct config {
     bool svm      = false;
     bool view     = false;
     bool sub      = false;
+    bool fix      = false;
     bool notrain  = false;
     bool novalid  = false;
     bool all      = false;
