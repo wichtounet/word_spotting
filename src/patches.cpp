@@ -293,7 +293,7 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
         sc_band_values.push_back(sc);
     }
 
-    for (double sc = 0.2; sc <= 0.9; sc += 0.05) {
+    for (double sc = 0.2; sc <= 0.9; sc += 0.1) {
         sc_band_values.push_back(sc);
     }
 
