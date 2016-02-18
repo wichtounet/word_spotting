@@ -285,15 +285,15 @@ template <bool DBN_Patch, typename Dataset, typename Set, typename DBN>
 void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters& param) {
     std::vector<double> sc_band_values;
 
-    for (double sc = 0.005; sc < 0.03; sc += 0.001) {
+    for (double sc = 0.01; sc < 0.03; sc += 0.001) {
         sc_band_values.push_back(sc);
     }
 
-    for (double sc = 0.030; sc < 0.2; sc += 0.005) {
+    for (double sc = 0.030; sc <= 0.15; sc += 0.005) {
         sc_band_values.push_back(sc);
     }
 
-    for (double sc = 0.2; sc <= 0.9; sc += 0.1) {
+    for (double sc = 0.2; sc <= 0.5; sc += 0.1) {
         sc_band_values.push_back(sc);
     }
 
