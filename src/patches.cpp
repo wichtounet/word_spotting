@@ -515,7 +515,7 @@ void patches_train(
 
         auto cdbn = std::make_unique<cdbn_t>();
 
-        if(conf.iam){
+        if(conf.iam && !conf.sub){
             cdbn->batch_mode_run = true;
         }
 
@@ -737,7 +737,7 @@ void patches_train(
 
         auto cdbn = std::make_unique<cdbn_t>();
 
-        if(conf.iam){
+        if(conf.iam && !conf.sub){
             cdbn->batch_mode_run = true;
         }
 
@@ -952,7 +952,7 @@ void patches_train(
 
         auto cdbn = std::make_unique<cdbn_t>();
 
-        if(conf.iam){
+        if(conf.iam && !conf.sub){
             cdbn->batch_mode_run = true;
         }
 
