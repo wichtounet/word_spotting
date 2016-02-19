@@ -815,7 +815,7 @@ void patches_train(
         parameters params;
         params.sc_band = 0.1;
 
-        if(global_scaling || features || !(conf.load && conf.notrain)){
+        if(global_scaling || features || !conf.notrain){
             std::cout << "Evaluate on training set" << std::endl;
             evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
         }
@@ -829,7 +829,7 @@ void patches_train(
             optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
         }
 
-        if(features || !(conf.load && conf.novalid)){
+        if(features || !conf.novalid){
             std::cout << "Evaluate on validation set" << std::endl;
             evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
         }
