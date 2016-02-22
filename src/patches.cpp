@@ -796,19 +796,29 @@ void patches_train(
         if (conf.load || features) {
             cdbn->load(file_name);
         } else {
-            std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
-            training_patches.reserve(pretraining_image_names.size() * 5);
+            if (conf.iam && !conf.sub) {
+                std::cout << "Training is done with patch iterators..." << std::endl;
 
-            std::cout << "Generate patches ..." << std::endl;
+                patch_iterator<cdbn_t> it(conf, dataset, pretraining_image_names);
+                patch_iterator<cdbn_t> end(conf, dataset, pretraining_image_names, pretraining_image_names.size());
 
-            for (auto& name : pretraining_image_names) {
-                auto patches = mat_to_patches<cdbn_t>(conf, dataset.word_images.at(name), true);
-                std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
+                cdbn->pretrain(it, end, full::epochs);
+            } else {
+                std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
+                training_patches.reserve(pretraining_image_names.size() * 10);
+
+                std::cout << "Generate patches ..." << std::endl;
+
+                for (auto& name : pretraining_image_names) {
+                    auto patches = mat_to_patches<cdbn_t>(conf, dataset.word_images.at(name), true);
+                    std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
+                }
+
+                std::cout << "... done" << std::endl;
+
+                cdbn->pretrain(training_patches, third::epochs);
             }
 
-            std::cout << "... done" << std::endl;
-
-            cdbn->pretrain(training_patches, third::epochs);
             cdbn->store(file_name);
         }
 
