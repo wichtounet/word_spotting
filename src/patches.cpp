@@ -802,7 +802,7 @@ void patches_train(
                 patch_iterator<cdbn_t> it(conf, dataset, pretraining_image_names);
                 patch_iterator<cdbn_t> end(conf, dataset, pretraining_image_names, pretraining_image_names.size());
 
-                cdbn->pretrain(it, end, full::epochs);
+                cdbn->pretrain(it, end, third::epochs);
             } else {
                 std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
                 training_patches.reserve(pretraining_image_names.size() * 10);
