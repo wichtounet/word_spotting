@@ -820,6 +820,8 @@ void patches_train(
             }
 
             cdbn->store(file_name);
+
+            dll::dump_timers();
         }
 
         parameters params;
