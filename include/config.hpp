@@ -51,6 +51,7 @@ struct config {
     bool novalid  = false;
     bool all      = false;
     bool load     = false;
+    bool hmm      = false;
 
     bool washington = true;
     bool parzival   = false;

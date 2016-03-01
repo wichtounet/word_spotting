@@ -37,6 +37,7 @@ void print_usage() {
     std::cout << " -washington : The dataset is Washington [default]" << std::endl;
     std::cout << " -parzival : The dataset is Parzival" << std::endl;
     std::cout << " -iam : The dataset is IAM" << std::endl;
+    std::cout << " -hmm : Use HMM in place of DTW" << std::endl;
 }
 
 config parse_args(int argc, char** argv) {
@@ -88,6 +89,8 @@ config parse_args(int argc, char** argv) {
             conf.notrain = true;
         } else if (conf.args[i] == "-novalid") {
             conf.novalid = true;
+        } else if (conf.args[i] == "-hmm") {
+            conf.hmm = true;
         } else if (conf.args[i] == "-washington") {
             conf.washington = true;
             conf.parzival   = false;
