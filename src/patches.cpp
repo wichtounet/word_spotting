@@ -19,6 +19,7 @@
 #include "dll/dbn.hpp"
 #include "dll/avgp_layer.hpp"
 #include "dll/mp_layer.hpp"
+#include "dll/lcn_layer.hpp"
 #include "dll/patches_layer.hpp"
 #include "dll/patches_layer_pad.hpp"
 
@@ -715,20 +716,27 @@ void patches_train(
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
+                    //dll::lcn_layer_desc<5>::layer_t,
                     dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
                     dll::conv_rbm_desc<
                         K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
+                    dll::lcn_layer_desc<3>::layer_t,
                     dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
                 /*, dll::batch_mode*/>::dbn_t;
 #else
         static_assert(false, "No architecture has been selected");
 #endif
 
-#if defined(THIRD_CRBM_MP_1) || defined(THIRD_CRBM_MP_2) || defined(THIRD_CRBM_MP_3) || defined(THIRD_COMPLEX_2)
+#if defined(THIRD_CRBM_MP_1) || defined(THIRD_CRBM_MP_2) || defined(THIRD_CRBM_MP_3)
         //Max pooling layers models have more layers
         constexpr const std::size_t L1 = 0;
         constexpr const std::size_t L2 = 2;
         constexpr const std::size_t L3 = 4;
+#elif defined(THIRD_COMPLEX_2)
+        // CRBM -> LCN -> MP
+        constexpr const std::size_t L1 = 0;
+        constexpr const std::size_t L2 = 2;
+        constexpr const std::size_t L3 = 5;
 #else
         constexpr const std::size_t L1        = 0;
         constexpr const std::size_t L2        = 1;
@@ -770,6 +778,11 @@ void patches_train(
         third::pbias_2(cdbn->template layer_get<L3>().pbias);
         third::pbias_lambda_2(cdbn->template layer_get<L3>().pbias_lambda);
         third::sparsity_target_2(cdbn->template layer_get<L1>().sparsity_target);
+#endif
+
+#ifdef THIRD_COMPLEX_2
+        //cdbn->template layer_get<1>().sigma = 2.0;
+        cdbn->template layer_get<3>().sigma = 2.0;
 #endif
 
         cdbn->display();
