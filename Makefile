@@ -19,6 +19,14 @@ endif
 # Vectorization
 CXX_FLAGS += -DETL_VECTORIZE_FULL
 
+# Configure HMM
+ifneq (,$(SPOTTER_NO_HMM))
+CXX_FLAGS += -DSPOTTER_NO_HMM
+else
+CXX_FLAGS += -I/usr/include/armadillo_bits/
+LD_FLAGS  += -lmlpack -larmadillo -lboost_serialization -lboost_program_options
+endif
+
 # Activate BLAS mode on demand
 ifneq (,$(SPOTTER_MKL_THREADS))
 CXX_FLAGS += -DETL_MKL_MODE $(shell pkg-config --cflags mkl-threads)
