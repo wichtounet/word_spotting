@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "hmm.hpp"
+
 using thread_pool = cpp::default_thread_pool<>;
 
 struct parameters {
@@ -34,10 +36,16 @@ std::vector<std::string> select_training_images(const Dataset& dataset, names ke
 }
 
 template <typename Dataset, typename Ref, typename Features>
-std::vector<std::pair<std::string, weight>> compute_distances(
+std::vector<std::pair<std::string, weight>> compute_distances(const config& conf,
     thread_pool& pool, const Dataset& dataset, Features& test_features_a, Ref& ref_a,
     names training_images, names test_image_names, parameters parameters) {
     std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
+
+    hmm_p hmm;
+
+    if(conf.hmm){
+        hmm = train_ref_hmm(dataset, ref_a, training_images);
+    }
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
         auto t_size = dataset.word_images.at(test_image).size().width;

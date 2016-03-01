@@ -903,7 +903,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names tr
 
         // c) Compute the distances
 
-        auto diffs = compute_distances(pool, dataset, test_features, ref, training_images, test_image_names, parameters);
+        auto diffs = compute_distances(conf, pool, dataset, test_features, ref, training_images, test_image_names, parameters);
 
         // d) Update the local stats
 
