@@ -77,7 +77,13 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 
 #else
 
-//TODO Keep compatibility here
+using hmm_p = int;
+
+template <typename Dataset, typename Ref>
+hmm_p train_ref_hmm(const Dataset& /*dataset*/, Ref& /*ref_a*/, names /*training_images*/) {
+    //Disabled HMM
+    std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
+}
 
 #endif
 
