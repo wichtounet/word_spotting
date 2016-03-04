@@ -270,7 +270,9 @@ double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywor
 
         // c) Compute the distances
 
-        auto diffs_a = compute_distances(conf, pool, dataset, test_features_a, ref_a, training_images, test_image_names, parameters);
+        auto diffs_a = compute_distances(conf, pool, dataset, test_features_a, ref_a, training_images,
+            test_image_names, train_word_names,
+            parameters, [&](names train_names){ return compute_reference<DBN_Patch>(pool, dataset, dbn, conf, train_names); });
 
         // d) Update the local stats
 
@@ -384,7 +386,9 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
 
             // c) Compute the distances
 
-            auto diffs_a = compute_distances(conf, pool, dataset, test_features_a, ref_a, training_images, test_image_names, parameters);
+            auto diffs_a = compute_distances(conf, pool, dataset, test_features_a, ref_a, training_images,
+                test_image_names, train_word_names,
+                parameters, [&](names train_names){ return compute_reference<DBN_Patch>(pool, dataset, dbn, conf, train_names);});
 
             // d) Update the local stats
 

@@ -12,6 +12,8 @@
 
 #include "cpp_utils/parallel.hpp"
 
+#include "dll/util/timers.hpp"
+
 #include "config.hpp"
 #include "standard.hpp"
 #include "utils.hpp"
@@ -903,7 +905,9 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names tr
 
         // c) Compute the distances
 
-        auto diffs = compute_distances(conf, pool, dataset, test_features, ref, training_images, test_image_names, parameters);
+        auto diffs = compute_distances(conf, pool, dataset, test_features, ref, training_images,
+            test_image_names, train_word_names,
+            parameters, [&](names train_names){ return compute_reference(pool, dataset, conf, train_names); });
 
         // d) Update the local stats
 
@@ -925,6 +929,8 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names tr
 
     std::cout << "Mean EER: " << mean_eer << std::endl;
     std::cout << "Mean AP: " << mean_ap << std::endl;
+
+    dll::dump_timers();
 }
 
 template <typename Dataset>

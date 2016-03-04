@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "dll/util/timers.hpp"
+
 #include "hmm.hpp"
 
 using thread_pool = cpp::default_thread_pool<>;
@@ -35,11 +37,17 @@ std::vector<std::string> select_training_images(const Dataset& dataset, names ke
     return training_images;
 }
 
-template <typename Dataset, typename Ref, typename Features>
+template <typename Dataset, typename Ref, typename Features, typename RefFunctor>
 std::vector<std::pair<std::string, weight>> compute_distances(const config& conf,
     thread_pool& pool, const Dataset& dataset, Features& test_features_a, Ref& ref_a,
-    names training_images, names test_image_names, parameters parameters) {
+    names training_images, names test_image_names, names train_word_names, parameters parameters, RefFunctor functor) {
     std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
+
+    static hmm_p global_hmm;
+
+    if(conf.hmm && !global_hmm){
+        global_hmm = train_global_hmm(train_word_names, functor);
+    }
 
     hmm_p hmm;
 
@@ -47,27 +55,48 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
         hmm = train_ref_hmm(dataset, ref_a, training_images);
     }
 
+    //Either frakking compiler or me is too stupid, so we need this
+    //workaround
+    auto& global_hmm_workaround = global_hmm;
+
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
         auto t_size = dataset.word_images.at(test_image).size().width;
 
         double best_diff_a = 100000000.0;
 
-        for (std::size_t i = 0; i < ref_a.size(); ++i) {
-            auto ref_size = dataset.word_images.at(training_images[i] + ".png").size().width;
+        if (conf.hmm) {
+            best_diff_a = hmm_distance(dataset, global_hmm_workaround, hmm, t_size, test_features_a[t], training_images);
+        } else {
+            for (std::size_t i = 0; i < ref_a.size(); ++i) {
+                auto ref_size = dataset.word_images.at(training_images[i] + ".png").size().width;
 
-            double diff_a;
-            auto ratio = static_cast<double>(ref_size) / t_size;
-            if (ratio > 2.0 || ratio < 0.5) {
-                diff_a = 100000000.0;
-            } else {
-                diff_a = dtw_distance(ref_a[i], test_features_a[t], true, parameters.sc_band);
+                double diff_a;
+                auto ratio = static_cast<double>(ref_size) / t_size;
+                if (ratio > 2.0 || ratio < 0.5) {
+                    diff_a = 100000000.0;
+                } else {
+                    diff_a = dtw_distance(ref_a[i], test_features_a[t], true, parameters.sc_band);
+                }
+
+                best_diff_a = std::min(best_diff_a, diff_a);
             }
-
-            best_diff_a = std::min(best_diff_a, diff_a);
         }
 
         diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
     });
+
+    if(conf.hmm){
+        weight min = diffs_a[0].second;
+        for(auto& diff : diffs_a){
+            min = std::min(min, diff.second);
+        }
+
+        if(min < 0.0){
+            for(auto& diff : diffs_a){
+                diff.second -= min;
+            }
+        }
+    }
 
     return diffs_a;
 }
