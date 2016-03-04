@@ -186,6 +186,12 @@ double hmm_distance(const Dataset& dataset, const hmm_p& global_hmm, const hmm_p
 
 using hmm_p = int;
 
+template <typename RefFunctor>
+hmm_p train_global_hmm(names /*train_word_names*/, RefFunctor /*functor*/) {
+    //Disabled HMM
+    std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
+}
+
 template <typename Dataset, typename Ref>
 hmm_p train_ref_hmm(const Dataset& /*dataset*/, Ref& /*ref_a*/, names /*training_images*/) {
     //Disabled HMM
