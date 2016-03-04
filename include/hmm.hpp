@@ -199,7 +199,7 @@ hmm_p train_ref_hmm(const Dataset& /*dataset*/, Ref& /*ref_a*/, names /*training
 }
 
 template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& /*dataset*/, const hmm_p& /*hmm*/, std::size_t /*pixel_width*/, const V1& /*s*/, names /*training_images*/) {
+double hmm_distance(const Dataset& /*dataset*/, const hmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, std::size_t /*pixel_width*/, const V1& /*test_image*/, names /*training_images*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 }
