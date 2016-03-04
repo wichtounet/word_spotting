@@ -40,6 +40,8 @@ hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
 
     std::vector<arma::mat> images;
 
+    std::size_t f = 0;
+
     //TODO Configure how the subset if sleected
 
     for(std::size_t image = 0; image < ref_a.size(); image += 10){
@@ -49,6 +51,8 @@ hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
 
         images.emplace_back(n_features, width);
 
+        f += width;
+
         for(std::size_t i = 0; i < width; ++i){
             for(std::size_t j = 0; j < ref_image[i].size(); ++j){
                 images.back()(j, i) = ref_image[i][j];
@@ -57,7 +61,10 @@ hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
     }
 
     try {
-        std::cout << "Start training the global HMM (with " << images.size() << " images)" << std::endl;
+        std::cout << "Start training the global HMM" << std::endl;
+        std::cout << "\tn_images: " << images.size() << std::endl;
+        std::cout << "\tn_observations=" << f << std::endl;
+        std::cout << "\tn_total_features=" << f * 9 << std::endl;
         hmm->Train(images);
         std::cout << "HMM succesfully converged (with " << images.size() << " images)" << std::endl;
     } catch (const std::logic_error& e){
