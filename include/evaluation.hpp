@@ -43,7 +43,7 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
     names training_images, names test_image_names, names train_word_names, parameters parameters, RefFunctor functor) {
     std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
 
-    static hmm_p global_hmm;
+    static gmm_p global_hmm;
 
     if(conf.hmm && !global_hmm){
         global_hmm = train_global_hmm(train_word_names, functor);

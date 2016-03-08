@@ -19,6 +19,7 @@ using GMM = mlpack::gmm::GMM;
 template<typename Distribution>
 using HMM = mlpack::hmm::HMM<Distribution>;
 
+using gmm_p = std::unique_ptr<GMM>;
 using hmm_p = std::unique_ptr<HMM<GMM>>;
 
 //Number of gaussians for the HMM
@@ -28,7 +29,7 @@ static constexpr const std::size_t n_hmm_gaussians = 8;
 static constexpr const std::size_t n_gmm_gaussians = 64;
 
 template <typename RefFunctor>
-hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
+gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
     dll::auto_timer timer("gmm_train");
 
     auto ref_a = functor(train_word_names);
@@ -37,6 +38,7 @@ hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
     const auto n_features = ref_a[0][0].size();
 
     auto hmm = std::make_unique<HMM<GMM>>(n_states, GMM(n_gmm_gaussians, n_features));
+    auto gmm = std::make_unique<GMM>(n_gmm_gaussians, n_features);
 
     std::vector<arma::mat> images;
 
@@ -65,7 +67,18 @@ hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
         std::cout << "\tn_images: " << images.size() << std::endl;
         std::cout << "\tn_observations=" << f << std::endl;
         std::cout << "\tn_total_features=" << f * 9 << std::endl;
-        hmm->Train(images);
+
+        gmm->Train(images[0]);
+        std::cout << '.';
+
+        for(std::size_t i = 1; i < images.size(); ++i){
+            gmm->Train(images[i], 1, true);
+            std::cout << '.';
+        }
+
+        std::cout << '.' << std::endl;
+
+        //hmm->Train(images);
         std::cout << "HMM succesfully converged (with " << images.size() << " images)" << std::endl;
     } catch (const std::logic_error& e){
         std::cout << "frakking HMM failed: " << e.what() << std::endl;
@@ -83,7 +96,7 @@ hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
         std::cout << "\tn_states: " << n_states << std::endl;
     }
 
-    return hmm;
+    return gmm;
 }
 
 template <typename Dataset, typename Ref>
@@ -152,7 +165,7 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 }
 
 template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& dataset, const hmm_p& global_hmm, const hmm_p& hmm, std::size_t pixel_width, const V1& test_image, names training_images) {
+double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, std::size_t pixel_width, const V1& test_image, names training_images) {
     double ref_width = 0;
 
     for(auto& image : training_images){
@@ -179,15 +192,26 @@ double hmm_distance(const Dataset& dataset, const hmm_p& global_hmm, const hmm_p
         }
     }
 
-    return -(hmm->LogLikelihood(image) / global_hmm->LogLikelihood(image));
+    auto gmm_likelihood = [&gmm](auto& image){
+        auto likelihood = std::log(gmm->Probability(image.col(0)));
+
+        for(std::size_t i = 1; i < image.n_cols; ++i){
+            likelihood += std::log(gmm->Probability(image.col(i)));
+        }
+
+        return likelihood;
+    };
+
+    return -(hmm->LogLikelihood(image) / gmm_likelihood(image));
 }
 
 #else
 
+using gmm_p = int;
 using hmm_p = int;
 
 template <typename RefFunctor>
-hmm_p train_global_hmm(names /*train_word_names*/, RefFunctor /*functor*/) {
+gmm_p train_global_hmm(names /*train_word_names*/, RefFunctor /*functor*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 }
@@ -199,7 +223,7 @@ hmm_p train_ref_hmm(const Dataset& /*dataset*/, Ref& /*ref_a*/, names /*training
 }
 
 template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& /*dataset*/, const hmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, std::size_t /*pixel_width*/, const V1& /*test_image*/, names /*training_images*/) {
+double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, std::size_t /*pixel_width*/, const V1& /*test_image*/, names /*training_images*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 }
