@@ -29,7 +29,7 @@ static constexpr const std::size_t n_gmm_gaussians = 64;
 
 template <typename RefFunctor>
 hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
-    dll::auto_timer("gmm_train");
+    dll::auto_timer timer("gmm_train");
 
     auto ref_a = functor(train_word_names);
 
@@ -88,7 +88,7 @@ hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
 
 template <typename Dataset, typename Ref>
 hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
-    dll::auto_timer("hmm_train");
+    dll::auto_timer timer("hmm_train");
 
     auto characters = dataset.word_labels.at(training_images[0]).size();
 
