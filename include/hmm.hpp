@@ -43,10 +43,11 @@ gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
     std::vector<arma::mat> images;
 
     std::size_t f = 0;
+    std::size_t step = 10;
 
     //TODO Configure how the subset if sleected
 
-    for(std::size_t image = 0; image < ref_a.size(); image += 10){
+    for(std::size_t image = 0; image < ref_a.size(); image += step){
         auto& ref_image = ref_a[image];
 
         auto width = ref_image.size();
