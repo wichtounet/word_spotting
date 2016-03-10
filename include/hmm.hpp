@@ -26,7 +26,10 @@ using hmm_p = std::unique_ptr<HMM<GMM>>;
 static constexpr const std::size_t n_hmm_gaussians = 1;
 
 //Number of gaussians for the GMM
-static constexpr const std::size_t n_gmm_gaussians = 64;
+static constexpr const std::size_t n_gmm_gaussians = 16;
+
+//Number of states per character
+static constexpr const auto n_states_per_char = 1;
 
 template <typename RefFunctor>
 gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
@@ -34,10 +37,8 @@ gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
 
     auto ref_a = functor(train_word_names);
 
-    const auto n_states = 1;
     const auto n_features = ref_a[0][0].size();
 
-    auto hmm = std::make_unique<HMM<GMM>>(n_states, GMM(n_gmm_gaussians, n_features));
     auto gmm = std::make_unique<GMM>(n_gmm_gaussians, n_features);
 
     //TODO Better Configure how the subset if sleected
@@ -95,7 +96,6 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 
     auto characters = dataset.word_labels.at(training_images[0]).size();
 
-    const auto n_states_per_char = 1;
     const auto n_states = characters * n_states_per_char;
     const auto n_features = ref_a[0][0].size();
 
