@@ -85,18 +85,5 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
         diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
     });
 
-    if(conf.hmm){
-        weight min = diffs_a[0].second;
-        for(auto& diff : diffs_a){
-            min = std::min(min, diff.second);
-        }
-
-        if(min < 0.0){
-            for(auto& diff : diffs_a){
-                diff.second -= min;
-            }
-        }
-    }
-
     return diffs_a;
 }

@@ -23,7 +23,7 @@ using gmm_p = std::unique_ptr<GMM>;
 using hmm_p = std::unique_ptr<HMM<GMM>>;
 
 //Number of gaussians for the HMM
-static constexpr const std::size_t n_hmm_gaussians = 8;
+static constexpr const std::size_t n_hmm_gaussians = 1;
 
 //Number of gaussians for the GMM
 static constexpr const std::size_t n_gmm_gaussians = 64;
@@ -40,61 +40,50 @@ gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
     auto hmm = std::make_unique<HMM<GMM>>(n_states, GMM(n_gmm_gaussians, n_features));
     auto gmm = std::make_unique<GMM>(n_gmm_gaussians, n_features);
 
-    std::vector<arma::mat> images;
+    //TODO Better Configure how the subset if sleected
+    std::size_t step = 5;
 
-    std::size_t f = 0;
-    std::size_t step = 10;
+    //Collect information on the dataset
 
-    //TODO Configure how the subset if sleected
+    std::size_t n_observations = 0;
+    std::size_t n_images = 0;
+
+    for(std::size_t image = 0; image < ref_a.size(); image += step){
+        n_observations += ref_a[image].size();
+        ++n_images;
+    }
+
+    //Flatten all the images
+
+    arma::mat flatten_mat(n_features, n_observations);
+    std::size_t o = 0;
 
     for(std::size_t image = 0; image < ref_a.size(); image += step){
         auto& ref_image = ref_a[image];
 
         auto width = ref_image.size();
 
-        images.emplace_back(n_features, width);
-
-        f += width;
-
         for(std::size_t i = 0; i < width; ++i){
-            for(std::size_t j = 0; j < ref_image[i].size(); ++j){
-                images.back()(j, i) = ref_image[i][j];
+            auto od = o++;
+            for(std::size_t j = 0; j < n_features; ++j){
+                flatten_mat(j, od) = ref_image[i][j];
             }
         }
     }
 
     try {
-        std::cout << "Start training the global HMM" << std::endl;
-        std::cout << "\tn_images: " << images.size() << std::endl;
-        std::cout << "\tn_observations=" << f << std::endl;
-        std::cout << "\tn_total_features=" << f * 9 << std::endl;
+        std::cout << "Start training the GMM" << std::endl;
+        std::cout << "\tn_images: " << n_images << std::endl;
+        std::cout << "\tn_observations=" << n_observations << std::endl;
+        std::cout << "\tn_total_features=" << n_observations * 9 << std::endl;
 
-        gmm->Train(images[0]);
-        std::cout << '.';
+        gmm->Train(flatten_mat);
 
-        for(std::size_t i = 1; i < images.size(); ++i){
-            gmm->Train(images[i], 1, true);
-            std::cout << '.';
-        }
-
-        std::cout << '.' << std::endl;
-
-        //hmm->Train(images);
-        std::cout << "HMM succesfully converged (with " << images.size() << " images)" << std::endl;
+        std::cout << "GMM succesfully converged (with " << n_images << " images)" << std::endl;
     } catch (const std::logic_error& e){
-        std::cout << "frakking HMM failed: " << e.what() << std::endl;
-        std::cout << "\tn_images: " << images.size() << std::endl;
-        std::cout << "\tn_features: " << n_features << std::endl;
-        std::cout << "\tn_states: " << n_states << std::endl;
-
-        for(auto& image : images){
-            image.print("Image");
-        }
+        std::cout << "frakking GMM failed: " << e.what() << std::endl;
     } catch (const std::runtime_error& e){
-        std::cout << "frakking HMM failed to converge: " << e.what() << std::endl;
-        std::cout << "\tn_images: " << images.size() << std::endl;
-        std::cout << "\tn_features: " << n_features << std::endl;
-        std::cout << "\tn_states: " << n_states << std::endl;
+        std::cout << "frakking GMM failed to converge: " << e.what() << std::endl;
     }
 
     return gmm;
@@ -106,7 +95,7 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 
     auto characters = dataset.word_labels.at(training_images[0]).size();
 
-    const auto n_states_per_char = 5;
+    const auto n_states_per_char = 1;
     const auto n_states = characters * n_states_per_char;
     const auto n_features = ref_a[0][0].size();
 
@@ -141,6 +130,7 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 
     try {
         hmm->Train(images, labels);
+
         std::cout << "HMM succesfully converged (with " << images.size() << " images)" << std::endl;
     } catch (const std::logic_error& e){
         std::cout << "frakking HMM failed: " << e.what() << std::endl;
@@ -178,7 +168,7 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
     auto ratio = ref_width / pixel_width;
 
     if (ratio > 2.0 || ratio < 0.5) {
-        return 1e100;
+        return 1e8;
     }
 
     //const auto n_states = hmm->Initial().size();
@@ -194,16 +184,47 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
     }
 
     auto gmm_likelihood = [&gmm](auto& image){
-        auto likelihood = std::log(gmm->Probability(image.col(0)));
+        auto likelihood = 0.0;
 
-        for(std::size_t i = 1; i < image.n_cols; ++i){
-            likelihood += std::log(gmm->Probability(image.col(i)));
+        for(std::size_t i = 0; i < image.n_cols; ++i){
+            double p = gmm->Probability(image.col(i));
+
+            if(!std::isfinite(p)){
+                std::cerr << "WARNING: p(x|GMM) not finite: " << p << std::endl;
+            }
+
+            double logp;
+
+            if(p == 0.0){
+                std::cerr << "WARNING: p(x|GMM) == 0 col: " << i << std::endl;
+                logp = -100;
+            } else {
+                logp = std::log(p);
+            }
+
+            if(!std::isfinite(logp)){
+                std::cerr << "WARNING: log(p(x|GMM)) not finite: " << logp << std::endl;
+            }
+
+            likelihood += logp;
         }
 
         return likelihood;
     };
 
-    return -(hmm->LogLikelihood(image) / gmm_likelihood(image));
+    auto p_hmm = hmm->LogLikelihood(image);
+    auto p_gmm = gmm_likelihood(image);
+
+    if(!std::isfinite(p_hmm)){
+        std::cerr << "WARNING: p(X|HMM) not finite: " << p_hmm << std::endl;
+        return 1e8; //TODO WHY
+    }
+
+    if(!std::isfinite(p_gmm)){
+        std::cerr << "WARNING: p(X|GMM) not finite: " << p_gmm << std::endl;
+    }
+
+    return -(p_hmm / p_gmm);
 }
 
 #else

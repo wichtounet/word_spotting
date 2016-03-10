@@ -25,6 +25,8 @@
 #define LOCAL_LINEAR_SCALING
 #include "scaling.hpp" //Scaling functions
 
+//#define DEBUG_DISTANCES
+
 namespace {
 
 const bool interpolate = false;
@@ -908,6 +910,16 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names tr
         auto diffs = compute_distances(conf, pool, dataset, test_features, ref, training_images,
             test_image_names, train_word_names,
             parameters, [&](names train_names){ return compute_reference(pool, dataset, conf, train_names); });
+
+#ifdef DEBUG_DISTANCES
+        std::cout << "Keyword: " << keyword << std::endl;
+
+        std::sort(diffs.begin(), diffs.end(), [](auto& a, auto& b) { return a.second < b.second; });
+
+        for(auto& diff : diffs){
+            std::cout << dataset.word_labels.at(diff.first) << " <-> " << diff.second << std::endl;
+        }
+#endif
 
         // d) Update the local stats
 
