@@ -171,7 +171,6 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
         return 1e8;
     }
 
-    //const auto n_states = hmm->Initial().size();
     const auto n_features = test_image[0].size();
     const auto width = test_image.size();
 
