@@ -864,7 +864,7 @@ parameters get_parameters(config& /*conf*/){
 
 template <typename Dataset, typename Set>
 void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names train_word_names, names test_image_names, bool training) {
-    thread_pool pool;
+    thread_pool pool(1);
 
     auto parameters = get_parameters(conf);
 

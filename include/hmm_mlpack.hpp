@@ -16,6 +16,8 @@
 #include <mlpack/methods/hmm/hmm.hpp>
 #include <mlpack/methods/gmm/gmm.hpp>
 
+namespace hmm_mlpack {
+
 using GMM = mlpack::gmm::GMM;
 
 template<typename Distribution>
@@ -282,7 +284,11 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
     return -(p_hmm / p_gmm);
 }
 
+} //end of namespace hmm_mlpack
+
 #else
+
+namespace hmm_mlpack {
 
 using gmm_p = int;
 using hmm_p = int;
@@ -304,6 +310,8 @@ double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, con
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 }
+
+} //end of namespace hmm_mlpack
 
 #endif
 

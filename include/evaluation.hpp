@@ -9,7 +9,7 @@
 
 #include "dll/util/timers.hpp"
 
-#include "hmm.hpp"
+#include "hmm_mlpack.hpp"
 
 using thread_pool = cpp::default_thread_pool<>;
 
@@ -43,16 +43,16 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
     names training_images, names test_image_names, names train_word_names, parameters parameters, RefFunctor functor) {
     std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
 
-    static gmm_p global_hmm;
+    static hmm_mlpack::gmm_p global_hmm;
 
     if(conf.hmm && !global_hmm){
-        global_hmm = train_global_hmm(train_word_names, functor);
+        global_hmm = hmm_mlpack::train_global_hmm(train_word_names, functor);
     }
 
-    hmm_p hmm;
+    hmm_mlpack::hmm_p hmm;
 
     if(conf.hmm){
-        hmm = train_ref_hmm(dataset, ref_a, training_images);
+        hmm = hmm_mlpack::train_ref_hmm(dataset, ref_a, training_images);
     }
 
     //Either frakking compiler or me is too stupid, so we need this
@@ -65,7 +65,7 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
         double best_diff_a = 100000000.0;
 
         if (conf.hmm) {
-            best_diff_a = hmm_distance(dataset, global_hmm_workaround, hmm, t_size, test_features_a[t], training_images);
+            best_diff_a = hmm_mlpack::hmm_distance(dataset, global_hmm_workaround, hmm, t_size, test_features_a[t], training_images);
         } else {
             for (std::size_t i = 0; i < ref_a.size(); ++i) {
                 auto ref_size = dataset.word_images.at(training_images[i] + ".png").size().width;
