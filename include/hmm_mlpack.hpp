@@ -35,6 +35,9 @@ static constexpr const std::size_t n_gmm_gaussians = 16;
 //Number of states per character
 static constexpr const auto n_states_per_char = 2;
 
+static constexpr const std::size_t salts = 5;
+static constexpr const double salt = 0.05;
+
 template <typename RefFunctor>
 gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
     dll::auto_timer timer("gmm_train");
@@ -135,12 +138,17 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 
     static std::default_random_engine rand_engine(std::time(nullptr));
 
+    //Generate the Salt distributions
+
+    std::vector<std::normal_distribution<double>> distributions;
+
+    for(std::size_t f = 0; f < n_features; ++f){
+        distributions.emplace_back(0.0, salt * deviations[f]);
+    }
+
     // Copy the input (for salting)
     auto reference = ref_a;
     reference.clear();
-
-    static constexpr const std::size_t salts = 5;
-    static constexpr const double salt = 0.05;
 
     for(auto& image : ref_a){
         for (std::size_t s = 0; s < salts; ++s) {
@@ -149,8 +157,7 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
             if(salt > 0.0){
                 for (auto& column : copy) {
                     for (std::size_t f = 0; f < n_features; ++f) {
-                        std::normal_distribution<double> dist(0.0, salt * deviations[f]);
-                        column[f] += dist(rand_engine);
+                        column[f] += distributions[f](rand_engine);
                     }
                 }
             }
