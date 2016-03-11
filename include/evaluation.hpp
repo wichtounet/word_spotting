@@ -43,30 +43,32 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
     names training_images, names test_image_names, names train_word_names, parameters parameters, RefFunctor functor) {
     std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
 
-    static hmm_mlpack::gmm_p global_hmm;
-
-    if(conf.hmm && !global_hmm){
-        global_hmm = hmm_mlpack::train_global_hmm(train_word_names, functor);
-    }
-
-    hmm_mlpack::hmm_p hmm;
-
     if(conf.hmm){
-        hmm = hmm_mlpack::train_ref_hmm(dataset, ref_a, training_images);
-    }
+        static hmm_mlpack::gmm_p global_hmm;
 
-    //Either frakking compiler or me is too stupid, so we need this
-    //workaround
-    auto& global_hmm_workaround = global_hmm;
+        if(!global_hmm){
+            global_hmm = hmm_mlpack::train_global_hmm(train_word_names, functor);
+        }
 
-    cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
-        auto t_size = dataset.word_images.at(test_image).size().width;
+        auto hmm = hmm_mlpack::train_ref_hmm(dataset, ref_a, training_images);
 
-        double best_diff_a = 100000000.0;
+        //Either frakking compiler or me is too stupid, so we need this
+        //workaround
+        auto& gmm = global_hmm;
 
-        if (conf.hmm) {
-            best_diff_a = hmm_mlpack::hmm_distance(dataset, global_hmm_workaround, hmm, t_size, test_features_a[t], training_images);
-        } else {
+        cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
+            auto t_size = dataset.word_images.at(test_image).size().width;
+
+            auto best_diff_a = hmm_mlpack::hmm_distance(dataset, gmm, hmm, t_size, test_features_a[t], training_images);
+
+            diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
+        });
+    } else {
+        cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
+            auto t_size = dataset.word_images.at(test_image).size().width;
+
+            double best_diff_a = 100000000.0;
+
             for (std::size_t i = 0; i < ref_a.size(); ++i) {
                 auto ref_size = dataset.word_images.at(training_images[i] + ".png").size().width;
 
@@ -80,10 +82,10 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
 
                 best_diff_a = std::min(best_diff_a, diff_a);
             }
-        }
 
-        diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
-    });
+            diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
+        });
+    }
 
     return diffs_a;
 }
