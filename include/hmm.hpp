@@ -10,6 +10,8 @@
 
 #ifndef SPOTTER_NO_HMM
 
+#include <random>
+
 #include <mlpack/core.hpp>
 #include <mlpack/methods/hmm/hmm.hpp>
 #include <mlpack/methods/gmm/gmm.hpp>
@@ -29,7 +31,7 @@ static constexpr const std::size_t n_hmm_gaussians = 1;
 static constexpr const std::size_t n_gmm_gaussians = 16;
 
 //Number of states per character
-static constexpr const auto n_states_per_char = 1;
+static constexpr const auto n_states_per_char = 2;
 
 template <typename RefFunctor>
 gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
@@ -41,7 +43,7 @@ gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
 
     auto gmm = std::make_unique<GMM>(n_gmm_gaussians, n_features);
 
-    //TODO Better Configure how the subset if sleected
+    //TODO Better Configure how the subset if selected
     std::size_t step = 5;
 
     //Collect information on the dataset
@@ -101,11 +103,65 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 
     auto hmm = std::make_unique<HMM<GMM>>(n_states, GMM(n_hmm_gaussians, n_features));
 
-    std::vector<arma::mat> images(ref_a.size());
-    std::vector<arma::Row<size_t>> labels(ref_a.size());
+    //Collect the standard deviations
 
-    for(std::size_t image = 0; image < ref_a.size(); ++image){
-        auto& ref_image = ref_a[image];
+    std::vector<double> deviations(n_features);
+
+    for(std::size_t f = 0; f < n_features; ++f){
+        double mean = 0.0;
+        std::size_t n = 0;
+
+        for(auto& image : ref_a){
+            for(auto& column : image){
+                mean += column[f];
+            }
+            n += image.size();
+        }
+
+        mean /= n;
+
+        double stddev = 0.0;
+
+        for(auto& image : ref_a){
+            for(auto& column : image){
+                stddev += (column[f] - mean) * (column[f] - mean);
+            }
+        }
+
+        deviations[f] = std::sqrt(stddev / n);
+    }
+
+    static std::default_random_engine rand_engine(std::time(nullptr));
+
+    // Copy the input (for salting)
+    auto reference = ref_a;
+    reference.clear();
+
+    static constexpr const std::size_t salts = 5;
+    static constexpr const double salt = 0.05;
+
+    for(auto& image : ref_a){
+        for (std::size_t s = 0; s < salts; ++s) {
+            auto copy = image;
+
+            if(salt > 0.0){
+                for (auto& column : copy) {
+                    for (std::size_t f = 0; f < n_features; ++f) {
+                        std::normal_distribution<double> dist(0.0, salt * deviations[f]);
+                        column[f] += dist(rand_engine);
+                    }
+                }
+            }
+
+            reference.push_back(copy);
+        }
+    }
+
+    std::vector<arma::mat> images(reference.size());
+    std::vector<arma::Row<size_t>> labels(reference.size());
+
+    for(std::size_t image = 0; image < reference.size(); ++image){
+        auto& ref_image = reference[image];
 
         auto width = ref_image.size();
 
