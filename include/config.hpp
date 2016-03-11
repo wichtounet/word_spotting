@@ -52,6 +52,7 @@ struct config {
     bool all      = false;
     bool load     = false;
     bool hmm      = false;
+    bool htk      = false;
 
     bool washington = true;
     bool parzival   = false;
