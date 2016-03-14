@@ -10,6 +10,8 @@
 
 #ifndef SPOTTER_NO_HMM
 
+#define FULL_DEBUG
+
 #include <random>
 
 #include <mlpack/core.hpp>
@@ -27,16 +29,16 @@ using gmm_p = std::unique_ptr<GMM>;
 using hmm_p = std::unique_ptr<HMM<GMM>>;
 
 //Number of gaussians for the HMM
-static constexpr const std::size_t n_hmm_gaussians = 1;
+static constexpr const std::size_t n_hmm_gaussians = 2;
 
 //Number of gaussians for the GMM
 static constexpr const std::size_t n_gmm_gaussians = 16;
 
 //Number of states per character
-static constexpr const auto n_states_per_char = 2;
+static constexpr const auto n_states_per_char = 10;
 
-static constexpr const std::size_t salts = 5;
-static constexpr const double salt = 0.05;
+static constexpr const std::size_t salts = 20;
+static constexpr const double salt = 0.1;
 
 template <typename RefFunctor>
 gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
@@ -150,19 +152,23 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
     auto reference = ref_a;
     reference.clear();
 
-    for(auto& image : ref_a){
-        for (std::size_t s = 0; s < salts; ++s) {
-            auto copy = image;
+    for (auto& image : ref_a) {
+        if (salts <= 1) {
+            reference.push_back(image);
+        } else {
+            for (std::size_t s = 0; s < salts; ++s) {
+                auto copy = image;
 
-            if(salt > 0.0){
-                for (auto& column : copy) {
-                    for (std::size_t f = 0; f < n_features; ++f) {
-                        column[f] += distributions[f](rand_engine);
+                if (salt > 0.0) {
+                    for (auto& column : copy) {
+                        for (std::size_t f = 0; f < n_features; ++f) {
+                            column[f] += distributions[f](rand_engine);
+                        }
                     }
                 }
-            }
 
-            reference.push_back(copy);
+                reference.push_back(copy);
+            }
         }
     }
 
@@ -216,6 +222,14 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
         std::cout << "\tn_features: " << n_features << std::endl;
         std::cout << "\tn_states: " << n_states << std::endl;
     }
+
+#ifdef FULL_DEBUG
+    for(std::size_t i = 0; i < images.size(); ++i){
+        auto& image = images[i];
+
+        std::cout << "p(x|HMM)" << hmm->LogLikelihood(image) << std::endl;
+    }
+#endif
 
     return hmm;
 }
@@ -281,6 +295,15 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
 
     if(!std::isfinite(p_hmm)){
         std::cerr << "WARNING: p(X|HMM) not finite: " << p_hmm << std::endl;
+
+        //arma::mat stateProb(hmm->Initial().size(), test_image.size());
+        //auto p_hmm_estimate = hmm->Estimate(image, stateProb);
+
+        //std::cout << p_hmm_estimate << std::endl;
+        //std::cout << image << std::endl;
+        //std::cout << stateProb << std::endl;
+        //std::cout << std::endl;
+
         return 1e8; //TODO WHY
     }
 
