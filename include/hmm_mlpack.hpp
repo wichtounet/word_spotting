@@ -27,6 +27,8 @@ using HMM = mlpack::hmm::HMM<Distribution>;
 using gmm_p = std::unique_ptr<GMM>;
 using hmm_p = std::unique_ptr<HMM<GMM>>;
 
+//Note: These values are the best for the 8 first keywords...
+
 //Number of gaussians for the HMM
 static constexpr const std::size_t n_hmm_gaussians = 2;
 
