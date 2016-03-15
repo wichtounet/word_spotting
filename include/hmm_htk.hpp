@@ -89,10 +89,10 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
 
 #else
 
-namespace hmm_mlpack {
+namespace hmm_htk {
 
-using gmm_p = int;
-using hmm_p = int;
+using gmm_p = std::string;
+using hmm_p = std::string;
 
 template <typename RefFunctor>
 gmm_p train_global_hmm(names /*train_word_names*/, RefFunctor /*functor*/) {
