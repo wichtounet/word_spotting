@@ -5,6 +5,11 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 #pragma once
 
 #ifndef SPOTTER_NO_HMM
@@ -115,3 +120,4 @@ double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, con
 } //end of namespace hmm_mlpack
 
 #endif
+#pragma GCC diagnostic pop
