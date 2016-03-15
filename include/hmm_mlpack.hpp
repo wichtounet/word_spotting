@@ -9,7 +9,7 @@
 
 #ifndef SPOTTER_NO_HMM
 
-#define FULL_DEBUG
+//#define FULL_DEBUG
 
 #include <random>
 
@@ -86,7 +86,7 @@ gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
         std::cout << "\tn_observations=" << n_observations << std::endl;
         std::cout << "\tn_total_features=" << n_observations * 9 << std::endl;
 
-        gmm->Train(flatten_mat);
+        //gmm->Train(flatten_mat);
 
         std::cout << "GMM succesfully converged (with " << n_images << " images)" << std::endl;
     } catch (const std::logic_error& e){
@@ -310,7 +310,7 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
         std::cerr << "WARNING: p(X|GMM) not finite: " << p_gmm << std::endl;
     }
 
-    return -(p_hmm / p_gmm);
+    return -(p_hmm /*/ p_gmm*/);
 }
 
 } //end of namespace hmm_mlpack
