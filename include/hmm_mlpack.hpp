@@ -5,8 +5,7 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
-#ifndef WORD_SPOTTER_HMM_HPP
-#define WORD_SPOTTER_HMM_HPP
+#pragma once
 
 #ifndef SPOTTER_NO_HMM
 
@@ -342,7 +341,5 @@ double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, con
 }
 
 } //end of namespace hmm_mlpack
-
-#endif
 
 #endif

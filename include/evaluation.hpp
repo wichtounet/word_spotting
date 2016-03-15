@@ -10,6 +10,7 @@
 #include "dll/util/timers.hpp"
 
 #include "hmm_mlpack.hpp"
+#include "hmm_htk.hpp"
 
 using thread_pool = cpp::default_thread_pool<>;
 
@@ -43,7 +44,27 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
     names training_images, names test_image_names, names train_word_names, parameters parameters, RefFunctor functor) {
     std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
 
-    if(conf.hmm){
+    if(conf.hmm && conf.htk){
+        static hmm_htk::gmm_p global_hmm;
+
+        if(global_hmm.empty()){
+            global_hmm = hmm_htk::train_global_hmm(train_word_names, functor);
+        }
+
+        auto hmm = hmm_htk::train_ref_hmm(dataset, ref_a, training_images);
+
+        //Either frakking compiler or me is too stupid, so we need this
+        //workaround
+        auto& gmm = global_hmm;
+
+        cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
+            auto t_size = dataset.word_images.at(test_image).size().width;
+
+            auto best_diff_a = hmm_htk::hmm_distance(dataset, gmm, hmm, t_size, test_features_a[t], training_images);
+
+            diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
+        });
+    } else if(conf.hmm){
         static hmm_mlpack::gmm_p global_hmm;
 
         if(!global_hmm){
