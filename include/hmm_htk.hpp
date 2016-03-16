@@ -28,13 +28,18 @@ using gmm_p = std::string;
 using hmm_p = std::string;
 
 //Number of gaussians for the HMM
-static constexpr const std::size_t n_hmm_gaussians = 2;
+constexpr const std::size_t n_hmm_gaussians = 2;
 
 //Number of training iterations for the HMM
-static constexpr const std::size_t n_hmm_iterations = 2;
+constexpr const std::size_t n_hmm_iterations = 2;
 
 //Number of states per character
-static constexpr const auto n_states_per_char = 10;
+constexpr const auto n_states_per_char = 10;
+
+const std::string bin_hmm_init = "scripts/hmm-init.pl";
+const std::string bin_hhed   = "HHEd";
+const std::string bin_herest = "HERest";
+const std::string bin_hvite = "HVite";
 
 inline auto exec_command(const std::string& command) {
     std::stringstream output;
@@ -101,10 +106,6 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
     const std::string htk_config_file  = folder + "/htk_config";
     const std::string letters_file     = folder + "/letters";
     const std::string mlf_file         = folder + "/train.mlf";
-
-    const std::string bin_hmm_init = "scripts/hmm-init.pl";
-    const std::string bin_hhed   = "HHEd";
-    const std::string bin_herest = "HERest";
 
     mkdir(base_folder.c_str(), 0777);
     mkdir(folder.c_str(), 0777);
@@ -312,6 +313,63 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
 
     const auto n_features = test_image[0].size();
     const auto width = test_image.size();
+
+    const std::string folder = hmm;
+
+    const std::string features_file    = folder + "/test_features.lst";
+    const std::string hmm_info_file    = folder + "/hmm_info";
+    const std::string means_file       = folder + "/means";
+    const std::string variances_file   = folder + "/variances";
+    const std::string covariances_file = folder + "/covariances";
+    const std::string init_mmf_file    = folder + "/init_mmf";
+    const std::string htk_config_file  = folder + "/htk_config";
+    const std::string letters_file     = folder + "/letters";
+    const std::string mlf_file         = folder + "/train.mlf";
+    const std::string log_file    = folder + "/vite.log";
+
+    const std::string file_path = folder + "/test_file.htk";
+
+    {
+        std::ofstream os(features_file);
+        os << file_path << "\n";
+    }
+
+    {
+        std::ofstream os(file_path, std::ofstream::binary);
+
+        dll::binary_write(os, static_cast<int>(1));                            //Number of samples
+        dll::binary_write(os, static_cast<int>(1));                            //Dummy HTK_SAMPLE_RATE
+        dll::binary_write(os, static_cast<short>(n_features * sizeof(float))); //Sample size
+        dll::binary_write(os, static_cast<short>(9));                          //Used defined sample kind = 9 ?
+
+        //Write all the values
+        for(auto feature_vector : test_image){
+            for(auto v : feature_vector){
+                dll::binary_write(os, v);
+            }
+        }
+    }
+
+    std::string hvite_command =
+        bin_hvite +
+        " -C " + htk_config_file +
+        " -i " + log_file +
+        " -H " + hmm_info_file +
+        " -S " + features_file +
+        " " + letters_file;
+
+    auto hvite_result = exec_command(hvite_command);
+
+    if(hvite_result.first){
+        std::cout << "HVite failed with result code: " << hvite_result.first << std::endl;
+        std::cout << "Command: " << hvite_command << std::endl;
+        std::cout << hvite_result.second << std::endl;
+    }
+
+  //`bin/HVite -C #{file_htk_config} -i #{file_recognition_log} -H #{file_mmf} -S #{file_featurelist} #{file_spelling} #{file_letters}`
+
+
+
 
     //TODO
 
