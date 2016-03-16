@@ -44,6 +44,15 @@ std::string keyword_to_string(const std::vector<T>& vec) {
     return result;
 }
 
+template <typename T>
+std::string keyword_to_short_string(const std::vector<T>& vec) {
+    std::string result;
+    for (auto& v : vec) {
+        result += v;
+    }
+    return result;
+}
+
 etl::dyn_matrix<weight, 3> mat_for_patches(const config& conf, const cv::Mat& image);
 
 template <typename DBN>
