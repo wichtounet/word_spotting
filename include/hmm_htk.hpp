@@ -107,6 +107,9 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
     const std::string htk_config_file  = folder + "/htk_config";
     const std::string letters_file     = folder + "/letters";
     const std::string mlf_file         = folder + "/train.mlf";
+    const std::string grammar_file     = folder + "/grammar.bnf";
+    const std::string wordnet_file     = folder + "/grammar.wnet";
+    const std::string spelling_file    = folder + "/spelling";
 
     mkdir(base_folder.c_str(), 0777);
     mkdir(folder.c_str(), 0777);
@@ -220,6 +223,47 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
             std::cout << result.second << std::endl;
         }
     }
+
+    // Generate the grammar (used for testing)
+
+    {
+        std::ofstream os(grammar_file);
+
+        os << "(";
+
+        for(std::size_t i = 1; i <= characters; ++i){
+            os << " s" << i;
+        }
+
+        os << ")";
+    }
+
+    // Generate the spelling file (used for testing)
+
+    {
+        std::ofstream os(spelling_file);
+
+        for(std::size_t i = 1; i <= characters; ++i){
+            os << "s" << i << " s" << i << std::endl;;
+        }
+    }
+
+    // Generate the wordnet (used for testing)
+
+    std::string hparse_command =
+        bin_hparse +
+        " " + grammar_file +
+        " " + wordnet_file;
+
+    auto hparse_result = exec_command(hparse_command);
+
+    if(hparse_result.first){
+        std::cout << "HParse failed with result code: " << hparse_result.first << std::endl;
+        std::cout << "Command: " << hparse_command << std::endl;
+        std::cout << hparse_result.second << std::endl;
+    }
+
+    // Train each gaussian
 
     for(std::size_t g = 1; g <= n_hmm_gaussians; ++g){
         const std::string mmf_file           = folder + "/trained_" + std::to_string(g) + ".mmf";
@@ -336,26 +380,6 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
     }
 
     {
-        std::ofstream os(grammar_file);
-
-        os << "(";
-
-        for(std::size_t i = 1; i <= characters; ++i){
-            os << " s" << i;
-        }
-
-        os << ")";
-    }
-
-    {
-        std::ofstream os(spelling_file);
-
-        for(std::size_t i = 1; i <= characters; ++i){
-            os << "s" << i << " s" << i << std::endl;;
-        }
-    }
-
-    {
         std::ofstream os(file_path, std::ofstream::binary);
 
         dll::binary_write(os, static_cast<int>(test_image.size()));            //Number of observations
@@ -369,22 +393,6 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
                 dll::binary_write(os, v);
             }
         }
-    }
-
-    std::string hparse_command =
-        bin_hparse +
-        " " + grammar_file +
-        " " + wordnet_file;
-
-    auto hparse_result = exec_command(hparse_command);
-
-    if(hparse_result.first){
-        std::cout << "HParse failed with result code: " << hparse_result.first << std::endl;
-        std::cout << "Command: " << hparse_command << std::endl;
-        std::cout << hparse_result.second << std::endl;
-
-        //We need the wordnet for HVite
-        return 1e8;
     }
 
     std::string hvite_command =
