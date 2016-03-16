@@ -37,9 +37,10 @@ constexpr const std::size_t n_hmm_iterations = 2;
 constexpr const auto n_states_per_char = 10;
 
 const std::string bin_hmm_init = "scripts/hmm-init.pl";
-const std::string bin_hhed   = "HHEd";
-const std::string bin_herest = "HERest";
-const std::string bin_hvite = "HVite";
+const std::string bin_hhed     = "HHEd";
+const std::string bin_herest   = "HERest";
+const std::string bin_hvite    = "HVite";
+const std::string bin_hparse   = "HParse";
 
 inline auto exec_command(const std::string& command) {
     std::stringstream output;
@@ -124,7 +125,7 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 
         std::ofstream os(file_path, std::ofstream::binary);
 
-        dll::binary_write(os, static_cast<int>(ref_a.size()));                 //Number of samples
+        dll::binary_write(os, static_cast<int>(ref.size()));                 //Number of samples
         dll::binary_write(os, static_cast<int>(1));                            //Dummy HTK_SAMPLE_RATE
         dll::binary_write(os, static_cast<short>(n_features * sizeof(float))); //Sample size
         dll::binary_write(os, static_cast<short>(9));                          //Used defined sample kind = 9 ?
@@ -288,7 +289,6 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
                 std::cout << "Command: " << herest_command << std::endl;
                 std::cout << herest_result.second << std::endl;
             }
-
         }
     }
 
@@ -311,21 +311,22 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
         return 1e8;
     }
 
+    auto label = dataset.word_labels.at(training_images[0]);
+    auto characters = label.size();
+
     const auto n_features = test_image[0].size();
     const auto width = test_image.size();
 
     const std::string folder = hmm;
 
     const std::string features_file    = folder + "/test_features.lst";
-    const std::string hmm_info_file    = folder + "/hmm_info";
-    const std::string means_file       = folder + "/means";
-    const std::string variances_file   = folder + "/variances";
-    const std::string covariances_file = folder + "/covariances";
-    const std::string init_mmf_file    = folder + "/init_mmf";
+    const std::string hmm_info_file    = folder + "/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
     const std::string htk_config_file  = folder + "/htk_config";
     const std::string letters_file     = folder + "/letters";
-    const std::string mlf_file         = folder + "/train.mlf";
-    const std::string log_file    = folder + "/vite.log";
+    const std::string log_file         = folder + "/vite.log";
+    const std::string grammar_file     = folder + "/grammar.bnf";
+    const std::string wordnet_file     = folder + "/grammar.wnet";
+    const std::string spelling_file     = folder + "/spelling";
 
     const std::string file_path = folder + "/test_file.htk";
 
@@ -335,11 +336,31 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
     }
 
     {
+        std::ofstream os(grammar_file);
+
+        os << "(";
+
+        for(std::size_t i = 1; i <= characters; ++i){
+            os << " s" << i;
+        }
+
+        os << ")";
+    }
+
+    {
+        std::ofstream os(spelling_file);
+
+        for(std::size_t i = 1; i <= characters; ++i){
+            os << "s" << i << " s" << i << std::endl;;
+        }
+    }
+
+    {
         std::ofstream os(file_path, std::ofstream::binary);
 
-        dll::binary_write(os, static_cast<int>(1));                            //Number of samples
+        dll::binary_write(os, static_cast<int>(test_image.size()));            //Number of observations
         dll::binary_write(os, static_cast<int>(1));                            //Dummy HTK_SAMPLE_RATE
-        dll::binary_write(os, static_cast<short>(n_features * sizeof(float))); //Sample size
+        dll::binary_write(os, static_cast<short>(n_features * sizeof(float))); //Observation size
         dll::binary_write(os, static_cast<short>(9));                          //Used defined sample kind = 9 ?
 
         //Write all the values
@@ -350,12 +371,31 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
         }
     }
 
+    std::string hparse_command =
+        bin_hparse +
+        " " + grammar_file +
+        " " + wordnet_file;
+
+    auto hparse_result = exec_command(hparse_command);
+
+    if(hparse_result.first){
+        std::cout << "HParse failed with result code: " << hparse_result.first << std::endl;
+        std::cout << "Command: " << hparse_command << std::endl;
+        std::cout << hparse_result.second << std::endl;
+
+        //We need the wordnet for HVite
+        return 1e8;
+    }
+
     std::string hvite_command =
         bin_hvite +
         " -C " + htk_config_file +
+        " -w " + wordnet_file +
         " -i " + log_file +
         " -H " + hmm_info_file +
         " -S " + features_file +
+        " -T 1 " +
+        " " + spelling_file +
         " " + letters_file;
 
     auto hvite_result = exec_command(hvite_command);
@@ -364,14 +404,20 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
         std::cout << "HVite failed with result code: " << hvite_result.first << std::endl;
         std::cout << "Command: " << hvite_command << std::endl;
         std::cout << hvite_result.second << std::endl;
+    } else {
+        std::string result = hvite_result.second;
+
+        std::istringstream f(result);
+        std::string line;
+        while (std::getline(f, line)) {
+            if(line.find(" == ") != std::string::npos){
+                auto begin = line.find("[Ac=");
+                auto end = line.find(" ", begin + 1);
+                std::string log_likelihood_str(line.begin() + begin + 4, line.begin() + end);
+                return -std::atof(log_likelihood_str.c_str());
+            }
+        }
     }
-
-  //`bin/HVite -C #{file_htk_config} -i #{file_recognition_log} -H #{file_mmf} -S #{file_featurelist} #{file_spelling} #{file_letters}`
-
-
-
-
-    //TODO
 
     return 1e8;
 }
