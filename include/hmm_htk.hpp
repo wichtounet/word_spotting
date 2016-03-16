@@ -89,8 +89,8 @@ template <typename Dataset, typename Ref>
 hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
     dll::auto_timer timer("htk_hmm_train");
 
-    auto label = dataset.word_labels.at(training_images[0]);
-    auto characters = label.size();
+    const auto label = dataset.word_labels.at(training_images[0]);
+    const auto characters = label.size();
 
     const auto n_states = characters * n_states_per_char;
     const auto n_features = ref_a[0][0].size();
@@ -349,14 +349,14 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
 
     ref_width /= training_images.size();
 
-    auto ratio = ref_width / pixel_width;
+    const auto ratio = ref_width / pixel_width;
 
     if (ratio > 2.0 || ratio < 0.5) {
         return 1e8;
     }
 
-    auto label = dataset.word_labels.at(training_images[0]);
-    auto characters = label.size();
+    const auto label = dataset.word_labels.at(training_images[0]);
+    const auto characters = label.size();
 
     const auto n_features = test_image[0].size();
     const auto width = test_image.size();
