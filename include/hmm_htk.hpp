@@ -22,14 +22,17 @@ namespace hmm_htk {
 using gmm_p = std::string;
 using hmm_p = std::string;
 
-//Number of gaussians for the HMM
+// Number of gaussians for the HMM
 constexpr const std::size_t n_hmm_gaussians = 2;
 
-//Number of training iterations for the HMM
+// Number of training iterations for the HMM
 constexpr const std::size_t n_hmm_iterations = 2;
 
-//Number of states per character
+// Number of states per character
 constexpr const auto n_states_per_char = 10;
+
+// Minimum variance for training
+constexpr const double herest_min_variance = 0.000001;
 
 const std::string bin_hmm_init = "scripts/hmm-init.pl";
 const std::string bin_hhed     = "HHEd";
@@ -310,8 +313,6 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
         }
 
         for(std::size_t i = 0; i < n_hmm_iterations; ++i){
-            const double herest_min_variance = 0.000001;
-
             std::string herest_command =
                 bin_herest +
                 " -C " + htk_config_file +
