@@ -135,7 +135,7 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
         //Write all the values
         for(auto feature_vector : ref){
             for(auto v : feature_vector){
-                dll::binary_write(os, v);
+                dll::binary_write(os, static_cast<float>(v));
             }
         }
     }
@@ -390,7 +390,7 @@ double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& h
         //Write all the values
         for(auto feature_vector : test_image){
             for(auto v : feature_vector){
-                dll::binary_write(os, v);
+                dll::binary_write(os, static_cast<float>(v));
             }
         }
     }
