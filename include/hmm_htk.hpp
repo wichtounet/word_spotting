@@ -5,11 +5,6 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wunused-function"
-
 #pragma once
 
 #ifndef SPOTTER_NO_HMM
@@ -59,6 +54,10 @@ inline auto exec_command(const std::string& command) {
     return std::make_pair(exit_code, output.str());
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-function"
 template <typename RefFunctor>
 gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
     dll::auto_timer timer("htk_gmm_train");
@@ -84,6 +83,7 @@ gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
 
     return "frakking_gmm";
 }
+#pragma GCC diagnostic pop
 
 template <typename Dataset, typename Ref>
 hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
@@ -92,7 +92,6 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
     const auto label = dataset.word_labels.at(training_images[0]);
     const auto characters = label.size();
 
-    const auto n_states = characters * n_states_per_char;
     const auto n_features = ref_a[0][0].size();
 
     const std::string base_folder = ".hmm";
@@ -189,7 +188,6 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 
         for(std::size_t i = 0; i < training_images.size(); ++i){
             auto& image = training_images[i];
-            auto& ref   = ref_a[i];
 
             const std::string lab_name = folder + "/" + image + ".lab";
 
@@ -340,7 +338,7 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 }
 
 template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, std::size_t pixel_width, const V1& test_image, names training_images) {
+double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& hmm, std::size_t pixel_width, const V1& test_image, names training_images) {
     double ref_width = 0;
 
     for(auto& image : training_images){
@@ -355,11 +353,7 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
         return 1e8;
     }
 
-    const auto label = dataset.word_labels.at(training_images[0]);
-    const auto characters = label.size();
-
     const auto n_features = test_image[0].size();
-    const auto width = test_image.size();
 
     const std::string folder = hmm;
 
@@ -460,4 +454,3 @@ double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, con
 } //end of namespace hmm_mlpack
 
 #endif
-#pragma GCC diagnostic pop
