@@ -368,9 +368,9 @@ double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& h
     const std::string spelling_file   = folder + "/spelling";
 
     // Local files
-    const std::string log_file      = folder + "/vite.log";
-    const std::string features_file = folder + "/test_features.lst";
-    const std::string file_path     = folder + "/test_file.htk";
+    const std::string log_file      = folder + "/" + test_image + ".log";
+    const std::string features_file = folder + "/" + test_image + ".lst";
+    const std::string file_path     = folder + "/" + test_image + ".htk";
 
     // Generate the file with the list of feature files
 
