@@ -338,7 +338,9 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 }
 
 template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& hmm, std::size_t pixel_width, const V1& test_image, names training_images) {
+double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& hmm, const std::string& test_image, const V1& test_features, names training_images) {
+    auto pixel_width = dataset.word_images.at(test_image).size().width;
+
     double ref_width = 0;
 
     for(auto& image : training_images){
@@ -353,7 +355,7 @@ double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& h
         return 1e8;
     }
 
-    const auto n_features = test_image[0].size();
+    const auto n_features = test_features[0].size();
 
     const std::string folder = hmm;
 
@@ -382,13 +384,13 @@ double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& h
     {
         std::ofstream os(file_path, std::ofstream::binary);
 
-        dll::binary_write(os, static_cast<int>(test_image.size()));            //Number of observations
+        dll::binary_write(os, static_cast<int>(test_features.size()));            //Number of observations
         dll::binary_write(os, static_cast<int>(1));                            //Dummy HTK_SAMPLE_RATE
         dll::binary_write(os, static_cast<short>(n_features * sizeof(float))); //Observation size
         dll::binary_write(os, static_cast<short>(9));                          //Used defined sample kind = 9 ?
 
         //Write all the values
-        for(auto feature_vector : test_image){
+        for(auto feature_vector : test_features){
             for(auto v : feature_vector){
                 dll::binary_write(os, static_cast<float>(v));
             }
@@ -452,7 +454,7 @@ hmm_p train_ref_hmm(const Dataset& /*dataset*/, Ref& /*ref_a*/, names /*training
 }
 
 template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, std::size_t /*pixel_width*/, const V1& /*test_image*/, names /*training_images*/) {
+double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, const std::string& /*test_image*/, const V1& /*test_features*/, names /*training_images*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 }

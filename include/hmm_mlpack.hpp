@@ -236,7 +236,9 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 }
 
 template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, std::size_t pixel_width, const V1& test_image, names training_images) {
+double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, const std::string& test_image, const V1& test_features, names training_images) {
+    auto pixel_width = dataset.word_images.at(test_image).size().width;
+
     double ref_width = 0;
 
     for(auto& image : training_images){
@@ -251,14 +253,14 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
         return 1e8;
     }
 
-    const auto n_features = test_image[0].size();
-    const auto width = test_image.size();
+    const auto n_features = test_features[0].size();
+    const auto width = test_features.size();
 
     arma::mat image(n_features, width);
 
     for(std::size_t i = 0; i < width; ++i){
-        for(std::size_t j = 0; j < test_image[i].size(); ++j){
-            image(j, i) = test_image[i][j];
+        for(std::size_t j = 0; j < test_features[i].size(); ++j){
+            image(j, i) = test_features[i][j];
         }
     }
 
@@ -297,7 +299,7 @@ double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, 
     if(!std::isfinite(p_hmm)){
         std::cerr << "WARNING: p(X|HMM) not finite: " << p_hmm << std::endl;
 
-        //arma::mat stateProb(hmm->Initial().size(), test_image.size());
+        //arma::mat stateProb(hmm->Initial().size(), test_features.size());
         //auto p_hmm_estimate = hmm->Estimate(image, stateProb);
 
         //std::cout << p_hmm_estimate << std::endl;
@@ -337,7 +339,7 @@ hmm_p train_ref_hmm(const Dataset& /*dataset*/, Ref& /*ref_a*/, names /*training
 }
 
 template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, std::size_t /*pixel_width*/, const V1& /*test_image*/, names /*training_images*/) {
+double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, const std::string& /*test_image*/, const V1& /*test_features*/, names /*training_images*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 }
