@@ -110,7 +110,6 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
     const std::string wordnet_file     = folder + "/grammar.wnet";
     const std::string spelling_file    = folder + "/spelling";
 
-    mkdir(base_folder.c_str(), 0777);
     mkdir(folder.c_str(), 0777);
 
     std::vector<std::string> features_files;
@@ -338,38 +337,45 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 }
 
 template <typename V1>
-void prepare_test_features(const std::string& test_image, const V1& test_features) {
-    const auto n_features = test_features[0].size();
+void prepare_test_features(names test_image_names, const V1& test_features_a) {
+    const std::string base_folder = ".hmm";
+    const std::string folder = base_folder + "/test";
 
-    const std::string folder = ".hmm/test";
-
+    mkdir(base_folder.c_str(), 0777);
     mkdir(folder.c_str(), 0777);
 
-    // Local files
-    const std::string features_file = folder + "/" + test_image + ".lst";
-    const std::string file_path     = folder + "/" + test_image + ".htk";
+    for(std::size_t t = 0; t < test_image_names.size(); ++t){
+        auto& test_image = test_image_names[t];
+        auto& test_features = test_features_a[t];
 
-    // Generate the file with the list of feature files
+        const auto n_features = test_features[0].size();
 
-    {
-        std::ofstream os(features_file);
-        os << file_path << "\n";
-    }
+        // Local files
+        const std::string features_file = folder + "/" + test_image + ".lst";
+        const std::string file_path     = folder + "/" + test_image + ".htk";
 
-    // Generate the feature file
+        // Generate the file with the list of feature files
 
-    {
-        std::ofstream os(file_path, std::ofstream::binary);
+        {
+            std::ofstream os(features_file);
+            os << file_path << "\n";
+        }
 
-        dll::binary_write(os, static_cast<int>(test_features.size()));            //Number of observations
-        dll::binary_write(os, static_cast<int>(1));                            //Dummy HTK_SAMPLE_RATE
-        dll::binary_write(os, static_cast<short>(n_features * sizeof(float))); //Observation size
-        dll::binary_write(os, static_cast<short>(9));                          //Used defined sample kind = 9 ?
+        // Generate the feature file
 
-        //Write all the values
-        for(auto feature_vector : test_features){
-            for(auto v : feature_vector){
-                dll::binary_write(os, static_cast<float>(v));
+        {
+            std::ofstream os(file_path, std::ofstream::binary);
+
+            dll::binary_write(os, static_cast<int>(test_features.size()));         //Number of observations
+            dll::binary_write(os, static_cast<int>(1));                            //Dummy HTK_SAMPLE_RATE
+            dll::binary_write(os, static_cast<short>(n_features * sizeof(float))); //Observation size
+            dll::binary_write(os, static_cast<short>(9));                          //Used defined sample kind = 9 ?
+
+            //Write all the values
+            for (auto feature_vector : test_features) {
+                for (auto v : feature_vector) {
+                    dll::binary_write(os, static_cast<float>(v));
+                }
             }
         }
     }
@@ -467,7 +473,7 @@ hmm_p train_ref_hmm(const Dataset& /*dataset*/, Ref& /*ref_a*/, names /*training
 }
 
 template <typename V1>
-void prepare_test_features(const std::string& /*test_image*/, const V1& /*test_features*/) {
+void prepare_test_features(names /*test_image_names*/, const V1& /*test_features_a*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 }

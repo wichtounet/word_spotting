@@ -50,15 +50,12 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
         if(global_hmm.empty()){
             global_hmm = hmm_htk::train_global_hmm(train_word_names, functor);
 
-            cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
-                hmm_htk::prepare_test_features(test_image, test_features_a[t]);
-            });
+            hmm_htk::prepare_test_features(test_image_names, test_features_a);
         }
 
         auto hmm = hmm_htk::train_ref_hmm(dataset, ref_a, training_images);
 
-        //Either frakking compiler or me is too stupid, so we need this
-        //workaround
+        //Either frakking compiler or me is too stupid, so we need this workaround
         auto& gmm = global_hmm;
 
         cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
