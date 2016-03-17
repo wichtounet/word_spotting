@@ -337,38 +337,15 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
     return folder;
 }
 
-template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& hmm, const std::string& test_image, const V1& test_features, names training_images) {
-    auto pixel_width = dataset.word_images.at(test_image).size().width;
-
-    double ref_width = 0;
-
-    for(auto& image : training_images){
-        ref_width += dataset.word_images.at(image + ".png").size().width;
-    }
-
-    ref_width /= training_images.size();
-
-    const auto ratio = ref_width / pixel_width;
-
-    if (ratio > 2.0 || ratio < 0.5) {
-        return 1e8;
-    }
-
+template <typename V1>
+void prepare_test_features(const std::string& test_image, const V1& test_features) {
     const auto n_features = test_features[0].size();
 
-    const std::string folder = hmm;
+    const std::string folder = ".hmm/test";
 
-    // Global files
-    const std::string hmm_info_file   = folder + "/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
-    const std::string htk_config_file = folder + "/htk_config";
-    const std::string letters_file    = folder + "/letters";
-    const std::string grammar_file    = folder + "/grammar.bnf";
-    const std::string wordnet_file    = folder + "/grammar.wnet";
-    const std::string spelling_file   = folder + "/spelling";
+    mkdir(folder.c_str(), 0777);
 
     // Local files
-    const std::string log_file      = folder + "/" + test_image + ".log";
     const std::string features_file = folder + "/" + test_image + ".lst";
     const std::string file_path     = folder + "/" + test_image + ".htk";
 
@@ -396,6 +373,42 @@ double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& h
             }
         }
     }
+}
+
+template <typename Dataset, typename V1>
+double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& hmm, const std::string& test_image, const V1& /*test_features*/, names training_images) {
+    auto pixel_width = dataset.word_images.at(test_image).size().width;
+
+    double ref_width = 0;
+
+    for(auto& image : training_images){
+        ref_width += dataset.word_images.at(image + ".png").size().width;
+    }
+
+    ref_width /= training_images.size();
+
+    const auto ratio = ref_width / pixel_width;
+
+    if (ratio > 2.0 || ratio < 0.5) {
+        return 1e8;
+    }
+
+    const std::string folder = hmm;
+
+    // Global files
+    const std::string hmm_info_file   = folder + "/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
+    const std::string htk_config_file = folder + "/htk_config";
+    const std::string letters_file    = folder + "/letters";
+    const std::string grammar_file    = folder + "/grammar.bnf";
+    const std::string wordnet_file    = folder + "/grammar.wnet";
+    const std::string spelling_file   = folder + "/spelling";
+
+    // Test feature files
+    const std::string features_file = ".hmm/test/" + test_image + ".lst";
+    const std::string file_path     = ".hmm/test/" + test_image + ".htk";
+
+    // Local files
+    const std::string log_file      = folder + "/" + test_image + ".log";
 
     std::string hvite_command =
         bin_hvite +
@@ -449,6 +462,12 @@ gmm_p train_global_hmm(names /*train_word_names*/, RefFunctor /*functor*/) {
 
 template <typename Dataset, typename Ref>
 hmm_p train_ref_hmm(const Dataset& /*dataset*/, Ref& /*ref_a*/, names /*training_images*/) {
+    //Disabled HMM
+    std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
+}
+
+template <typename V1>
+void prepare_test_features(const std::string& /*test_image*/, const V1& /*test_features*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 }
