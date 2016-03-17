@@ -357,21 +357,27 @@ double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& h
 
     const std::string folder = hmm;
 
-    const std::string features_file    = folder + "/test_features.lst";
-    const std::string hmm_info_file    = folder + "/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
-    const std::string htk_config_file  = folder + "/htk_config";
-    const std::string letters_file     = folder + "/letters";
-    const std::string log_file         = folder + "/vite.log";
-    const std::string grammar_file     = folder + "/grammar.bnf";
-    const std::string wordnet_file     = folder + "/grammar.wnet";
-    const std::string spelling_file     = folder + "/spelling";
+    // Global files
+    const std::string hmm_info_file   = folder + "/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
+    const std::string htk_config_file = folder + "/htk_config";
+    const std::string letters_file    = folder + "/letters";
+    const std::string grammar_file    = folder + "/grammar.bnf";
+    const std::string wordnet_file    = folder + "/grammar.wnet";
+    const std::string spelling_file   = folder + "/spelling";
 
-    const std::string file_path = folder + "/test_file.htk";
+    // Local files
+    const std::string log_file      = folder + "/vite.log";
+    const std::string features_file = folder + "/test_features.lst";
+    const std::string file_path     = folder + "/test_file.htk";
+
+    // Generate the file with the list of feature files
 
     {
         std::ofstream os(features_file);
         os << file_path << "\n";
     }
+
+    // Generate the feature file
 
     {
         std::ofstream os(file_path, std::ofstream::binary);
