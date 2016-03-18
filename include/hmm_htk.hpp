@@ -19,7 +19,6 @@
 
 namespace hmm_htk {
 
-using gmm_p = std::string;
 using hmm_p = std::string;
 
 // Number of gaussians for the HMM
@@ -62,30 +61,22 @@ inline auto exec_command(const std::string& command) {
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wunused-function"
 template <typename RefFunctor>
-gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
-    dll::auto_timer timer("htk_gmm_train");
+hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
+    dll::auto_timer timer("htk_global_hmm_train");
 
     auto ref_a = functor(train_word_names);
 
     const auto n_features = ref_a[0][0].size();
 
-    //TODO Better Configure how the subset if selected
-    std::size_t step = 5;
+    const std::string base_folder = ".hmm";
+    const std::string folder = base_folder + "/global/";
 
-    //Collect information on the dataset
-
-    std::size_t n_observations = 0;
-    std::size_t n_images = 0;
-
-    for(std::size_t image = 0; image < ref_a.size(); image += step){
-        n_observations += ref_a[image].size();
-        ++n_images;
-    }
-
-    //TODO
+    mkdir(base_folder.c_str(), 0777);
+    mkdir(folder.c_str(), 0777);
 
     return "frakking_gmm";
 }
+
 #pragma GCC diagnostic pop
 
 template <typename Dataset, typename Ref>
@@ -338,9 +329,9 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
 }
 
 template <typename V1>
-void prepare_test_features(names test_image_names, const V1& test_features_a) {
+void prepare_features(const std::string& folder_name, names test_image_names, const V1& test_features_a) {
     const std::string base_folder = ".hmm";
-    const std::string folder = base_folder + "/test";
+    const std::string folder = base_folder + "/" + folder_name;
 
     mkdir(base_folder.c_str(), 0777);
     mkdir(folder.c_str(), 0777);
@@ -380,6 +371,16 @@ void prepare_test_features(names test_image_names, const V1& test_features_a) {
             }
         }
     }
+}
+
+template <typename V1>
+void prepare_test_features(names test_image_names, const V1& test_features_a) {
+    prepare_features("test", test_images_names, test_features_a);
+}
+
+template <typename V1>
+void prepare_train_features(names test_image_names, const V1& test_features_a) {
+    prepare_features("train", test_images_names, test_features_a);
 }
 
 template <typename Dataset, typename V1>
