@@ -57,10 +57,10 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
         auto hmm = hmm_htk::train_ref_hmm(dataset, ref_a, training_images);
 
         //Either frakking compiler or me is too stupid, so we need this workaround
-        auto& gmm = global_hmm;
+        auto& global = global_hmm;
 
         cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
-            auto best_diff_a = hmm_htk::hmm_distance(dataset, gmm, hmm, test_image, test_features_a[t], training_images);
+            auto best_diff_a = hmm_htk::hmm_distance(dataset, global, hmm, test_image, test_features_a[t], training_images);
 
             diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
         });
