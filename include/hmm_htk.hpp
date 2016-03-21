@@ -56,10 +56,6 @@ inline auto exec_command(const std::string& command) {
     return std::make_pair(exit_code, output.str());
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wunused-function"
 template <typename RefFunctor>
 hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
     dll::auto_timer timer("htk_global_hmm_train");
@@ -76,8 +72,6 @@ hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
 
     return "frakking_hmm";
 }
-
-#pragma GCC diagnostic pop
 
 template <typename Dataset, typename Ref>
 hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
