@@ -484,6 +484,12 @@ void prepare_test_features(names /*test_image_names*/, const V1& /*test_features
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 }
 
+template <typename V1>
+void prepare_train_features(names /*test_image_names*/, const V1& /*test_features_a*/) {
+    //Disabled HMM
+    std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
+}
+
 template <typename Dataset, typename V1>
 double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, const std::string& /*test_image*/, const V1& /*test_features*/, names /*training_images*/) {
     //Disabled HMM
