@@ -450,7 +450,7 @@ hmm_p train_global_hmm(const Dataset& /*dataset*/, names /*train_word_names*/) {
 }
 
 template <typename Dataset>
-hmm_p train_ref_hmm(const Dataset& /*dataset*/, names /*training_images*/) {
+hmm_p prepare_test_keywords(const Dataset& /*dataset*/, names /*training_images*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 
