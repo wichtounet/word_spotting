@@ -48,13 +48,15 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
         static hmm_htk::hmm_p global_hmm;
 
         if(global_hmm.empty()){
-            hmm_htk::prepare_train_features(training_images, ref_a);
+            auto train_features_a = functor(train_word_names);
+
+            hmm_htk::prepare_train_features(train_word_names, train_features_a);
             hmm_htk::prepare_test_features(test_image_names, test_features_a);
 
-            global_hmm = hmm_htk::train_global_hmm(train_word_names, functor);
+            global_hmm = hmm_htk::train_global_hmm(dataset, train_word_names);
         }
 
-        auto hmm = hmm_htk::train_ref_hmm(dataset, ref_a, training_images);
+        auto hmm = hmm_htk::prepare_test_keywords(dataset, training_images);
 
         //Either frakking compiler or me is too stupid, so we need this workaround
         auto& global = global_hmm;

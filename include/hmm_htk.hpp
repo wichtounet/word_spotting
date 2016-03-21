@@ -25,7 +25,7 @@ using hmm_p = std::string;
 constexpr const std::size_t n_hmm_gaussians = 2;
 
 // Number of training iterations for the HMM
-constexpr const std::size_t n_hmm_iterations = 2;
+constexpr const std::size_t n_hmm_iterations = 4;
 
 // Number of states per character
 constexpr const auto n_states_per_char = 10;
@@ -56,84 +56,37 @@ inline auto exec_command(const std::string& command) {
     return std::make_pair(exit_code, output.str());
 }
 
-template <typename RefFunctor>
-hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
+template <typename Dataset>
+hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
     dll::auto_timer timer("htk_global_hmm_train");
 
-    auto ref_a = functor(train_word_names);
-
-    const auto n_features = ref_a[0][0].size();
-
+    // The folders
     const std::string base_folder = ".hmm";
     const std::string folder = base_folder + "/global/";
 
     mkdir(base_folder.c_str(), 0777);
     mkdir(folder.c_str(), 0777);
 
-    return "frakking_hmm";
-}
-
-template <typename Dataset, typename Ref>
-hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
-    dll::auto_timer timer("htk_hmm_train");
-
-    const auto label = dataset.word_labels.at(training_images[0]);
-    const auto characters = label.size();
-
-    const auto n_features = ref_a[0][0].size();
-
-    const std::string base_folder = ".hmm";
-    const std::string folder = base_folder + "/" + keyword_to_short_string(label);
-
-    const std::string features_file    = folder + "/train_features.lst";
+    // Generated files
+    const std::string htk_config_file  = folder + "/htk_config";
     const std::string hmm_info_file    = folder + "/hmm_info";
+    const std::string letters_file     = folder + "/letters";
+    const std::string features_file    = folder + "/train_features.lst";
     const std::string means_file       = folder + "/means";
     const std::string variances_file   = folder + "/variances";
     const std::string covariances_file = folder + "/covariances";
     const std::string init_mmf_file    = folder + "/init_mmf";
-    const std::string htk_config_file  = folder + "/htk_config";
-    const std::string letters_file     = folder + "/letters";
     const std::string mlf_file         = folder + "/train.mlf";
-    const std::string grammar_file     = folder + "/grammar.bnf";
-    const std::string wordnet_file     = folder + "/grammar.wnet";
-    const std::string spelling_file    = folder + "/spelling";
 
-    mkdir(folder.c_str(), 0777);
+    // Collect the characters
 
-    std::vector<std::string> features_files;
+    std::set<std::string> characters;
 
-    // Generate the features files (at least, it makes sense, but why binary...)
+    for(const auto& training_image : train_word_names){
+        decltype(auto) label = dataset.word_labels.at(training_image);
 
-    for(std::size_t i = 0; i < training_images.size(); ++i){
-        auto& image = training_images[i];
-        auto& ref   = ref_a[i];
-
-        const std::string file_path = folder + "/" + image + ".htk";
-
-        features_files.push_back(file_path);
-
-        std::ofstream os(file_path, std::ofstream::binary);
-
-        dll::binary_write(os, static_cast<int>(ref.size()));                 //Number of samples
-        dll::binary_write(os, static_cast<int>(1));                            //Dummy HTK_SAMPLE_RATE
-        dll::binary_write(os, static_cast<short>(n_features * sizeof(float))); //Sample size
-        dll::binary_write(os, static_cast<short>(9));                          //Used defined sample kind = 9 ?
-
-        //Write all the values
-        for(auto feature_vector : ref){
-            for(auto v : feature_vector){
-                dll::binary_write(os, static_cast<float>(v));
-            }
-        }
-    }
-
-    // Generate a file with the list of feature files (silly...)
-
-    {
-        std::ofstream os(features_file);
-
-        for(auto& file : features_files){
-            os << file << "\n";
+        for(const auto& character : label){
+            characters.insert(character);
         }
     }
 
@@ -142,8 +95,8 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
     {
         std::ofstream os(htk_config_file);
 
-        os << "NATURALREADORDER    =   T\n";
-        os << "NATURALWRITEORDER   =   T";
+        os << "NATURALREADORDER    =   T\n"
+           << "NATURALWRITEORDER   =   T";
     }
 
     // Generate a file with the states
@@ -151,8 +104,8 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
     {
         std::ofstream os(hmm_info_file);
 
-        for(std::size_t i = 1; i <= characters; ++i){
-            os << "s" << i << " " << n_states_per_char << " nocov noinit\n";
+        for(const auto& character : characters){
+            os << character << " " << n_states_per_char << " nocov noinit\n";
         }
     }
 
@@ -161,30 +114,18 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
     {
         std::ofstream os(letters_file);
 
-        for(std::size_t i = 1; i <= characters; ++i){
-            os << "s" << i << "\n";
+        for(const auto& character : characters){
+            os << character << "\n";
         }
     }
 
-    // Generate a file with the labels (I think)
+    // Generate a file with the list of feature files (silly...)
 
     {
-        std::ofstream os(mlf_file);
+        std::ofstream os(features_file);
 
-        os << "#!MLF!#" << std::endl;
-
-        for(std::size_t i = 0; i < training_images.size(); ++i){
-            auto& image = training_images[i];
-
-            const std::string lab_name = folder + "/" + image + ".lab";
-
-            os << "\"" << lab_name << "\"" << '\n';
-
-            for(std::size_t i = 1; i <= characters; ++i){
-                os << "s" << i << '\n';
-            }
-
-            os << "." << '\n';
+        for(auto& image : train_word_names){
+            os << base_folder + "/train/" + image << ".htk\n";
         }
     }
 
@@ -209,43 +150,26 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
         }
     }
 
-    // Generate the grammar (used for testing)
+    // Generate a file with the labels (I think)
 
     {
-        std::ofstream os(grammar_file);
+        std::ofstream os(mlf_file);
 
-        os << "(";
+        os << "#!MLF!#" << std::endl;
 
-        for(std::size_t i = 1; i <= characters; ++i){
-            os << " s" << i;
+        for(const auto& image : train_word_names){
+            const std::string lab_name = base_folder + "/train/" + image + ".lab";
+
+            os << "\"" << lab_name << "\"\n";
+
+            decltype(auto) label = dataset.word_labels.at(image);
+
+            for(const auto& character : label){
+                os << character << '\n';
+            }
+
+            os << ".\n";
         }
-
-        os << ")";
-    }
-
-    // Generate the spelling file (used for testing)
-
-    {
-        std::ofstream os(spelling_file);
-
-        for(std::size_t i = 1; i <= characters; ++i){
-            os << "s" << i << " s" << i << std::endl;;
-        }
-    }
-
-    // Generate the wordnet (used for testing)
-
-    std::string hparse_command =
-        bin_hparse +
-        " " + grammar_file +
-        " " + wordnet_file;
-
-    auto hparse_result = exec_command(hparse_command);
-
-    if(hparse_result.first){
-        std::cout << "HParse failed with result code: " << hparse_result.first << std::endl;
-        std::cout << "Command: " << hparse_command << std::endl;
-        std::cout << hparse_result.second << std::endl;
     }
 
     // Train each gaussian
@@ -319,6 +243,65 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
         }
     }
 
+    return base_folder;
+}
+
+template <typename Dataset>
+hmm_p prepare_test_keywords(const Dataset& dataset, names training_images) {
+    dll::auto_timer timer("htk_prepare_test_keywords");
+
+    const auto label = dataset.word_labels.at(training_images[0]);
+
+    // Folders
+    const std::string base_folder = ".hmm";
+    const std::string folder = base_folder + "/" + keyword_to_short_string(label);
+
+    mkdir(folder.c_str(), 0777);
+
+    // Generated files
+    const std::string grammar_file     = folder + "/grammar.bnf";
+    const std::string wordnet_file     = folder + "/grammar.wnet";
+    const std::string spelling_file    = folder + "/spelling";
+
+    // Generate the grammar (used for testing)
+
+    {
+        std::ofstream os(grammar_file);
+
+        os << "(";
+
+        for(auto& character : label){
+            os << " " << character;
+        }
+
+        os << ")";
+    }
+
+    // Generate the spelling file (used for testing)
+
+    {
+        std::ofstream os(spelling_file);
+
+        for(auto& character : label){
+            os << character << " " << character << std::endl;;
+        }
+    }
+
+    // Generate the wordnet (used for testing)
+
+    std::string hparse_command =
+        bin_hparse +
+        " " + grammar_file +
+        " " + wordnet_file;
+
+    auto hparse_result = exec_command(hparse_command);
+
+    if(hparse_result.first){
+        std::cout << "HParse failed with result code: " << hparse_result.first << std::endl;
+        std::cout << "Command: " << hparse_command << std::endl;
+        std::cout << hparse_result.second << std::endl;
+    }
+
     return folder;
 }
 
@@ -369,16 +352,20 @@ void prepare_features(const std::string& folder_name, names test_image_names, co
 
 template <typename V1>
 void prepare_test_features(names test_image_names, const V1& test_features_a) {
+    dll::auto_timer timer("htk_train_features");
     prepare_features("test", test_image_names, test_features_a);
 }
 
 template <typename V1>
 void prepare_train_features(names test_image_names, const V1& test_features_a) {
+    dll::auto_timer timer("htk_test_features");
     prepare_features("train", test_image_names, test_features_a);
 }
 
 template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& dataset, const hmm_p& /*hmm*/, const hmm_p& hmm, const std::string& test_image, const V1& /*test_features*/, names training_images) {
+double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_p& folder, const std::string& test_image, const V1& /*test_features*/, names training_images) {
+    return 1e8;
+
     auto pixel_width = dataset.word_images.at(test_image).size().width;
 
     double ref_width = 0;
@@ -395,21 +382,20 @@ double hmm_distance(const Dataset& dataset, const hmm_p& /*hmm*/, const hmm_p& h
         return 1e8;
     }
 
-    const std::string folder = hmm;
-
     // Global files
-    const std::string hmm_info_file   = folder + "/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
-    const std::string htk_config_file = folder + "/htk_config";
-    const std::string letters_file    = folder + "/letters";
-    const std::string grammar_file    = folder + "/grammar.bnf";
-    const std::string wordnet_file    = folder + "/grammar.wnet";
-    const std::string spelling_file   = folder + "/spelling";
+    const std::string hmm_info_file   = base_folder + "/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
+    const std::string htk_config_file = base_folder + "/htk_config";
+    const std::string letters_file    = base_folder + "/letters";
+
+    // Keywords files
+    const std::string grammar_file  = folder + "/grammar.bnf";
+    const std::string wordnet_file  = folder + "/grammar.wnet";
+    const std::string spelling_file = folder + "/spelling";
 
     // Test feature files
-    const std::string features_file = ".hmm/test/" + test_image + ".lst";
-    const std::string file_path     = ".hmm/test/" + test_image + ".htk";
+    const std::string features_file = base_folder + "/test/" + test_image + ".lst";
 
-    // Local files
+    // Generated files
     const std::string log_file      = folder + "/" + test_image + ".log";
 
     std::string hvite_command =
@@ -455,16 +441,16 @@ namespace hmm_htk {
 
 using hmm_p = std::string;
 
-template <typename RefFunctor>
-hmm_p train_global_hmm(names /*train_word_names*/, RefFunctor /*functor*/) {
+template <typename Dataset>
+hmm_p train_global_hmm(const Dataset& /*dataset*/, names /*train_word_names*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 
     return "";
 }
 
-template <typename Dataset, typename Ref>
-hmm_p train_ref_hmm(const Dataset& /*dataset*/, Ref& /*ref_a*/, names /*training_images*/) {
+template <typename Dataset>
+hmm_p train_ref_hmm(const Dataset& /*dataset*/, names /*training_images*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 
