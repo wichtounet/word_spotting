@@ -466,12 +466,16 @@ template <typename RefFunctor>
 gmm_p train_global_hmm(names /*train_word_names*/, RefFunctor /*functor*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
+
+    return "";
 }
 
 template <typename Dataset, typename Ref>
 hmm_p train_ref_hmm(const Dataset& /*dataset*/, Ref& /*ref_a*/, names /*training_images*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
+
+    return "";
 }
 
 template <typename V1>
@@ -484,6 +488,8 @@ template <typename Dataset, typename V1>
 double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, const std::string& /*test_image*/, const V1& /*test_features*/, names /*training_images*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
+
+    return 1e8;
 }
 
 } //end of namespace hmm_mlpack
