@@ -181,17 +181,19 @@ std::string select_folder(const std::string& base_folder) {
 
     mkdir(base_folder.c_str(), 0777);
 
-    std::size_t result_name = 0;
+    std::size_t current_stamp = 1;
+    std::string stamp_file = base_folder + "stamp";
+    std::ifstream f(stamp_file.c_str());
+    if (f.good()) {
+        f >> current_stamp;
+    }
 
-    std::string result_folder;
-
-    struct stat buffer;
-    do {
-        ++result_name;
-        result_folder = base_folder + std::to_string(result_name);
-    } while (stat(result_folder.c_str(), &buffer) == 0);
+    auto result_folder = base_folder + std::to_string(current_stamp);
 
     mkdir(result_folder.c_str(), 0777);
+
+    std::ofstream os(stamp_file.c_str());
+    os << ++current_stamp;
 
     std::cout << "... " << result_folder << std::endl;
 
