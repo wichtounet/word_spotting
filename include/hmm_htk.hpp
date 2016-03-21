@@ -74,7 +74,7 @@ hmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
     mkdir(base_folder.c_str(), 0777);
     mkdir(folder.c_str(), 0777);
 
-    return "frakking_gmm";
+    return "frakking_hmm";
 }
 
 #pragma GCC diagnostic pop
@@ -375,16 +375,16 @@ void prepare_features(const std::string& folder_name, names test_image_names, co
 
 template <typename V1>
 void prepare_test_features(names test_image_names, const V1& test_features_a) {
-    prepare_features("test", test_images_names, test_features_a);
+    prepare_features("test", test_image_names, test_features_a);
 }
 
 template <typename V1>
 void prepare_train_features(names test_image_names, const V1& test_features_a) {
-    prepare_features("train", test_images_names, test_features_a);
+    prepare_features("train", test_image_names, test_features_a);
 }
 
 template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& hmm, const std::string& test_image, const V1& /*test_features*/, names training_images) {
+double hmm_distance(const Dataset& dataset, const hmm_p& /*hmm*/, const hmm_p& hmm, const std::string& test_image, const V1& /*test_features*/, names training_images) {
     auto pixel_width = dataset.word_images.at(test_image).size().width;
 
     double ref_width = 0;
@@ -459,11 +459,10 @@ double hmm_distance(const Dataset& dataset, const gmm_p& /*gmm*/, const hmm_p& h
 
 namespace hmm_htk {
 
-using gmm_p = std::string;
 using hmm_p = std::string;
 
 template <typename RefFunctor>
-gmm_p train_global_hmm(names /*train_word_names*/, RefFunctor /*functor*/) {
+hmm_p train_global_hmm(names /*train_word_names*/, RefFunctor /*functor*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 
@@ -491,7 +490,7 @@ void prepare_train_features(names /*test_image_names*/, const V1& /*test_feature
 }
 
 template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, const std::string& /*test_image*/, const V1& /*test_features*/, names /*training_images*/) {
+double hmm_distance(const Dataset& /*dataset*/, const hmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, const std::string& /*test_image*/, const V1& /*test_features*/, names /*training_images*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 

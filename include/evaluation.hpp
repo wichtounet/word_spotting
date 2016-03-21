@@ -45,7 +45,7 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
     std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
 
     if(conf.hmm && conf.htk){
-        static hmm_htk::gmm_p global_hmm;
+        static hmm_htk::hmm_p global_hmm;
 
         if(global_hmm.empty()){
             hmm_htk::prepare_train_features(training_images, ref_a);
