@@ -22,7 +22,7 @@ namespace hmm_htk {
 using hmm_p = std::string;
 
 // Number of gaussians for the HMM
-constexpr const std::size_t n_hmm_gaussians = 2;
+constexpr const std::size_t n_hmm_gaussians = 7;
 
 // Number of training iterations for the HMM
 constexpr const std::size_t n_hmm_iterations = 4;
@@ -68,15 +68,18 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
     mkdir(folder.c_str(), 0777);
 
     // Generated files
-    const std::string htk_config_file  = folder + "/htk_config";
-    const std::string hmm_info_file    = folder + "/hmm_info";
-    const std::string letters_file     = folder + "/letters";
-    const std::string features_file    = folder + "/train_features.lst";
-    const std::string means_file       = folder + "/means";
-    const std::string variances_file   = folder + "/variances";
-    const std::string covariances_file = folder + "/covariances";
-    const std::string init_mmf_file    = folder + "/init_mmf";
-    const std::string mlf_file         = folder + "/train.mlf";
+    const std::string htk_config_file     = folder + "/htk_config";
+    const std::string hmm_info_file       = folder + "/hmm_info";
+    const std::string letters_file        = folder + "/letters";
+    const std::string features_file       = folder + "/train_features.lst";
+    const std::string means_file          = folder + "/means";
+    const std::string variances_file      = folder + "/variances";
+    const std::string covariances_file    = folder + "/covariances";
+    const std::string init_mmf_file       = folder + "/init_mmf";
+    const std::string mlf_file            = folder + "/train.mlf";
+    const std::string spelling_file       = folder + "/spelling";
+    const std::string global_grammar_file = folder + "/grammar.bnf";
+    const std::string global_wordnet_file = folder + "/grammar.wnet";
 
     // Collect the characters
 
@@ -172,6 +175,50 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
         }
     }
 
+    // Generate the spelling file (used for testing)
+    // TODO Not sure about this file
+
+    {
+        std::ofstream os(spelling_file);
+
+        for(auto& character : characters){
+            os << character << " " << character << std::endl;;
+        }
+    }
+
+    // Generate the global grammar (used for testing)
+
+    {
+        std::ofstream os(global_grammar_file);
+
+        os << "( < ";
+
+        std::string sep = " ";
+        for(auto& character : characters){
+            os << sep << character;
+            sep = " | ";
+        }
+
+        os << " > )";
+    }
+
+    // Generate the global wordnet (used for testing)
+
+    {
+        std::string hparse_command =
+            bin_hparse +
+            " " + global_grammar_file +
+            " " + global_wordnet_file;
+
+        auto hparse_result = exec_command(hparse_command);
+
+        if(hparse_result.first){
+            std::cout << "HParse failed with result code: " << hparse_result.first << std::endl;
+            std::cout << "Command: " << hparse_command << std::endl;
+            std::cout << hparse_result.second << std::endl;
+        }
+    }
+
     // Train each gaussian
 
     for(std::size_t g = 1; g <= n_hmm_gaussians; ++g){
@@ -254,19 +301,18 @@ hmm_p prepare_test_keywords(const Dataset& dataset, names training_images) {
 
     // Folders
     const std::string base_folder = ".hmm";
-    const std::string folder = base_folder + "/" + keyword_to_short_string(label);
+    const std::string folder      = base_folder + "/" + keyword_to_short_string(label);
 
     mkdir(folder.c_str(), 0777);
 
     // Generated files
-    const std::string grammar_file     = folder + "/grammar.bnf";
-    const std::string wordnet_file     = folder + "/grammar.wnet";
-    const std::string spelling_file    = folder + "/spelling";
+    const std::string keyword_grammar_file = folder + "/grammar.bnf";
+    const std::string keyword_wordnet_file = folder + "/grammar.wnet";
 
-    // Generate the grammar (used for testing)
+    // Generate the global grammar (used for testing)
 
     {
-        std::ofstream os(grammar_file);
+        std::ofstream os(keyword_grammar_file);
 
         os << "(";
 
@@ -277,29 +323,21 @@ hmm_p prepare_test_keywords(const Dataset& dataset, names training_images) {
         os << ")";
     }
 
-    // Generate the spelling file (used for testing)
+    // Generate the global wordnet (used for testing)
 
     {
-        std::ofstream os(spelling_file);
+        std::string hparse_command =
+            bin_hparse +
+            " " + keyword_grammar_file +
+            " " + keyword_wordnet_file;
 
-        for(auto& character : label){
-            os << character << " " << character << std::endl;;
+        auto hparse_result = exec_command(hparse_command);
+
+        if(hparse_result.first){
+            std::cout << "HParse failed with result code: " << hparse_result.first << std::endl;
+            std::cout << "Command: " << hparse_command << std::endl;
+            std::cout << hparse_result.second << std::endl;
         }
-    }
-
-    // Generate the wordnet (used for testing)
-
-    std::string hparse_command =
-        bin_hparse +
-        " " + grammar_file +
-        " " + wordnet_file;
-
-    auto hparse_result = exec_command(hparse_command);
-
-    if(hparse_result.first){
-        std::cout << "HParse failed with result code: " << hparse_result.first << std::endl;
-        std::cout << "Command: " << hparse_command << std::endl;
-        std::cout << hparse_result.second << std::endl;
     }
 
     return folder;
@@ -364,8 +402,6 @@ void prepare_train_features(names test_image_names, const V1& test_features_a) {
 
 template <typename Dataset, typename V1>
 double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_p& folder, const std::string& test_image, const V1& /*test_features*/, names training_images) {
-    return 1e8;
-
     auto pixel_width = dataset.word_images.at(test_image).size().width;
 
     double ref_width = 0;
@@ -383,54 +419,103 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
     }
 
     // Global files
-    const std::string hmm_info_file   = base_folder + "/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
-    const std::string htk_config_file = base_folder + "/htk_config";
-    const std::string letters_file    = base_folder + "/letters";
+    const std::string hmm_info_file       = base_folder + "/global/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
+    const std::string htk_config_file     = base_folder + "/global/htk_config";
+    const std::string letters_file        = base_folder + "/global/letters";
+    const std::string global_wordnet_file = base_folder + "/global/grammar.wnet";
+    const std::string spelling_file       = base_folder + "/global/spelling";
 
     // Keywords files
-    const std::string grammar_file  = folder + "/grammar.bnf";
-    const std::string wordnet_file  = folder + "/grammar.wnet";
-    const std::string spelling_file = folder + "/spelling";
+    const std::string keyword_wordnet_file = folder + "/grammar.wnet";
 
     // Test feature files
     const std::string features_file = base_folder + "/test/" + test_image + ".lst";
 
     // Generated files
-    const std::string log_file      = folder + "/" + test_image + ".log";
+    const std::string log_file = folder + "/" + test_image + ".log";
 
-    std::string hvite_command =
-        bin_hvite +
-        " -C " + htk_config_file +
-        " -w " + wordnet_file +
-        " -i " + log_file +
-        " -H " + hmm_info_file +
-        " -S " + features_file +
-        " -T 1 " +
-        " " + spelling_file +
-        " " + letters_file;
+    double keyword_acc = 1e8;
+    double global_acc = 1e8;
 
-    auto hvite_result = exec_command(hvite_command);
+    {
+        std::string hvite_command =
+            bin_hvite +
+            " -C " + htk_config_file +
+            " -w " + keyword_wordnet_file +
+            " -i " + log_file +
+            " -H " + hmm_info_file +
+            " -S " + features_file +
+            " -T 1 " +
+            " " + spelling_file +
+            " " + letters_file;
 
-    if(hvite_result.first){
-        std::cout << "HVite failed with result code: " << hvite_result.first << std::endl;
-        std::cout << "Command: " << hvite_command << std::endl;
-        std::cout << hvite_result.second << std::endl;
-    } else {
-        std::string result = hvite_result.second;
+        auto hvite_result = exec_command(hvite_command);
 
-        std::istringstream f(result);
-        std::string line;
-        while (std::getline(f, line)) {
-            if(line.find(" == ") != std::string::npos){
-                auto begin = line.find("[Ac=");
-                auto end = line.find(" ", begin + 1);
-                std::string log_likelihood_str(line.begin() + begin + 4, line.begin() + end);
-                return -std::atof(log_likelihood_str.c_str());
+        if(hvite_result.first){
+            std::cout << "HVite failed with result code: " << hvite_result.first << std::endl;
+            std::cout << "Command: " << hvite_command << std::endl;
+            std::cout << hvite_result.second << std::endl;
+        } else {
+            std::string result = hvite_result.second;
+
+            std::istringstream f(result);
+            std::string line;
+            while (std::getline(f, line)) {
+                if(line.find(" == ") != std::string::npos){
+                    auto begin = line.find("[Ac=");
+                    auto end = line.find(" ", begin + 1);
+                    std::string log_likelihood_str(line.begin() + begin + 4, line.begin() + end);
+                    keyword_acc = -std::atof(log_likelihood_str.c_str());
+                }
             }
         }
     }
 
-    return 1e8;
+    {
+        std::string hvite_command =
+            bin_hvite +
+            " -C " + htk_config_file +
+            " -w " + global_wordnet_file +
+            " -i " + log_file +
+            " -H " + hmm_info_file +
+            " -S " + features_file +
+            " -T 1 " +
+            " " + spelling_file +
+            " " + letters_file;
+
+        auto hvite_result = exec_command(hvite_command);
+
+        if(hvite_result.first){
+            std::cout << "HVite failed with result code: " << hvite_result.first << std::endl;
+            std::cout << "Command: " << hvite_command << std::endl;
+            std::cout << hvite_result.second << std::endl;
+        } else {
+            std::string result = hvite_result.second;
+
+            std::istringstream f(result);
+            std::string line;
+            while (std::getline(f, line)) {
+                if(line.find(" == ") != std::string::npos){
+                    auto begin = line.find("[Ac=");
+                    auto end = line.find(" ", begin + 1);
+                    std::string log_likelihood_str(line.begin() + begin + 4, line.begin() + end);
+                    global_acc = -std::atof(log_likelihood_str.c_str());
+                }
+            }
+        }
+    }
+
+    if(keyword_acc == 1e8){
+        std::cout << "keyword accuracy was not found" << std::endl;
+        return 1e8;
+    }
+
+    if(global_acc == 1e8){
+        std::cout << "global accuracy was not found" << std::endl;
+        return 1e8;
+    }
+
+    return -(keyword_acc / global_acc);
 }
 
 } //end of namespace hmm_mlpack
