@@ -968,8 +968,6 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names tr
 
     auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
 
-    keywords.resize(8);
-
     // 1. Select a folder
 
     auto result_folder = select_folder("./dtw_results/");
