@@ -17,6 +17,8 @@
 
 #include "dll/util/io.hpp" //TODO This should be extracted to cpp_utils
 
+//#define SPACE_MODEL
+
 namespace hmm_htk {
 
 using hmm_p = std::string;
@@ -28,7 +30,10 @@ constexpr const std::size_t n_hmm_gaussians = 7;
 constexpr const std::size_t n_hmm_iterations = 4;
 
 // Number of states per character
-constexpr const auto n_states_per_char = 10;
+constexpr const auto n_states_per_char = 20;
+
+// Number of states per space character
+constexpr const auto n_states_per_space = 10;
 
 // Minimum variance for training
 constexpr const double herest_min_variance = 0.000001;
@@ -93,9 +98,6 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
         }
     }
 
-    // Add the space character to the model
-    characters.insert("sp");
-
     // Generate the HTK config file (no idea what is in it)
 
     {
@@ -113,6 +115,10 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
         for(const auto& character : characters){
             os << character << " " << n_states_per_char << " nocov noinit\n";
         }
+
+#ifdef SPACE_MODEL
+        os << "sp " << n_states_per_space << " nocov noinit\n";
+#endif
     }
 
     // Generate a file with the letters
@@ -123,6 +129,10 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
         for(const auto& character : characters){
             os << character << "\n";
         }
+
+#ifdef SPACE_MODEL
+        os << "sp\n";
+#endif
     }
 
     // Generate a file with the list of feature files (silly...)
@@ -168,7 +178,9 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
 
             os << "\"" << lab_name << "\"\n";
 
+#ifdef SPACE_MODEL
             os << "sp\n";
+#endif
 
             decltype(auto) label = dataset.word_labels.at(image);
 
@@ -176,7 +188,9 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
                 os << character << '\n';
             }
 
+#ifdef SPACE_MODEL
             os << "sp\n";
+#endif
 
             os << ".\n";
         }
@@ -189,8 +203,12 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
         std::ofstream os(spelling_file);
 
         for(auto& character : characters){
-            os << character << " " << character << std::endl;;
+            os << character << " " << character << '\n';
         }
+
+#ifdef SPACE_MODEL
+        os << "sp sp\n";
+#endif
     }
 
     // Generate the global grammar (used for testing)
@@ -198,17 +216,23 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
     {
         std::ofstream os(global_grammar_file);
 
+#ifdef SPACE_MODEL
         os << "( sp < ";
+#else
+        os << "( < ";
+#endif
 
         std::string sep = " ";
         for(auto& character : characters){
-            if(character != "sp"){
-                os << sep << character;
-                sep = " | ";
-            }
+            os << sep << character;
+            sep = " | ";
         }
 
+#ifdef SPACE_MODEL
         os << " > sp )";
+#else
+        os << " > )";
+#endif
     }
 
     // Generate the global wordnet (used for testing)
@@ -229,6 +253,8 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
     }
 
     // Train each gaussian
+
+    std::cout << "Start training HMM" << std::endl;
 
     for(std::size_t g = 1; g <= n_hmm_gaussians; ++g){
         const std::string mmf_file           = folder + "/trained_" + std::to_string(g) + ".mmf";
@@ -297,7 +323,11 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
                 std::cout << herest_result.second << std::endl;
             }
         }
+
+        std::cout << '.';
     }
+
+    std::cout << " done" << std::endl;
 
     return base_folder;
 }
@@ -323,13 +353,21 @@ hmm_p prepare_test_keywords(const Dataset& dataset, names training_images) {
     {
         std::ofstream os(keyword_grammar_file);
 
+#ifdef SPACE_MODEL
         os << "( sp ";
+#else
+        os << "( ";
+#endif
 
         for(auto& character : label){
             os << " " << character;
         }
 
+#ifdef SPACE_MODEL
         os << " sp )";
+#else
+        os << " )";
+#endif
     }
 
     // Generate the global wordnet (used for testing)
@@ -481,6 +519,10 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
             }
         }
 
+        if(accuracy == 1e8){
+            std::cout << "HVite accuracy not found: " << std::endl << hvite_result.second << std::endl;
+        }
+
         return accuracy;
     };
 
@@ -488,7 +530,7 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
     double global_acc  = htk_model_accuracy(global_wordnet_file, global_log_file);
 
     if(keyword_acc == 1e8){
-        std::cout << "keyword accuracy was not found" << std::endl;
+        std::cout << "keyword accuracy was not found for keyword: " << keyword_to_short_string(label) << " and image " << test_image << std::endl;
         return 1e8;
     }
 
@@ -497,8 +539,8 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
         return 1e8;
     }
 
-    return ((keyword_acc - global_acc) / label.size());
-    //return -(keyword_acc / global_acc);
+    //return ((keyword_acc - global_acc) / label.size());
+    return -(keyword_acc / global_acc);
 }
 
 } //end of namespace hmm_mlpack
