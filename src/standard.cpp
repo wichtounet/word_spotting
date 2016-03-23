@@ -1021,8 +1021,8 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names tr
 
         update_stats(k, result_folder, dataset, keyword, diffs, eer, ap, global_top_stream, local_top_stream, test_image_names);
 
-        if(conf.parzival && k % (keywords.size() / 10) == 0){
-            std::cout << (k / (keywords.size() / 10)) * 10 << "%" << std::endl;
+        if((k + 1) % (keywords.size() / 10) == 0){
+            std::cout << ((k + 1) / (keywords.size() / 10)) * 10 << "%" << std::endl;
         }
     }
 
