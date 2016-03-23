@@ -93,6 +93,9 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
         }
     }
 
+    // Add the space character to the model
+    characters.insert("sp");
+
     // Generate the HTK config file (no idea what is in it)
 
     {
@@ -153,7 +156,7 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
         }
     }
 
-    // Generate a file with the labels (I think)
+    // Generate a file with the labels
 
     {
         std::ofstream os(mlf_file);
@@ -165,11 +168,15 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
 
             os << "\"" << lab_name << "\"\n";
 
+            os << "sp\n";
+
             decltype(auto) label = dataset.word_labels.at(image);
 
             for(const auto& character : label){
                 os << character << '\n';
             }
+
+            os << "sp\n";
 
             os << ".\n";
         }
@@ -191,15 +198,17 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
     {
         std::ofstream os(global_grammar_file);
 
-        os << "( < ";
+        os << "( sp < ";
 
         std::string sep = " ";
         for(auto& character : characters){
-            os << sep << character;
-            sep = " | ";
+            if(character != "sp"){
+                os << sep << character;
+                sep = " | ";
+            }
         }
 
-        os << " > )";
+        os << " > sp )";
     }
 
     // Generate the global wordnet (used for testing)
@@ -297,7 +306,7 @@ template <typename Dataset>
 hmm_p prepare_test_keywords(const Dataset& dataset, names training_images) {
     dll::auto_timer timer("htk_prepare_test_keywords");
 
-    const auto label = dataset.word_labels.at(training_images[0]);
+    const decltype(auto) label = dataset.word_labels.at(training_images[0]);
 
     // Folders
     const std::string base_folder = ".hmm";
@@ -314,13 +323,13 @@ hmm_p prepare_test_keywords(const Dataset& dataset, names training_images) {
     {
         std::ofstream os(keyword_grammar_file);
 
-        os << "(";
+        os << "( sp ";
 
         for(auto& character : label){
             os << " " << character;
         }
 
-        os << ")";
+        os << " sp )";
     }
 
     // Generate the global wordnet (used for testing)
@@ -418,6 +427,8 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
         return 1e8;
     }
 
+    decltype(auto) label = dataset.word_labels.at(training_images[0]);
+
     // Global files
     const std::string hmm_info_file       = base_folder + "/global/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
     const std::string htk_config_file     = base_folder + "/global/htk_config";
@@ -432,16 +443,16 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
     const std::string features_file = base_folder + "/test/" + test_image + ".lst";
 
     // Generated files
-    const std::string log_file = folder + "/" + test_image + ".log";
+    const std::string global_log_file  = folder + "/" + test_image + "_global.log";
+    const std::string keyword_log_file = folder + "/" + test_image + "_keyword.log";
 
-    double keyword_acc = 1e8;
-    double global_acc = 1e8;
+    auto htk_model_accuracy = [&](const std::string& wordnet, const std::string& log_file){
+        double accuracy = 1e8;
 
-    {
         std::string hvite_command =
             bin_hvite +
             " -C " + htk_config_file +
-            " -w " + keyword_wordnet_file +
+            " -w " + wordnet +
             " -i " + log_file +
             " -H " + hmm_info_file +
             " -S " + features_file +
@@ -465,45 +476,16 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
                     auto begin = line.find("[Ac=");
                     auto end = line.find(" ", begin + 1);
                     std::string log_likelihood_str(line.begin() + begin + 4, line.begin() + end);
-                    keyword_acc = -std::atof(log_likelihood_str.c_str());
+                    accuracy = -std::atof(log_likelihood_str.c_str());
                 }
             }
         }
-    }
 
-    {
-        std::string hvite_command =
-            bin_hvite +
-            " -C " + htk_config_file +
-            " -w " + global_wordnet_file +
-            " -i " + log_file +
-            " -H " + hmm_info_file +
-            " -S " + features_file +
-            " -T 1 " +
-            " " + spelling_file +
-            " " + letters_file;
+        return accuracy;
+    };
 
-        auto hvite_result = exec_command(hvite_command);
-
-        if(hvite_result.first){
-            std::cout << "HVite failed with result code: " << hvite_result.first << std::endl;
-            std::cout << "Command: " << hvite_command << std::endl;
-            std::cout << hvite_result.second << std::endl;
-        } else {
-            std::string result = hvite_result.second;
-
-            std::istringstream f(result);
-            std::string line;
-            while (std::getline(f, line)) {
-                if(line.find(" == ") != std::string::npos){
-                    auto begin = line.find("[Ac=");
-                    auto end = line.find(" ", begin + 1);
-                    std::string log_likelihood_str(line.begin() + begin + 4, line.begin() + end);
-                    global_acc = -std::atof(log_likelihood_str.c_str());
-                }
-            }
-        }
-    }
+    double keyword_acc = htk_model_accuracy(keyword_wordnet_file, keyword_log_file);
+    double global_acc  = htk_model_accuracy(global_wordnet_file, global_log_file);
 
     if(keyword_acc == 1e8){
         std::cout << "keyword accuracy was not found" << std::endl;
@@ -511,11 +493,12 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
     }
 
     if(global_acc == 1e8){
-        std::cout << "global accuracy was not found" << std::endl;
+        std::cout << "global accuracy was not found for keyword: " << keyword_to_short_string(label) << " and image " << test_image << std::endl;
         return 1e8;
     }
 
-    return -(keyword_acc / global_acc);
+    return ((keyword_acc - global_acc) / label.size());
+    //return -(keyword_acc / global_acc);
 }
 
 } //end of namespace hmm_mlpack
