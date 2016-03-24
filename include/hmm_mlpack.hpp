@@ -7,7 +7,7 @@
 
 #pragma once
 
-#ifndef SPOTTER_NO_HMM
+#ifndef SPOTTER_NO_MLPACK
 
 //#define FULL_DEBUG
 

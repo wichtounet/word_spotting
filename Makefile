@@ -21,7 +21,7 @@ CXX_FLAGS += -DETL_VECTORIZE_FULL
 
 # Configure HMM
 ifneq (,$(SPOTTER_NO_HMM))
-CXX_FLAGS += -DSPOTTER_NO_HMM
+CXX_FLAGS += -DSPOTTER_NO_MLPACK
 else
 CXX_FLAGS += -I/usr/include/armadillo_bits/
 LD_FLAGS  += -lmlpack -larmadillo -lboost_serialization -lboost_program_options
