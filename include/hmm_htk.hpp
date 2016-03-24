@@ -7,8 +7,6 @@
 
 #pragma once
 
-#ifndef SPOTTER_NO_HMM
-
 #define FULL_DEBUG
 
 #include <random>
@@ -544,49 +542,3 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
 }
 
 } //end of namespace hmm_mlpack
-
-#else
-
-namespace hmm_htk {
-
-using hmm_p = std::string;
-
-template <typename Dataset>
-hmm_p train_global_hmm(const Dataset& /*dataset*/, names /*train_word_names*/) {
-    //Disabled HMM
-    std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
-
-    return "";
-}
-
-template <typename Dataset>
-hmm_p prepare_test_keywords(const Dataset& /*dataset*/, names /*training_images*/) {
-    //Disabled HMM
-    std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
-
-    return "";
-}
-
-template <typename V1>
-void prepare_test_features(names /*test_image_names*/, const V1& /*test_features_a*/) {
-    //Disabled HMM
-    std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
-}
-
-template <typename V1>
-void prepare_train_features(names /*test_image_names*/, const V1& /*test_features_a*/) {
-    //Disabled HMM
-    std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
-}
-
-template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& /*dataset*/, const hmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, const std::string& /*test_image*/, const V1& /*test_features*/, names /*training_images*/) {
-    //Disabled HMM
-    std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
-
-    return 1e8;
-}
-
-} //end of namespace hmm_mlpack
-
-#endif
