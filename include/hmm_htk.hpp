@@ -539,7 +539,7 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
         return 1e8;
     }
 
-    //return ((keyword_acc - global_acc) / label.size());
+    //return ((keyword_acc - global_acc) / double(pixel_width));
     return -(keyword_acc / global_acc);
 }
 
