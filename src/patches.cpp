@@ -393,6 +393,10 @@ void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, cons
             // d) Update the local stats
 
             update_stats(k, result_folder, dataset, keyword, diffs_a, eer, ap, global_top_stream, local_top_stream, test_image_names);
+
+            if((k + 1) % (keywords.size() / 10) == 0){
+                std::cout << ((k + 1) / (keywords.size() / 10)) * 10 << "%" << std::endl;
+            }
         }
 
         std::cout << "... done" << std::endl;
