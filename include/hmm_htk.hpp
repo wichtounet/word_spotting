@@ -432,15 +432,15 @@ void prepare_features(const std::string& folder_name, names test_image_names, co
         {
             std::ofstream os(file_path, std::ofstream::binary);
 
-            cpp::binary_write(os, static_cast<int>(test_features.size()));         //Number of observations
-            cpp::binary_write(os, static_cast<int>(1));                            //Dummy HTK_SAMPLE_RATE
-            cpp::binary_write(os, static_cast<short>(n_features * sizeof(float))); //Observation size
-            cpp::binary_write(os, static_cast<short>(9));                          //Used defined sample kind = 9 ?
+            cpp::binary_write(os, static_cast<int32_t>(test_features.size()));       //Number of observations
+            cpp::binary_write(os, static_cast<int32_t>(1));                          //Dummy HTK_SAMPLE_RATE
+            cpp::binary_write(os, static_cast<int16_t>(n_features * sizeof(float))); //Observation size
+            cpp::binary_write(os, static_cast<int16_t>(9));                          //Used defined sample kind = 9
 
             //Write all the values
-            for (auto feature_vector : test_features) {
-                for (auto v : feature_vector) {
-                    cpp::binary_write(os, static_cast<float>(v));
+            for (decltype(auto) feature_vector : test_features) {
+                for (auto feature : feature_vector) {
+                    cpp::binary_write(os, static_cast<float>(feature));
                 }
             }
         }
