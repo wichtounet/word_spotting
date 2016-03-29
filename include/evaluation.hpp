@@ -48,6 +48,8 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
         static hmm_htk::hmm_p global_hmm;
 
         if(global_hmm.empty()){
+            std::cout << "Prepare global HMM" << std::endl;
+
             auto train_features_a = functor(train_word_names);
 
             hmm_htk::prepare_train_features(train_word_names, train_features_a);
