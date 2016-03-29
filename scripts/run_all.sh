@@ -23,15 +23,16 @@ else
     exit 1
 fi
 
+options="-2"
+
 if [ "$2" == "third" ]; then
     mode="third"
-    option="-third"
+    options="$options -third"
 elif [ "$2" == "half" ]; then
     mode="half"
-    option="-half"
+    options="$options -half"
 elif [ "$2" == "full" ]; then
     mode="full"
-    option=""
 else
     echo "The second parameter must be one of [full,half,third]"
     exit 1
@@ -39,25 +40,33 @@ fi
 
 set=$3
 
-all_option=""
 dataset="washington"
-dataset_option=""
 
-if [ "$4" == "all" ]; then
-    all_option="-all"
-fi
+# Discards the first three parameters
+shift 3
 
-if [ "$4" == "parzival" ]; then
-    dataset_option="-parzival"
-    dataset="parzival"
-fi
+while [ "$1" ]
+do
+    if [ "$1" == "all" ]; then
+        options="$options -all"
+    fi
 
-if [ "$4" == "iam" ]; then
-    dataset_option="-iam"
-    dataset="iam"
-fi
+    if [ "$1" == "parzival" ]; then
+        options="$options -parzival"
+        dataset="parzival"
+    fi
 
-options="$option $all_option $dataset_option"
+    if [ "$1" == "iam" ]; then
+        options="$options -iam"
+        dataset="iam"
+    fi
+
+    if [ "$1" == "hmm" ]; then
+        options="$options -hmm -htk"
+    fi
+
+    shift
+done
 
 config_file="config_${mode}.hpp"
 
@@ -81,7 +90,7 @@ echo "Stamp: $stamp"
 echo "Mode: $mode"
 echo "Dataset: $dataset"
 echo "Set: $set"
-echo "Options: $all_option"
+echo "Options: $options"
 
 mkdir -p "$stamp"
 
@@ -110,7 +119,7 @@ wait
 for machine in ${!machines[@]}; do
     (
     echo "Start execution on ${machines[machine]}"
-    sshpass -p "$password" ssh ${user}@${machines[machine]} "cd ~/dev/word_spotting; rm -rf results/*; ./release_debug/bin/spotter -2 ${options} train ~/datasets/${dataset} ${set} > grid.log ;"
+    sshpass -p "$password" ssh ${user}@${machines[machine]} "cd ~/dev/word_spotting; rm -rf results/*; ./release_debug/bin/spotter ${options} train ~/datasets/${dataset} ${set} > grid.log ;"
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/grid.log ${stamp}/${machine}.log
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/method_2_${mode}.dat ${stamp}/${machine}.dat
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/1/global_rel_file ${stamp}/${machine}_train_global_rel_file
