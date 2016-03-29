@@ -223,6 +223,14 @@ int main(int argc, char** argv) {
 
     std::cout << "  Method: " << method_to_string(conf.method) << std::endl;
 
+    if(conf.hmm && conf.htk){
+        std::cout << "    Eval: HMM (HTK)" << std::endl;
+    } else if(conf.hmm){
+        std::cout << "    Eval: HMM (mlpack)" << std::endl;
+    } else {
+        std::cout << "    Eval: DTW" << std::endl;
+    }
+
     if (conf.command == "evaluate") {
         conf.load = true;
         return command_train(conf);
