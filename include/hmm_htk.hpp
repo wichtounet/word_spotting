@@ -17,6 +17,7 @@
 #include "dll/util/io.hpp" //TODO This should be extracted to cpp_utils
 
 //#define SPACE_MODEL
+//#define HMM_VERBOSE
 
 namespace hmm_htk {
 
@@ -518,9 +519,11 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
             }
         }
 
+#ifdef HMM_VERBOSE
         if(accuracy == 1e8){
             std::cout << "HVite accuracy not found: " << std::endl << hvite_result.second << std::endl;
         }
+#endif
 
         return accuracy;
     };
