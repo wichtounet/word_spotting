@@ -14,7 +14,7 @@
 
 #include <sys/stat.h> //mkdir
 
-#include "dll/util/io.hpp" //TODO This should be extracted to cpp_utils
+#include "cpp_utils/io.hpp"
 
 //#define SPACE_MODEL
 //#define HMM_VERBOSE
@@ -420,15 +420,15 @@ void prepare_features(const std::string& folder_name, names test_image_names, co
         {
             std::ofstream os(file_path, std::ofstream::binary);
 
-            dll::binary_write(os, static_cast<int>(test_features.size()));         //Number of observations
-            dll::binary_write(os, static_cast<int>(1));                            //Dummy HTK_SAMPLE_RATE
-            dll::binary_write(os, static_cast<short>(n_features * sizeof(float))); //Observation size
-            dll::binary_write(os, static_cast<short>(9));                          //Used defined sample kind = 9 ?
+            cpp::binary_write(os, static_cast<int>(test_features.size()));         //Number of observations
+            cpp::binary_write(os, static_cast<int>(1));                            //Dummy HTK_SAMPLE_RATE
+            cpp::binary_write(os, static_cast<short>(n_features * sizeof(float))); //Observation size
+            cpp::binary_write(os, static_cast<short>(9));                          //Used defined sample kind = 9 ?
 
             //Write all the values
             for (auto feature_vector : test_features) {
                 for (auto v : feature_vector) {
-                    dll::binary_write(os, static_cast<float>(v));
+                    cpp::binary_write(os, static_cast<float>(v));
                 }
             }
         }
