@@ -61,6 +61,11 @@ inline auto exec_command(const std::string& command) {
     return std::make_pair(exit_code, output.str());
 }
 
+inline void write_log(const std::string& result, const std::string& file){
+    std::ofstream os(file);
+    os << result;
+}
+
 template <typename Dataset>
 hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
     dll::auto_timer timer("htk_global_hmm_train");
@@ -254,12 +259,13 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
 
     // Train each gaussian
 
-    std::cout << "Start training HMM" << std::endl;
+    std::cout << "Start training HMM with " << train_word_names.size() << " word images" << std::endl;
 
     for(std::size_t g = 1; g <= n_hmm_gaussians; ++g){
         const std::string mmf_file           = folder + "/trained_" + std::to_string(g) + ".mmf";
         const std::string stats_file         = folder + "/stats_" + std::to_string(g) + ".txt";
         const std::string multigaussian_file = folder + "/mu_" + std::to_string(g) + ".hhed";
+        const std::string hhed_log_file      = folder + "/hhed_" + std::to_string(g) + ".log";
 
         std::string previous_mmf_file;
         if(g == 1){
@@ -294,6 +300,8 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
 
         auto hhed_result = exec_command(hhed_command);
 
+        write_log(hhed_result.second, hhed_log_file);
+
         if(hhed_result.first){
             std::cout << "HHEd failed with result code: " << hhed_result.first << std::endl;
             std::cout << "Command: " << hhed_command << std::endl;
@@ -304,6 +312,8 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
         }
 
         for(std::size_t i = 0; i < n_hmm_iterations; ++i){
+            const std::string herest_log_file      = folder + "/herest_" + std::to_string(g) + "_" + std::to_string(i) + ".log";
+
             std::string herest_command =
                 bin_herest +
                 " -C " + htk_config_file +
@@ -316,6 +326,8 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
                 " " + letters_file;
 
             auto herest_result = exec_command(herest_command);
+
+            write_log(herest_result.second, herest_log_file);
 
             if(herest_result.first){
                 std::cout << "HERest failed with result code: " << herest_result.first << std::endl;
