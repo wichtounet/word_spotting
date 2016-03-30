@@ -38,11 +38,12 @@ constexpr const auto n_states_per_space = 10;
 // Minimum variance for training
 constexpr const double herest_min_variance = 0.000001;
 
-const std::string bin_hmm_init = "scripts/hmm-init.pl";
-const std::string bin_hhed     = "HHEd";
-const std::string bin_herest   = "HERest";
-const std::string bin_hvite    = "HVite";
-const std::string bin_hparse   = "HParse";
+const std::string bin_hmm_init   = "scripts/hmm-init.pl";
+const std::string bin_hhed       = "HHEd";
+const std::string bin_herest     = "HERest";
+const std::string bin_hvite      = "HVite";
+const std::string bin_hparse     = "HParse";
+const std::string bin_debug_args = " -A -D -V -T 1 ";
 
 inline auto exec_command(const std::string& command) {
     std::stringstream output;
@@ -245,6 +246,7 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
     {
         std::string hparse_command =
             bin_hparse +
+            bin_debug_args +
             " " + global_grammar_file +
             " " + global_wordnet_file;
 
@@ -293,6 +295,7 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
 
         std::string hhed_command =
             bin_hhed +
+            bin_debug_args +
             " -C " + htk_config_file +
             " -M " + folder +
             " -H " + mmf_file +
@@ -316,6 +319,7 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
 
             std::string herest_command =
                 bin_herest +
+                bin_debug_args +
                 " -C " + htk_config_file +
                 " -v " + std::to_string(herest_min_variance) +
                 " -M " + folder +
@@ -387,6 +391,7 @@ hmm_p prepare_test_keywords(const Dataset& dataset, names training_images) {
     {
         std::string hparse_command =
             bin_hparse +
+            bin_debug_args +
             " " + keyword_grammar_file +
             " " + keyword_wordnet_file;
 
@@ -493,20 +498,22 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
     const std::string features_file = base_folder + "/test/" + test_image + ".lst";
 
     // Generated files
+    const std::string global_trans_file  = folder + "/" + test_image + "_global.trans";
     const std::string global_log_file  = folder + "/" + test_image + "_global.log";
+    const std::string keyword_trans_file = folder + "/" + test_image + "_keyword.trans";
     const std::string keyword_log_file = folder + "/" + test_image + "_keyword.log";
 
-    auto htk_model_accuracy = [&](const std::string& wordnet, const std::string& log_file){
+    auto htk_model_accuracy = [&](const std::string& wordnet, const std::string& trans_file, const std::string& log_file){
         double accuracy = 1e8;
 
         std::string hvite_command =
             bin_hvite +
+            bin_debug_args +
             " -C " + htk_config_file +
             " -w " + wordnet +
-            " -i " + log_file +
+            " -i " + trans_file +
             " -H " + hmm_info_file +
             " -S " + features_file +
-            " -T 1 " +
             " " + spelling_file +
             " " + letters_file;
 
@@ -517,7 +524,9 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
             std::cout << "Command: " << hvite_command << std::endl;
             std::cout << hvite_result.second << std::endl;
         } else {
-            std::string result = hvite_result.second;
+            write_log(hvite_result.second, log_file);
+
+            decltype(auto) result = hvite_result.second;
 
             std::istringstream f(result);
             std::string line;
@@ -540,8 +549,8 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
         return accuracy;
     };
 
-    double keyword_acc = htk_model_accuracy(keyword_wordnet_file, keyword_log_file);
-    double global_acc  = htk_model_accuracy(global_wordnet_file, global_log_file);
+    double keyword_acc = htk_model_accuracy(keyword_wordnet_file, keyword_trans_file, keyword_log_file);
+    double global_acc  = htk_model_accuracy(global_wordnet_file, global_trans_file, global_log_file);
 
     if(keyword_acc == 1e8){
         std::cout << "keyword accuracy was not found for keyword: " << keyword_to_short_string(label) << " and image " << test_image << std::endl;
