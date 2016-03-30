@@ -46,25 +46,56 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
 
     if(conf.hmm && conf.htk){
         static hmm_htk::hmm_p global_hmm;
+        static std::vector<double> global_likelihoods;
+
+        //Either frakking compiler or me is too stupid, so we need this workaround
+        auto& global = global_hmm;
+        auto& global_l = global_likelihoods;
+
+        auto threads = std::thread::hardware_concurrency();
+        auto test_images = test_image_names.size();
+        auto n = test_images / threads;
 
         if(global_hmm.empty()){
             std::cout << "Prepare global HMM" << std::endl;
+
+            std::cout << "Prepare features" << std::endl;
 
             auto train_features_a = functor(train_word_names);
 
             hmm_htk::prepare_train_features(train_word_names, train_features_a);
             hmm_htk::prepare_test_features(test_image_names, test_features_a);
 
-            global_hmm = hmm_htk::train_global_hmm(dataset, train_word_names);
+            global_hmm = hmm_htk::train_global_hmm(conf, dataset, train_word_names);
+
+            std::cout << "Prepare global likelihoods" << std::endl;
+
+            global_likelihoods.resize(test_image_names.size());
+
+            cpp::parallel_foreach_n(pool, 0, threads, [&](auto t){
+                auto start = t * n;
+                auto end = (t == threads - 1) ? test_images : (t + 1) * n;
+
+                hmm_htk::global_likelihood_many(global, test_image_names, global_l, t, start, end);
+            });
+
+            std::cout << ".... global done" << std::endl;
         }
 
         auto hmm = hmm_htk::prepare_test_keywords(dataset, training_images);
 
-        //Either frakking compiler or me is too stupid, so we need this workaround
-        auto& global = global_hmm;
+        // Compute the keywords likelihoods
+
+        std::vector<double> keyword_likelihoods(test_image_names.size());
+
+        cpp::parallel_foreach_n(pool, 0, threads, [&](auto t){
+            hmm_htk::keyword_likelihood_many(global, hmm, test_image_names, keyword_likelihoods, t, t * n);
+        });
+
+        // Compute the final distances
 
         cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
-            auto best_diff_a = hmm_htk::hmm_distance(dataset, global, hmm, test_image, test_features_a[t], training_images);
+            auto best_diff_a = hmm_htk::hmm_distance(dataset, test_image, training_images, global_l[t], keyword_likelihoods[t]);
 
             diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
         });

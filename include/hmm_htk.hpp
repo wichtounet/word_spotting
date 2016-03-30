@@ -18,6 +18,7 @@
 
 //#define SPACE_MODEL
 //#define HMM_VERBOSE
+//#define WRITE_LOG
 
 namespace hmm_htk {
 
@@ -30,7 +31,8 @@ constexpr const std::size_t n_hmm_gaussians = 7;
 constexpr const std::size_t n_hmm_iterations = 4;
 
 // Number of states per character
-constexpr const auto n_states_per_char = 20;
+constexpr const auto n_states_per_char_std     = 20;
+constexpr const auto n_states_per_char_patches = 10;
 
 // Number of states per space character
 constexpr const auto n_states_per_space = 10;
@@ -63,20 +65,27 @@ inline auto exec_command(const std::string& command) {
 }
 
 inline void write_log(const std::string& result, const std::string& file){
+#ifdef WRITE_LOG
     std::ofstream os(file);
     os << result;
+#else
+    cpp_unused(result);
+    cpp_unused(file);
+#endif
 }
 
 template <typename Dataset>
-hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
+hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_word_names) {
     dll::auto_timer timer("htk_global_hmm_train");
 
     // The folders
     const std::string base_folder = ".hmm";
     const std::string folder = base_folder + "/global/";
+    const std::string logs_folder = base_folder + "/global/logs/";
 
     mkdir(base_folder.c_str(), 0777);
     mkdir(folder.c_str(), 0777);
+    mkdir(logs_folder.c_str(), 0777);
 
     // Generated files
     const std::string htk_config_file     = folder + "/htk_config";
@@ -91,6 +100,12 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
     const std::string spelling_file       = folder + "/spelling";
     const std::string global_grammar_file = folder + "/grammar.bnf";
     const std::string global_wordnet_file = folder + "/grammar.wnet";
+
+    // Get number of states per char from the configuration
+    const std::size_t n_states_per_char =
+            conf.method == Method::Patches
+        ?   n_states_per_char_patches
+        :   n_states_per_char_std;
 
     // Collect the characters
 
@@ -203,7 +218,6 @@ hmm_p train_global_hmm(const Dataset& dataset, names train_word_names) {
     }
 
     // Generate the spelling file (used for testing)
-    // TODO Not sure about this file
 
     {
         std::ofstream os(spelling_file);
@@ -408,7 +422,7 @@ hmm_p prepare_test_keywords(const Dataset& dataset, names training_images) {
 }
 
 template <typename V1>
-void prepare_features(const std::string& folder_name, names test_image_names, const V1& test_features_a) {
+void prepare_features(const std::string& folder_name, names test_image_names, const V1& test_features_a, bool lst_file) {
     const std::string base_folder = ".hmm";
     const std::string folder = base_folder + "/" + folder_name;
 
@@ -427,7 +441,7 @@ void prepare_features(const std::string& folder_name, names test_image_names, co
 
         // Generate the file with the list of feature files
 
-        {
+        if(lst_file) {
             std::ofstream os(features_file);
             os << file_path << "\n";
         }
@@ -455,17 +469,163 @@ void prepare_features(const std::string& folder_name, names test_image_names, co
 template <typename V1>
 void prepare_test_features(names test_image_names, const V1& test_features_a) {
     dll::auto_timer timer("htk_train_features");
-    prepare_features("test", test_image_names, test_features_a);
+    prepare_features("test", test_image_names, test_features_a, false);
 }
 
 template <typename V1>
 void prepare_train_features(names test_image_names, const V1& test_features_a) {
     dll::auto_timer timer("htk_test_features");
-    prepare_features("train", test_image_names, test_features_a);
+    prepare_features("train", test_image_names, test_features_a, false);
 }
 
-template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_p& folder, const std::string& test_image, const V1& /*test_features*/, names training_images) {
+inline void global_likelihood_many(const hmm_p& base_folder, names test_image_names, std::vector<double>& global_likelihoods, std::size_t t, std::size_t start, std::size_t end) {
+    // Global files
+    const std::string hmm_info_file       = base_folder + "/global/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
+    const std::string htk_config_file     = base_folder + "/global/htk_config";
+    const std::string letters_file        = base_folder + "/global/letters";
+    const std::string global_wordnet_file = base_folder + "/global/grammar.wnet";
+    const std::string spelling_file       = base_folder + "/global/spelling";
+
+    // Generated files
+    const std::string global_trans_file = base_folder + "/global/logs/thread_" + std::to_string(t) + ".trans";
+    const std::string global_log_file   = base_folder + "/global/logs/thread_" + std::to_string(t) + ".log";
+    const std::string global_lst_file   = base_folder + "/test/thread_" + std::to_string(t) + ".lst";
+
+    // Generate the listing file
+
+    {
+        std::ofstream os(global_lst_file);
+
+        for (std::size_t i = start; i < end; ++i) {
+            os << base_folder << "/test/" << test_image_names[i] << ".htk\n";
+        }
+    }
+
+    std::string hvite_command =
+        bin_hvite +
+        bin_debug_args +
+        " -C " + htk_config_file +
+        " -w " + global_wordnet_file +
+#ifdef WRITE_LOG
+        " -i " + global_trans_file +
+#endif
+        " -H " + hmm_info_file +
+        " -S " + global_lst_file +
+        " " + spelling_file +
+        " " + letters_file;
+
+    auto hvite_result = exec_command(hvite_command);
+
+    if (hvite_result.first) {
+        std::cout << "HVite failed with result code: " << hvite_result.first << std::endl;
+        std::cout << "Command: " << hvite_command << std::endl;
+        std::cout << hvite_result.second << std::endl;
+    } else {
+        write_log(hvite_result.second, global_log_file);
+
+        decltype(auto) result = hvite_result.second;
+
+        std::istringstream f(result);
+        std::string line;
+        std::size_t i = start;
+        while (std::getline(f, line)) {
+            if(line.find("File: ") == 0){
+                if(!line.find(test_image_names[i])){
+                    std::cout << "I hate HTK" << std::endl;
+                }
+
+                // Go to the next line
+                std::getline(f, line);
+
+                if (line.find(" == ") != std::string::npos) {
+                    auto begin = line.find("[Ac=");
+                    auto end = line.find(" ", begin + 1);
+                    std::string log_likelihood_str(line.begin() + begin + 4, line.begin() + end);
+                    global_likelihoods[i] = -std::atof(log_likelihood_str.c_str());
+                } else {
+#ifdef HMM_VERBOSE
+                    std::cout << "global accuracy was not found for image " << test_image_names[i] << std::endl;
+#endif
+                    global_likelihoods[i] = 1e8;
+                }
+
+                ++i;
+            }
+        }
+    }
+}
+
+inline void keyword_likelihood_many(const hmm_p& base_folder, const hmm_p& folder, names test_image_names, std::vector<double>& keyword_likelihoods, std::size_t t, std::size_t start) {
+    // Global files
+    const std::string hmm_info_file   = base_folder + "/global/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
+    const std::string htk_config_file = base_folder + "/global/htk_config";
+    const std::string letters_file    = base_folder + "/global/letters";
+    const std::string spelling_file   = base_folder + "/global/spelling";
+    const std::string global_lst_file = base_folder + "/test/thread_" + std::to_string(t) + ".lst";
+
+    // Keywords files
+    const std::string keyword_wordnet_file = folder + "/grammar.wnet";
+
+    // Generated files
+    const std::string keyword_trans_file = folder + "/thread_" + std::to_string(t) + ".trans";
+    const std::string keyword_log_file   = folder + "/thread_" + std::to_string(t) + ".log";
+
+    std::string hvite_command =
+        bin_hvite +
+        bin_debug_args +
+        " -C " + htk_config_file +
+        " -w " + keyword_wordnet_file +
+#ifdef WRITE_LOG
+        " -i " + keyword_trans_file +
+#endif
+        " -H " + hmm_info_file +
+        " -S " + global_lst_file +
+        " " + spelling_file +
+        " " + letters_file;
+
+    auto hvite_result = exec_command(hvite_command);
+
+    if (hvite_result.first) {
+        std::cout << "HVite failed with result code: " << hvite_result.first << std::endl;
+        std::cout << "Command: " << hvite_command << std::endl;
+        std::cout << hvite_result.second << std::endl;
+    } else {
+        write_log(hvite_result.second, keyword_log_file);
+
+        decltype(auto) result = hvite_result.second;
+
+        std::istringstream f(result);
+        std::string line;
+        std::size_t i = start;
+        while (std::getline(f, line)) {
+            if(line.find("File: ") == 0){
+                if(!line.find(test_image_names[i])){
+                    std::cout << "I hate HTK" << std::endl;
+                }
+
+                // Go to the next line
+                std::getline(f, line);
+
+                if (line.find(" == ") != std::string::npos) {
+                    auto begin = line.find("[Ac=");
+                    auto end = line.find(" ", begin + 1);
+                    std::string log_likelihood_str(line.begin() + begin + 4, line.begin() + end);
+                    keyword_likelihoods[i] = -std::atof(log_likelihood_str.c_str());
+                } else {
+#ifdef HMM_VERBOSE
+                    std::cout << "keyword accuracy was not found for image " << test_image_names[i] << " and keyword " << folder << std::endl;
+#endif
+                    keyword_likelihoods[i] = 1e8;
+                }
+
+                ++i;
+            }
+        }
+    }
+}
+
+template <typename Dataset>
+double hmm_distance(const Dataset& dataset, const std::string& test_image, names training_images, double global_acc, double keyword_acc) {
     auto pixel_width = dataset.word_images.at(test_image).size().width;
 
     double ref_width = 0;
@@ -479,86 +639,6 @@ double hmm_distance(const Dataset& dataset, const hmm_p& base_folder, const hmm_
     const auto ratio = ref_width / pixel_width;
 
     if (ratio > 2.0 || ratio < 0.5) {
-        return 1e8;
-    }
-
-    decltype(auto) label = dataset.word_labels.at(training_images[0]);
-
-    // Global files
-    const std::string hmm_info_file       = base_folder + "/global/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
-    const std::string htk_config_file     = base_folder + "/global/htk_config";
-    const std::string letters_file        = base_folder + "/global/letters";
-    const std::string global_wordnet_file = base_folder + "/global/grammar.wnet";
-    const std::string spelling_file       = base_folder + "/global/spelling";
-
-    // Keywords files
-    const std::string keyword_wordnet_file = folder + "/grammar.wnet";
-
-    // Test feature files
-    const std::string features_file = base_folder + "/test/" + test_image + ".lst";
-
-    // Generated files
-    const std::string global_trans_file  = folder + "/" + test_image + "_global.trans";
-    const std::string global_log_file  = folder + "/" + test_image + "_global.log";
-    const std::string keyword_trans_file = folder + "/" + test_image + "_keyword.trans";
-    const std::string keyword_log_file = folder + "/" + test_image + "_keyword.log";
-
-    auto htk_model_accuracy = [&](const std::string& wordnet, const std::string& trans_file, const std::string& log_file){
-        double accuracy = 1e8;
-
-        std::string hvite_command =
-            bin_hvite +
-            bin_debug_args +
-            " -C " + htk_config_file +
-            " -w " + wordnet +
-            " -i " + trans_file +
-            " -H " + hmm_info_file +
-            " -S " + features_file +
-            " " + spelling_file +
-            " " + letters_file;
-
-        auto hvite_result = exec_command(hvite_command);
-
-        if(hvite_result.first){
-            std::cout << "HVite failed with result code: " << hvite_result.first << std::endl;
-            std::cout << "Command: " << hvite_command << std::endl;
-            std::cout << hvite_result.second << std::endl;
-        } else {
-            write_log(hvite_result.second, log_file);
-
-            decltype(auto) result = hvite_result.second;
-
-            std::istringstream f(result);
-            std::string line;
-            while (std::getline(f, line)) {
-                if(line.find(" == ") != std::string::npos){
-                    auto begin = line.find("[Ac=");
-                    auto end = line.find(" ", begin + 1);
-                    std::string log_likelihood_str(line.begin() + begin + 4, line.begin() + end);
-                    accuracy = -std::atof(log_likelihood_str.c_str());
-                }
-            }
-        }
-
-#ifdef HMM_VERBOSE
-        if(accuracy == 1e8){
-            std::cout << "HVite accuracy not found: " << std::endl << hvite_result.second << std::endl;
-        }
-#endif
-
-        return accuracy;
-    };
-
-    double keyword_acc = htk_model_accuracy(keyword_wordnet_file, keyword_trans_file, keyword_log_file);
-    double global_acc  = htk_model_accuracy(global_wordnet_file, global_trans_file, global_log_file);
-
-    if(keyword_acc == 1e8){
-        std::cout << "keyword accuracy was not found for keyword: " << keyword_to_short_string(label) << " and image " << test_image << std::endl;
-        return 1e8;
-    }
-
-    if(global_acc == 1e8){
-        std::cout << "global accuracy was not found for keyword: " << keyword_to_short_string(label) << " and image " << test_image << std::endl;
         return 1e8;
     }
 
