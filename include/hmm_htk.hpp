@@ -92,9 +92,6 @@ hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_w
     const std::string hmm_info_file       = folder + "/hmm_info";
     const std::string letters_file        = folder + "/letters";
     const std::string features_file       = folder + "/train_features.lst";
-    const std::string means_file          = folder + "/means";
-    const std::string variances_file      = folder + "/variances";
-    const std::string covariances_file    = folder + "/covariances";
     const std::string init_mmf_file       = folder + "/init_mmf";
     const std::string mlf_file            = folder + "/train.mlf";
     const std::string spelling_file       = folder + "/spelling";
@@ -167,17 +164,11 @@ hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_w
     }
 
     // Generate the means/variances/covariances/init_mmf files
-    // TODO This take way too long with large features
-    // The script should be cut to remove means/variances/covariances files
-    // which are useless anyway
 
     {
         std::string init_command =
             bin_hmm_init
             + " --hmmmacro " + init_mmf_file
-            + " -e " + means_file
-            + " -v " + variances_file
-            + " -c " + covariances_file
             + " --infofile " + hmm_info_file
             + " " + features_file;
 
