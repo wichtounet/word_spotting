@@ -167,6 +167,9 @@ hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_w
     }
 
     // Generate the means/variances/covariances/init_mmf files
+    // TODO This take way too long with large features
+    // The script should be cut to remove means/variances/covariances files
+    // which are useless anyway
 
     {
         std::string init_command =
