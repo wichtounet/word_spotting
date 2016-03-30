@@ -18,7 +18,6 @@ my $lint = length( pack("i",1) );
 my $lfloat = length( pack("f",1) );
 my $N = -1;
 my $DIM = -1;
-my @vectors = ();
 my @means = ();
 my @cov = ();
 
@@ -42,62 +41,12 @@ while(<>) {
         }
         $N = 0;
     }
-    for( my $j = 0; $j < $num; $j++ ) { #read feature vectors
-        for( my $k = 0; $k < $DIM; $k++ ) {
-            read( FILE, $val, $lfloat ); $val = unpack( "f", $val );
-            $vectors[$j][$k] = $val;
-        }
-        $N++;
-    }
     close FILE;
-    for( my $j = 0; $j < $num; $j++ ) { #accumulate mean and covariance values
-        for( my $k = 0; $k < $DIM; $k++ ) {
-            $means[$k] += $vectors[$j][$k];
-            for( my $l = $k; $l < $DIM; $l++ ) {
-                $cov[$k][$l] += $vectors[$j][$k] * $vectors[$j][$l];
-            }
-        }
-    }
-}
-
-for( my $i = 0; $i < $DIM; $i++ ) { #finalize means
-  $means[$i] /= $N;
-}
-for( my $i = 0; $i < $DIM; $i++ ) { #finalize covariances
-  for( my $j = $i; $j < $DIM; $j++ ) {
-    $cov[$i][$j] /= $N;
-    $cov[$i][$j] -= $means[$i] * $means[$j];
-  }
 }
 
 my @variances;
 for(my $i=0;$i<$DIM;$i++) {
     push @variances, $cov[$i][$i];
-}
-
-#writing files if required
-if($opt{means}) {
-    open MEANS, ">$opt{means}" or die "could not write to $opt{means}\n";
-    print MEANS "$_\n" foreach @means;
-    close MEANS or die;
-}
-if($opt{variances}) {
-    open VARIANCES, ">$opt{variances}" or die "could not write to $opt{variances}\n";
-    print VARIANCES "$_\n" foreach @variances;
-    close VARIANCES or die;
-}
-if($opt{covariances}) {
-    open COVARIANCES, ">$opt{covariances}" or die "could not write to $opt{covariances}\n";
-    for( my $i = 0; $i < $DIM; $i++ ) {
-        for( my $j = $i; $j < $DIM; $j++ ) {
-            unless($i==$j)    {
-                print COVARIANCES " ";
-            }
-            print COVARIANCES $cov[$i][$j];
-        }
-        print COVARIANCES "\n";
-    }
-    close COVARIANCES or die;
 }
 
 # initializing the hmms
