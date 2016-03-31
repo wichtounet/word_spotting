@@ -855,13 +855,15 @@ void patches_train(
             evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
         }
 
-        if (features || conf.load || conf.fix) {
-            std::cout << "Switch to optimal parameters" << std::endl;
-            params.sc_band = 0.05;
-            std::cout << "\tsc_band: " << params.sc_band << std::endl;
-        } else {
-            std::cout << "Optimize parameters" << std::endl;
-            optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        if (!conf.hmm) {
+            if (features || conf.load || conf.fix) {
+                std::cout << "Switch to optimal parameters" << std::endl;
+                params.sc_band = 0.05;
+                std::cout << "\tsc_band: " << params.sc_band << std::endl;
+            } else {
+                std::cout << "Optimize parameters" << std::endl;
+                optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+            }
         }
 
         if(features || !conf.novalid){
@@ -1077,13 +1079,15 @@ void patches_train(
             evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
         }
 
-        if (features || conf.load || conf.fix) {
-            std::cout << "Switch to optimal parameters" << std::endl;
-            params.sc_band = 0.05;
-            std::cout << "\tsc_band: " << params.sc_band << std::endl;
-        } else {
-            std::cout << "Optimize parameters" << std::endl;
-            optimize_parameters<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+        if (!conf.hmm) {
+            if (features || conf.load || conf.fix) {
+                std::cout << "Switch to optimal parameters" << std::endl;
+                params.sc_band = 0.05;
+                std::cout << "\tsc_band: " << params.sc_band << std::endl;
+            } else {
+                std::cout << "Optimize parameters" << std::endl;
+                optimize_parameters<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+            }
         }
 
         if(features || !(conf.load && conf.novalid)){
