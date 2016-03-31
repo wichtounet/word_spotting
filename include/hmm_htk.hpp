@@ -32,7 +32,7 @@ constexpr const std::size_t n_hmm_iterations = 4;
 
 // Number of states per character
 constexpr const auto n_states_per_char_std     = 20;
-constexpr const auto n_states_per_char_patches = 10;
+constexpr const auto n_states_per_char_patches = 20;
 
 // Number of states per space character
 constexpr const auto n_states_per_space = 10;
@@ -636,8 +636,8 @@ double hmm_distance(const Dataset& dataset, const std::string& test_image, names
         return 1e8;
     }
 
-    //return ((keyword_acc - global_acc) / double(pixel_width));
-    return -(keyword_acc / global_acc);
+    return ((keyword_acc - global_acc) / double(pixel_width));
+    //return -(keyword_acc / global_acc);
 }
 
 } //end of namespace hmm_mlpack
