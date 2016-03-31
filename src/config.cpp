@@ -38,7 +38,7 @@ void print_usage() {
     std::cout << " -parzival : The dataset is Parzival" << std::endl;
     std::cout << " -iam : The dataset is IAM" << std::endl;
     std::cout << " -hmm : Use HMM (with mlpack) in place of DTW" << std::endl;
-    std::cout << " -htk : Use HMM (with HTK) in place of DTW" << std::endl;
+    std::cout << " -htk : Use HTK in place of mlpack" << std::endl;
 }
 
 config parse_args(int argc, char** argv) {
