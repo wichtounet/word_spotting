@@ -298,9 +298,12 @@ hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_w
 
     // Train each gaussian
 
-    std::cout << "Start training HMM with " << train_word_names.size() << " word images" << std::endl;
-
     const auto n_hmm_gaussians = select_gaussians(conf);
+
+    std::cout << "Start training HMM" << std::endl
+        << "    " << train_word_names.size() << " word images" << std::endl
+        << "    " << n_hmm_gaussians << " gaussians" << std::endl
+        << "    " << n_hmm_iterations << " training iterations" << std::endl;
 
     for(std::size_t g = 1; g <= n_hmm_gaussians; ++g){
         const std::string mmf_file           = folder + "/trained_" + std::to_string(g) + ".mmf";
