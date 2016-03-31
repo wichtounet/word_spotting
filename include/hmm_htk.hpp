@@ -136,6 +136,12 @@ hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_w
 
     // Generate a file with the states
 
+    // Get number of states per char from the configuration
+    const std::size_t n_states_per_char =
+        conf.method == Method::Patches
+            ? n_states_per_char_patches
+            : n_states_per_char_std;
+
     if (conf.hmm_var) {
         const std::string fixed_hmm_info_file =
             conf.washington ? "scripts/gw-hmm-info"
@@ -152,12 +158,6 @@ hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_w
         }
     } else {
         std::ofstream os(hmm_info_file);
-
-        // Get number of states per char from the configuration
-        const std::size_t n_states_per_char =
-            conf.method == Method::Patches
-                ? n_states_per_char_patches
-                : n_states_per_char_std;
 
         for (const auto& character : characters) {
             os << character << " " << n_states_per_char << " nocov noinit\n";
@@ -304,6 +304,12 @@ hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_w
         << "    " << train_word_names.size() << " word images" << std::endl
         << "    " << n_hmm_gaussians << " gaussians" << std::endl
         << "    " << n_hmm_iterations << " training iterations" << std::endl;
+
+    if (conf.hmm_var) {
+        std::cout << "    " << " variable number of states per character" << std::endl;
+    } else {
+        std::cout << "    " << n_states_per_space << " states per character" << std::endl;
+    }
 
     for(std::size_t g = 1; g <= n_hmm_gaussians; ++g){
         const std::string mmf_file           = folder + "/trained_" + std::to_string(g) + ".mmf";
