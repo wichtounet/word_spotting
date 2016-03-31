@@ -822,6 +822,10 @@ void patches_train(
             if (conf.iam && !conf.sub) {
                 std::cout << "Training is done with patch iterators..." << std::endl;
 
+                if(third::elastic_augment){
+                    std::cout << "WARNING: Elastic distortions is not supported for patch_iterator yet" << std::endl;
+                }
+
                 patch_iterator<cdbn_t> it(conf, dataset, pretraining_image_names);
                 patch_iterator<cdbn_t> end(conf, dataset, pretraining_image_names, pretraining_image_names.size());
 
@@ -833,8 +837,19 @@ void patches_train(
                 std::cout << "Generate patches ..." << std::endl;
 
                 for (auto& name : pretraining_image_names) {
-                    auto patches = mat_to_patches<cdbn_t>(conf, dataset.word_images.at(name), true);
+                    decltype(auto) image = dataset.word_images.at(name);
+
+                    // Insert the patches from the original image
+                    auto patches = mat_to_patches<cdbn_t>(conf, image, true);
                     std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
+
+                    // Insert the patches from the distorted versions
+                    for(std::size_t d = 0; d < third::elastic_augment; ++d){
+                        auto distorted_image = elastic_distort(image);
+
+                        auto patches = mat_to_patches<cdbn_t>(conf, distorted_image, true);
+                        std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
+                    }
                 }
 
                 std::cout << "... done" << std::endl;

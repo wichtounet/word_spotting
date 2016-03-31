@@ -16,6 +16,8 @@
 #include "config.hpp"
 #include "dataset.hpp"
 
+cv::Mat elastic_distort(const cv::Mat& clean_image);
+
 template <typename T>
 std::ostream& operator<<(std::ostream& stream, const std::vector<T>& vec) {
     std::string comma = "";
