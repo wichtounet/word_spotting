@@ -25,7 +25,9 @@ namespace hmm_htk {
 using hmm_p = std::string;
 
 // Number of gaussians for the HMM
-constexpr const std::size_t n_hmm_gaussians = 7;
+constexpr const std::size_t n_hmm_gaussians_gw  = 7;
+constexpr const std::size_t n_hmm_gaussians_iam = 12;
+constexpr const std::size_t n_hmm_gaussians_par = 15;
 
 // Number of training iterations for the HMM
 constexpr const std::size_t n_hmm_iterations = 4;
@@ -46,6 +48,19 @@ const std::string bin_herest     = "HERest";
 const std::string bin_hvite      = "HVite";
 const std::string bin_hparse     = "HParse";
 const std::string bin_debug_args = " -A -D -V -T 1 ";
+
+inline std::size_t select_gaussians(const config& conf){
+    if(conf.washington){
+        return n_hmm_gaussians_gw;
+    } else if(conf.parzival){
+        return n_hmm_gaussians_par;
+    } else if(conf.iam){
+        return n_hmm_gaussians_iam;
+    } else {
+        std::cout << "ERROR: Dataset is not handled in select_gaussians" << std::endl;
+        return 0;
+    }
+}
 
 inline auto exec_command(const std::string& command) {
     std::stringstream output;
@@ -285,6 +300,8 @@ hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_w
 
     std::cout << "Start training HMM with " << train_word_names.size() << " word images" << std::endl;
 
+    const auto n_hmm_gaussians = select_gaussians(conf);
+
     for(std::size_t g = 1; g <= n_hmm_gaussians; ++g){
         const std::string mmf_file           = folder + "/trained_" + std::to_string(g) + ".mmf";
         const std::string stats_file         = folder + "/stats_" + std::to_string(g) + ".txt";
@@ -486,7 +503,9 @@ void prepare_train_features(names test_image_names, const V1& test_features_a) {
     prepare_features("train", test_image_names, test_features_a, false);
 }
 
-inline void global_likelihood_many(const hmm_p& base_folder, names test_image_names, std::vector<double>& global_likelihoods, std::size_t t, std::size_t start, std::size_t end) {
+inline void global_likelihood_many(const config& conf, const hmm_p& base_folder, names test_image_names, std::vector<double>& global_likelihoods, std::size_t t, std::size_t start, std::size_t end) {
+    const auto n_hmm_gaussians = select_gaussians(conf);
+
     // Global files
     const std::string hmm_info_file       = base_folder + "/global/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
     const std::string htk_config_file     = base_folder + "/global/htk_config";
@@ -563,7 +582,9 @@ inline void global_likelihood_many(const hmm_p& base_folder, names test_image_na
     }
 }
 
-inline void keyword_likelihood_many(const hmm_p& base_folder, const hmm_p& folder, names test_image_names, std::vector<double>& keyword_likelihoods, std::size_t t, std::size_t start) {
+inline void keyword_likelihood_many(const config& conf, const hmm_p& base_folder, const hmm_p& folder, names test_image_names, std::vector<double>& keyword_likelihoods, std::size_t t, std::size_t start) {
+    const auto n_hmm_gaussians = select_gaussians(conf);
+
     // Global files
     const std::string hmm_info_file   = base_folder + "/global/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
     const std::string htk_config_file = base_folder + "/global/htk_config";

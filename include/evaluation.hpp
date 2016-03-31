@@ -76,7 +76,7 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
                 auto start = t * n;
                 auto end = (t == threads - 1) ? test_images : (t + 1) * n;
 
-                hmm_htk::global_likelihood_many(global, test_image_names, global_l, t, start, end);
+                hmm_htk::global_likelihood_many(conf, global, test_image_names, global_l, t, start, end);
             });
 
             std::cout << ".... global done" << std::endl;
@@ -89,7 +89,7 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
         std::vector<double> keyword_likelihoods(test_image_names.size());
 
         cpp::parallel_foreach_n(pool, 0, threads, [&](auto t){
-            hmm_htk::keyword_likelihood_many(global, hmm, test_image_names, keyword_likelihoods, t, t * n);
+            hmm_htk::keyword_likelihood_many(conf, global, hmm, test_image_names, keyword_likelihoods, t, t * n);
         });
 
         // Compute the final distances
