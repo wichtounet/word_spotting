@@ -970,7 +970,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names tr
 
     // 1. Select a folder
 
-    auto result_folder = select_folder("./dtw_results/");
+    auto result_folder = select_folder("./results/");
 
     // 2. Generate the rel files
 

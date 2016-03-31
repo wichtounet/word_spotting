@@ -103,7 +103,7 @@ template <typename Dataset, typename Set>
 void evaluate_features(const Dataset& dataset, const Set& set, config& conf, const std::vector<std::string>& train_word_names, const std::vector<std::string>& test_image_names) {
     auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
 
-    auto result_folder = select_folder("./dtw_results/");
+    auto result_folder = select_folder("./results/");
 
     generate_rel_files(result_folder, dataset, test_image_names, keywords);
 

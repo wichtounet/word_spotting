@@ -29,7 +29,7 @@ do
     do
         results=`$exec_file $method $db_option $options train $db_path $db_cv`
         method_name=$(echo "$results" | grep "Method: " | cut -d" " -f4)
-        folder=$(echo "$results" | grep "dtw_results" | cut -d" " -f2)
+        folder=$(echo "$results" | grep "results" | cut -d" " -f2)
         trec_results=`./scripts/trec_eval.sh $folder`
         gmap=$(echo "$trec_results" | head -n1 | cut -d" " -f2)
         grp=$(echo "$trec_results" | head -n2 | tail -n1 | cut -d" " -f3)
