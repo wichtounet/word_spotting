@@ -98,12 +98,6 @@ hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_w
     const std::string global_grammar_file = folder + "/grammar.bnf";
     const std::string global_wordnet_file = folder + "/grammar.wnet";
 
-    // Get number of states per char from the configuration
-    const std::size_t n_states_per_char =
-            conf.method == Method::Patches
-        ?   n_states_per_char_patches
-        :   n_states_per_char_std;
-
     // Collect the characters
 
     std::set<std::string> characters;
@@ -127,10 +121,30 @@ hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_w
 
     // Generate a file with the states
 
-    {
+    if (conf.hmm_var) {
+        const std::string fixed_hmm_info_file =
+            conf.washington ? "scripts/gw-hmm-info"
+                            : conf.iam ? "scripts/iam-hmm-info"
+                                       : "scripts/par-hmm-info";
+
+        std::string cp_command = "cp " + fixed_hmm_info_file + " " + hmm_info_file;
+        auto cp_result         = exec_command(cp_command);
+
+        if (cp_result.first) {
+            std::cout << "cp failed with result code: " << cp_result.first << std::endl;
+            std::cout << "Command: " << cp_command << std::endl;
+            std::cout << cp_result.second << std::endl;
+        }
+    } else {
         std::ofstream os(hmm_info_file);
 
-        for(const auto& character : characters){
+        // Get number of states per char from the configuration
+        const std::size_t n_states_per_char =
+            conf.method == Method::Patches
+                ? n_states_per_char_patches
+                : n_states_per_char_std;
+
+        for (const auto& character : characters) {
             os << character << " " << n_states_per_char << " nocov noinit\n";
         }
 

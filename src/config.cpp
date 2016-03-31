@@ -39,6 +39,7 @@ void print_usage() {
     std::cout << " -iam : The dataset is IAM" << std::endl;
     std::cout << " -hmm : Use HMM (with mlpack) in place of DTW" << std::endl;
     std::cout << " -htk : Use HTK in place of mlpack" << std::endl;
+    std::cout << " -hmm-var: Use variable number of HMM states instead of fixed ones" << std::endl;
 }
 
 config parse_args(int argc, char** argv) {
@@ -94,6 +95,8 @@ config parse_args(int argc, char** argv) {
             conf.hmm = true;
         } else if (conf.args[i] == "-htk") {
             conf.htk = true;
+        } else if (conf.args[i] == "-hmm-var") {
+            conf.hmm_var = true;
         } else if (conf.args[i] == "-washington") {
             conf.washington = true;
             conf.parzival   = false;
