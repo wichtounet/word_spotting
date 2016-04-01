@@ -10,12 +10,24 @@
 
 #include "utils.hpp"
 
-etl::dyn_matrix<weight, 3> mat_for_patches(const config& /*conf*/, const cv::Mat& image) {
-    etl::dyn_matrix<weight, 3> training_image(std::size_t(1), std::size_t(image.size().height), std::size_t(image.size().width));
+etl::dyn_matrix<weight, 3> mat_for_patches(const config& conf, const cv::Mat& image) {
+    cv::Mat buffer_image;
 
-    for (std::size_t y = 0; y < static_cast<std::size_t>(image.size().height); ++y) {
-        for (std::size_t x = 0; x < static_cast<std::size_t>(image.size().width); ++x) {
-            auto pixel = image.at<uint8_t>(cv::Point(x, y));
+    if (conf.downscale > 1) {
+        cv::Mat scaled_normalized(
+            cv::Size(std::max(1UL, static_cast<size_t>(image.size().width)), std::max(1UL, image.size().height / conf.downscale)),
+            CV_8U);
+        cv::resize(image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
+        cv::adaptiveThreshold(scaled_normalized, buffer_image, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
+    }
+
+    const cv::Mat& clean_image = conf.downscale > 1 ? buffer_image : image;
+
+    etl::dyn_matrix<weight, 3> training_image(std::size_t(1), std::size_t(clean_image.size().height), std::size_t(clean_image.size().width));
+
+    for (std::size_t y = 0; y < static_cast<std::size_t>(clean_image.size().height); ++y) {
+        for (std::size_t x = 0; x < static_cast<std::size_t>(clean_image.size().width); ++x) {
+            auto pixel = clean_image.at<uint8_t>(cv::Point(x, y));
 
             training_image(0, y, x) = pixel == 0 ? 0.0 : 1.0;
 
