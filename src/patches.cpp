@@ -733,6 +733,19 @@ void patches_train(
                     dll::lcn_layer_desc<3>::layer_t,
                     dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
                 /*, dll::batch_mode*/>::dbn_t;
+#elif defined(THIRD_MODERN)
+        using cdbn_t =
+            dll::dbn_desc<
+                dll::dbn_layers<
+                    dll::conv_rbm_desc<
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
+                    //dll::lcn_layer_desc<5>::layer_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
+                    dll::conv_rbm_desc<
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
+                    dll::lcn_layer_desc<3>::layer_t,
+                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
+                /*, dll::batch_mode*/>::dbn_t;
 #else
         static_assert(false, "No architecture has been selected");
 #endif
@@ -746,7 +759,12 @@ void patches_train(
         // CRBM -> LCN -> MP
         constexpr const std::size_t L1 = 0;
         constexpr const std::size_t L2 = 2;
-        constexpr const std::size_t L3 = 5;
+        constexpr const std::size_t L3 = 1000;
+#elif defined(THIRD_MODERN)
+        // Distort -> Patches - CRBM -> MP
+        constexpr const std::size_t L1 = 2;
+        constexpr const std::size_t L2 = 4;
+        constexpr const std::size_t L3 = 1000;
 #else
         constexpr const std::size_t L1        = 0;
         constexpr const std::size_t L2        = 1;
