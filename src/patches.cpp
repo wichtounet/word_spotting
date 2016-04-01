@@ -22,6 +22,7 @@
 #include "dll/lcn_layer.hpp"
 #include "dll/patches_layer.hpp"
 #include "dll/patches_layer_pad.hpp"
+#include "dll/augment_layer.hpp"
 
 #ifndef OPENCV_23
 #include "dll/ocv_visualizer.hpp"
@@ -734,18 +735,30 @@ void patches_train(
                     dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
                 /*, dll::batch_mode*/>::dbn_t;
 #elif defined(THIRD_MODERN)
-        using cdbn_t =
+        using cdbn_train_t =
             dll::dbn_desc<
                 dll::dbn_layers<
+                    dll::augment_layer_desc<dll::elastic<third::elastic_augment, 17>>::layer_t,
+                    dll::patches_layer_padh_desc<third::patch_width, third::patch_height, 1, third::train_stride, 1, dll::weight_type<weight>>::layer_t,
                     dll::conv_rbm_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
-                    //dll::lcn_layer_desc<5>::layer_t,
                     dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
                     dll::conv_rbm_desc<
                         K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
-                    dll::lcn_layer_desc<3>::layer_t,
                     dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
                 /*, dll::batch_mode*/>::dbn_t;
+        using cdbn_test_t =
+            dll::dbn_desc<
+                dll::dbn_layers<
+                    dll::patches_layer_padh_desc<third::patch_width, third::patch_height, 1, third::train_stride, 1, dll::weight_type<weight>>::layer_t,
+                    dll::conv_rbm_desc<
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
+                    dll::conv_rbm_desc<
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
+                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
+                /*, dll::batch_mode*/>::dbn_t;
+        using cdbn_t = cdbn_test_t;
 #else
         static_assert(false, "No architecture has been selected");
 #endif
@@ -773,47 +786,54 @@ void patches_train(
 
         auto cdbn = std::make_unique<cdbn_t>();
 
+#ifdef THIRD_MODERN
+        auto cdbn_train = std::make_unique<cdbn_train_t>();
+        auto& cdbn_ref = cdbn_train;
+#else
+        auto& cdbn_ref = cdbn;
+#endif
+
         if(conf.iam && !conf.sub){
-            cdbn->batch_mode_run = true;
+            cdbn_ref->batch_mode_run = true;
         }
 
         // Level 1
-        third::rate_0(cdbn->template layer_get<L1>().learning_rate);
-        third::momentum_0(cdbn->template layer_get<L1>().initial_momentum, cdbn->template layer_get<L1>().final_momentum);
-        third::wd_l1_0(cdbn->template layer_get<L1>().l1_weight_cost);
-        third::wd_l2_0(cdbn->template layer_get<L1>().l2_weight_cost);
-        third::pbias_0(cdbn->template layer_get<L1>().pbias);
-        third::pbias_lambda_0(cdbn->template layer_get<L1>().pbias_lambda);
-        third::sparsity_target_0(cdbn->template layer_get<L1>().sparsity_target);
+        third::rate_0(cdbn_ref->template layer_get<L1>().learning_rate);
+        third::momentum_0(cdbn_ref->template layer_get<L1>().initial_momentum, cdbn_ref->template layer_get<L1>().final_momentum);
+        third::wd_l1_0(cdbn_ref->template layer_get<L1>().l1_weight_cost);
+        third::wd_l2_0(cdbn_ref->template layer_get<L1>().l2_weight_cost);
+        third::pbias_0(cdbn_ref->template layer_get<L1>().pbias);
+        third::pbias_lambda_0(cdbn_ref->template layer_get<L1>().pbias_lambda);
+        third::sparsity_target_0(cdbn_ref->template layer_get<L1>().sparsity_target);
 
 #if THIRD_LEVELS >= 2
         //Level 2
-        third::rate_1(cdbn->template layer_get<L2>().learning_rate);
-        third::momentum_1(cdbn->template layer_get<L2>().initial_momentum, cdbn->template layer_get<L2>().final_momentum);
-        third::wd_l1_1(cdbn->template layer_get<L2>().l1_weight_cost);
-        third::wd_l2_1(cdbn->template layer_get<L2>().l2_weight_cost);
-        third::pbias_1(cdbn->template layer_get<L2>().pbias);
-        third::pbias_lambda_1(cdbn->template layer_get<L2>().pbias_lambda);
-        third::sparsity_target_1(cdbn->template layer_get<L1>().sparsity_target);
+        third::rate_1(cdbn_ref->template layer_get<L2>().learning_rate);
+        third::momentum_1(cdbn_ref->template layer_get<L2>().initial_momentum, cdbn_ref->template layer_get<L2>().final_momentum);
+        third::wd_l1_1(cdbn_ref->template layer_get<L2>().l1_weight_cost);
+        third::wd_l2_1(cdbn_ref->template layer_get<L2>().l2_weight_cost);
+        third::pbias_1(cdbn_ref->template layer_get<L2>().pbias);
+        third::pbias_lambda_1(cdbn_ref->template layer_get<L2>().pbias_lambda);
+        third::sparsity_target_1(cdbn_ref->template layer_get<L1>().sparsity_target);
 #endif
 
 #if THIRD_LEVELS >= 3
         //Level 3
-        third::rate_2(cdbn->template layer_get<L3>().learning_rate);
-        third::momentum_2(cdbn->template layer_get<L3>().initial_momentum, cdbn->template layer_get<L3>().final_momentum);
-        third::wd_l1_2(cdbn->template layer_get<L3>().l1_weight_cost);
-        third::wd_l2_2(cdbn->template layer_get<L3>().l2_weight_cost);
-        third::pbias_2(cdbn->template layer_get<L3>().pbias);
-        third::pbias_lambda_2(cdbn->template layer_get<L3>().pbias_lambda);
-        third::sparsity_target_2(cdbn->template layer_get<L1>().sparsity_target);
+        third::rate_2(cdbn_ref->template layer_get<L3>().learning_rate);
+        third::momentum_2(cdbn_ref->template layer_get<L3>().initial_momentum, cdbn_ref->template layer_get<L3>().final_momentum);
+        third::wd_l1_2(cdbn_ref->template layer_get<L3>().l1_weight_cost);
+        third::wd_l2_2(cdbn_ref->template layer_get<L3>().l2_weight_cost);
+        third::pbias_2(cdbn_ref->template layer_get<L3>().pbias);
+        third::pbias_lambda_2(cdbn_ref->template layer_get<L3>().pbias_lambda);
+        third::sparsity_target_2(cdbn_ref->template layer_get<L1>().sparsity_target);
 #endif
 
 #ifdef THIRD_COMPLEX_2
         //cdbn->template layer_get<1>().sigma = 2.0;
-        cdbn->template layer_get<3>().sigma = 2.0;
+        cdbn_ref->template layer_get<3>().sigma = 2.0;
 #endif
 
-        cdbn->display();
+        cdbn_ref->display();
         std::cout << cdbn->output_size() << " output features" << std::endl;
 
         constexpr const auto patch_width  = third::patch_width;
@@ -833,10 +853,36 @@ void patches_train(
 
         const std::string file_name("method_2_third.dat");
 
+#ifdef THIRD_MODERN
+        static constexpr const bool DBN_Patch = true;
+#else
+        static constexpr const bool DBN_Patch = false;
+#endif
+
         //Train the DBN
         if (conf.load || features) {
             cdbn->load(file_name);
         } else {
+#ifdef THIRD_MODERN
+            std::cout << "Training is done with inline distort/patches..." << std::endl;
+
+            std::vector<etl::dyn_matrix<weight, 3>> training_images;
+            training_images.reserve(pretraining_image_names.size());
+
+            std::cout << "Generate images ..." << std::endl;
+
+            for (auto& name : pretraining_image_names) {
+                training_images.push_back(mat_for_patches(conf, dataset.word_images.at(name)));
+            }
+
+            std::cout << "... done" << std::endl;
+
+            cdbn_train->pretrain(training_images, third::epochs);
+
+            // Exchance weights
+            cdbn_train->store(file_name);
+            cdbn->load(file_name);
+#else
             if (conf.iam && !conf.sub) {
                 std::cout << "Training is done with patch iterators..." << std::endl;
 
@@ -874,6 +920,7 @@ void patches_train(
 
                 cdbn->pretrain(training_patches, third::epochs);
             }
+#endif
 
             cdbn->store(file_name);
 
@@ -885,7 +932,7 @@ void patches_train(
 
         if(global_scaling || features || !conf.notrain){
             std::cout << "Evaluate on training set" << std::endl;
-            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
+            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
         }
 
         if (!conf.hmm) {
@@ -895,17 +942,17 @@ void patches_train(
                 std::cout << "\tsc_band: " << params.sc_band << std::endl;
             } else {
                 std::cout << "Optimize parameters" << std::endl;
-                optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+                optimize_parameters<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
             }
         }
 
         if(features || !conf.novalid){
             std::cout << "Evaluate on validation set" << std::endl;
-            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
+            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
         }
 
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
+        evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
 
 #if defined(THIRD_RBM_1) || defined(THIRD_RBM_2) || defined(THIRD_RBM_3)
         //Silence some warnings

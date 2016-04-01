@@ -21,7 +21,7 @@ namespace third {
 //#define THIRD_CRBM_MP_2  //Two layers of CRBM with Max Pooling after each layer (C1/C2)
 //#define THIRD_CRBM_MP_3  //Three layers of CRBM with Max Pooling after each layer (C1/C2/C3)
 
-#define THIRD_COMPLEX_2 //Architecture to play around LCN
+//#define THIRD_COMPLEX_2 //Architecture to play around LCN
 #define THIRD_MODERN    //Architecture to play around
 
 constexpr const std::size_t patch_height = 40; //Should not be changed
