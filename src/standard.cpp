@@ -941,8 +941,6 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names tr
 
     std::cout << "Mean EER: " << mean_eer << std::endl;
     std::cout << "Mean AP: " << mean_ap << std::endl;
-
-    dll::dump_timers();
 }
 
 template <typename Dataset>

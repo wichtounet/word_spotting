@@ -18,6 +18,10 @@
 //Method-Agnostic commands
 #include "evaluate_features.hpp" //evaluate_patches command
 
+#include <atomic>
+#include <mutex>
+#include "dll/util/timers.hpp"
+
 namespace {
 
 using string_vector = std::vector<std::string>;
@@ -128,6 +132,8 @@ int command_train(config& conf) {
             patches_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
             break;
     }
+
+    dll::dump_timers();
 
     return 0;
 }

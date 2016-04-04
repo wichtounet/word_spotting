@@ -923,8 +923,6 @@ void patches_train(
 #endif
 
             cdbn->store(file_name);
-
-            dll::dump_timers();
         }
 
         parameters params;
