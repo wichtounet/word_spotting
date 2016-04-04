@@ -169,7 +169,6 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
     Gx = cv::Scalar(0.0);
     Gy = cv::Scalar(0.0);
 
-    //To avoid compilation errors (will not run)
 #ifndef OPENCV_23
     sGx.copyTo(Gx(cv::Rect(left , 0, width, height)));
     sGy.copyTo(Gy(cv::Rect(left , 0, width, height)));
@@ -336,9 +335,15 @@ std::vector<etl::dyn_vector<weight>> standard_features_vinciarelli_2004(const cv
 
     L = cv::Scalar(1.0);
 
-    //To avoid compilation errors (will not run)
 #ifndef OPENCV_23
     clean_image_float.copyTo(L(cv::Rect(left , 0, width, height)));
+#else
+    //This is not efficient, but we need this because of the ANCIENT retarded grid machines
+    for (std::size_t y = 0; y < height; ++y) {
+        for (std::size_t x = 0; x < width; ++x) {
+            L.at<double>(y, x + left) = clean_image_float.at<double>(y, x);
+        }
+    }
 #endif
 
     // 3. Invert the image (for sums)
@@ -509,10 +514,18 @@ std::vector<etl::dyn_vector<weight>> standard_features_terasawa_2009(const cv::M
     Gx = cv::Scalar(0.0);
     Gy = cv::Scalar(0.0);
 
-    //To avoid compilation errors (will not run)
 #ifndef OPENCV_23
     sGx.copyTo(Gx(cv::Rect(left , 0, width, height)));
     sGy.copyTo(Gy(cv::Rect(left , 0, width, height)));
+#else
+    //This will be frakking slow, but grid machines are RETARDEDLY ANCIENT
+
+    for (std::size_t y = 0; y < height; ++y) {
+        for (std::size_t x = 0; x < width; ++x) {
+            Gx.at<double>(y, x + left) = sGx.at<double>(y, x);
+            Gy.at<double>(y, x + left) = sGy.at<double>(y, x);
+        }
+    }
 #endif
 
     // 4. Compute magnitude and orientations of the gradients
