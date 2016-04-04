@@ -173,6 +173,15 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
 #ifndef OPENCV_23
     sGx.copyTo(Gx(cv::Rect(left , 0, width, height)));
     sGy.copyTo(Gy(cv::Rect(left , 0, width, height)));
+#else
+    //This will be frakking slow, but grid machines are RETARDEDLY ANCIENT
+
+    for (std::size_t y = 0; y < height; ++y) {
+        for (std::size_t x = 0; x < width; ++x) {
+            Gx.at<double>(y, x + left) = sGx.at<double>(y, x);
+            Gy.at<double>(y, x + left) = sGy.at<double>(y, x);
+        }
+    }
 #endif
 
     // 4. Compute magnitude and orientations of the gradients
