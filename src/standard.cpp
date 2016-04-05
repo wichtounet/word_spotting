@@ -617,7 +617,7 @@ std::vector<etl::dyn_vector<weight>> standard_features_terasawa_2009(const cv::M
 
             // Normalize the block
 
-            constexpr const double epsilon = 16.0; //TODO Check that fucking value
+            constexpr const double epsilon = 16.0;
 
             double norm = 0.0;
 
