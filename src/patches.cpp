@@ -117,84 +117,109 @@ using features_t = typename std::conditional_t<
     std::vector<typename DBN::output_t>,
     std::vector<std::vector<typename DBN::output_t>>>;
 
+template <typename Patch>
+void normalize_patch_features(Patch& features){
+    cpp_unused(features);
+
+#ifdef LOCAL_FRAME_NORMALIZATION
+    for (std::size_t i = 0; i < etl::dim<0>(features); ++i) {
+        features(i) /= etl::sum(features(i));
+    }
+#endif
+
+#ifdef LOCAL_L2_NORMALIZATION
+    for (std::size_t i = 0; i < etl::dim<0>(features); ++i) {
+        features(i) /= std::sqrt(etl::sum(features(i) + features(i)) + 16.0 * 16.0);
+    }
+#endif
+
+#ifdef GLOBAL_L2_NORMALIZATION
+    features /= std::sqrt(etl::sum(features + features) + 16.0 * 16.0);
+#endif
+
+#ifdef GLOBAL_FRAME_NORMALIZATION
+    features /= etl::sum(features);
+#endif
+}
+
+template <typename Features>
+void normalize_feature_vector(Features& vec){
+    // 1. Normalize the features of each patch
+    for(auto& features : vec){
+        normalize_patch_features(features);
+    }
+
+    // 2. Globally normalize the features
+
+#ifdef LOCAL_LINEAR_SCALING
+    local_linear_feature_scaling(vec);
+#endif
+
+#ifdef LOCAL_MEAN_SCALING
+    local_mean_feature_scaling(vec);
+#endif
+}
+
+template <typename Features>
+void normalize_features(const config& conf, bool training, Features& features){
+    cpp_unused(features);
+    cpp_unused(conf);
+    cpp_unused(training);
+
+#ifdef GLOBAL_MEAN_SCALING
+    auto scale = global_mean_scaling(features, conf, training);
+#endif
+
+#ifdef GLOBAL_LINEAR_SCALING
+    auto scale = global_linear_scaling(features, conf, training);
+#endif
+
+#ifdef GLOBAL_SCALING
+    for (std::size_t t = 0; t < features.size(); ++t) {
+        for (std::size_t i = 0; i < features[t].size(); ++i) {
+            for (std::size_t f = 0; f < features.back().back().size(); ++f) {
+                features[t][i][f] = scale(features[t][i][f], conf.scale_a[f], conf.scale_b[f]);
+            }
+        }
+    }
+#endif
+}
+
 template <bool DBN_Patch, typename Dataset, typename DBN>
 features_t<DBN_Patch, DBN> prepare_outputs(
-    thread_pool& pool, const Dataset& dataset, const DBN& dbn, config& conf,
+    thread_pool& pool, const Dataset& dataset, const DBN& dbn, const config& conf,
     names test_image_names, bool training) {
-    //Get some sizes
-    const std::size_t patch_height = HEIGHT / conf.downscale;
-    const std::size_t patch_width  = conf.patch_width;
 
     features_t<DBN_Patch, DBN> test_features_a(test_image_names.size());
 
     std::cout << "Prepare the outputs ..." << std::endl;
 
-    cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(),
-                            [&, patch_height, patch_width](auto& test_image, std::size_t i) {
-                                auto& vec = test_features_a[i];
+    auto feature_extractor = [&](auto& test_image, std::size_t i) {
+        auto& vec = test_features_a[i];
 
-                                cpp::static_if<DBN_Patch>([&](auto f) {
-                                    //Get features from DBN
-                                    auto image = mat_for_patches(conf, dataset.word_images.at(test_image));
-                                    f(dbn).activation_probabilities(image, vec);
-                                }).else_([&](auto f) {
-                auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(test_image), training);
+        //Get features from DBN
+        cpp::static_if<DBN_Patch>([&](auto f) {
+            auto image = mat_for_patches(conf, dataset.word_images.at(test_image));
+            f(dbn).activation_probabilities(image, vec);
+        }).else_([&](auto f) {
+            auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(test_image), training);
 
-                for(auto& patch : patches){
-                    f(vec).push_back(f(dbn).prepare_one_output());
-                    auto& features = vec.back();
-                    f(dbn).activation_probabilities(patch, features);
+            vec.reserve(patches.size());
 
-#ifdef LOCAL_FRAME_NORMALIZATION
-                    for(std::size_t i = 0; i < etl::dim<0>(features); ++i){
-                        features(i) /= etl::sum(features(i));
-                    }
-#endif
+            for(auto& patch : patches){
+                f(vec).push_back(f(dbn).prepare_one_output());
+                auto& features = vec.back();
+                f(dbn).activation_probabilities(patch, features);
 
-#ifdef LOCAL_L2_NORMALIZATION
-                    for(std::size_t i = 0; i < etl::dim<0>(features); ++i){
-                        features(i) /= std::sqrt(etl::sum(features(i) + features(i)) + 16.0 * 16.0);
-                    }
-#endif
-
-#ifdef GLOBAL_L2_NORMALIZATION
-                    features /= std::sqrt(etl::sum(features + features) + 16.0 * 16.0);
-#endif
-
-#ifdef GLOBAL_FRAME_NORMALIZATION
-                    features /= etl::sum(features);
-#endif
-                } });
-
-#ifdef LOCAL_LINEAR_SCALING
-                                local_linear_feature_scaling(vec);
-#endif
-
-#ifdef LOCAL_MEAN_SCALING
-                                local_mean_feature_scaling(vec);
-#endif
-                            });
-
-#ifdef GLOBAL_MEAN_SCALING
-    auto scale = global_mean_scaling(test_features_a, conf, training);
-#endif
-
-#ifdef GLOBAL_LINEAR_SCALING
-    auto scale = global_linear_scaling(test_features_a, conf, training);
-#endif
-
-#ifdef GLOBAL_SCALING
-    for (std::size_t t = 0; t < test_features_a.size(); ++t) {
-        for (std::size_t i = 0; i < test_features_a[t].size(); ++i) {
-            for (std::size_t f = 0; f < test_features_a.back().back().size(); ++f) {
-                test_features_a[t][i][f] = scale(test_features_a[t][i][f], conf.scale_a[f], conf.scale_b[f]);
             }
-        }
-    }
-#else
-    cpp_unused(training);
-    cpp_unused(conf);
-#endif
+        });
+
+        normalize_feature_vector(vec);
+    };
+
+    cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), feature_extractor);
+
+    normalize_features(conf, training, test_features_a);
 
     std::cout << "... done" << std::endl;
 
@@ -203,51 +228,37 @@ features_t<DBN_Patch, DBN> prepare_outputs(
 
 template <bool DBN_Patch, typename Dataset, typename DBN>
 features_t<DBN_Patch, DBN> compute_reference(
-    thread_pool& pool, const Dataset& dataset, const DBN& dbn,
-    const config& conf, names training_images) {
+    thread_pool& pool, const Dataset& dataset, const DBN& dbn, const config& conf,
+    names training_images) {
+
     features_t<DBN_Patch, DBN> ref_a(training_images.size());
 
-    cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(),
-                            [&](auto& training_image, std::size_t e) {
-                                cpp::static_if<DBN_Patch>([&](auto f) {
-                                    //Compute the features
-                                    auto image = mat_for_patches(conf, dataset.word_images.at(training_image + ".png"));
-                                    f(dbn).activation_probabilities(image, ref_a[e]);
-                                }).else_([&](auto f) {
-                auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(training_image + ".png"), false);
+    auto feature_extractor = [&](auto& test_image, std::size_t i) {
+        auto& vec = ref_a[i];
 
-                ref_a[e].reserve(patches.size());
+        //Get features from DBN
+        cpp::static_if<DBN_Patch>([&](auto f) {
+            auto image = mat_for_patches(conf, dataset.word_images.at(test_image + ".png"));
+            f(dbn).activation_probabilities(image, vec);
+        }).else_([&](auto f) {
+            auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(test_image + ".png"), false);
 
-                for(std::size_t i = 0; i < patches.size(); ++i){
-                    ref_a[e].push_back(f(dbn).prepare_one_output());
-                    f(dbn).activation_probabilities(patches[i], ref_a[e][i]);
-                    // ref_a[e][i] /= etl::sum(ref_a[e][i]); // Local Frame Normalization
-                } });
+            vec.reserve(patches.size());
 
-#ifdef LOCAL_LINEAR_SCALING
-                                local_linear_feature_scaling(ref_a[e]);
-#endif
+            for(auto& patch : patches){
+                f(vec).push_back(f(dbn).prepare_one_output());
+                auto& features = vec.back();
+                f(dbn).activation_probabilities(patch, features);
 
-#ifdef LOCAL_MEAN_SCALING
-                                local_mean_feature_scaling(ref_a[e]);
-#endif
+            }
+        });
 
-#ifdef GLOBAL_MEAN_SCALING
-                                auto scale = global_mean_scaling(ref_a[e], conf, false);
-#endif
+        normalize_feature_vector(vec);
+    };
 
-#ifdef GLOBAL_LINEAR_SCALING
-                                auto scale = global_linear_scaling(ref_a[e], conf, false);
-#endif
+    cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(), feature_extractor);
 
-#ifdef GLOBAL_SCALING
-                                for (std::size_t i = 0; i < ref_a.size(); ++i) {
-                                    for (std::size_t f = 0; f < ref_a[i].size(); ++f) {
-                                        ref_a[e][i][f] = scale(ref_a[i][f], conf.scale_a[f], conf.scale_b[f]);
-                                    }
-                                }
-#endif
-                            });
+    normalize_features(conf, false, ref_a);
 
     return ref_a;
 }
