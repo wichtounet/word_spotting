@@ -812,7 +812,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
     return features;
 }
 
-void scale(std::vector<std::vector<etl::dyn_vector<weight>>>& test_features, config& conf, bool training) {
+void scale(std::vector<std::vector<etl::dyn_vector<weight>>>& test_features, const config& conf, bool training) {
 #ifdef GLOBAL_MEAN_SCALING
     auto scale = global_mean_scaling(test_features, conf, training);
 #endif
@@ -837,7 +837,7 @@ void scale(std::vector<std::vector<etl::dyn_vector<weight>>>& test_features, con
 }
 
 template <typename Dataset>
-std::vector<std::vector<etl::dyn_vector<weight>>> prepare_outputs(thread_pool& pool, const Dataset& dataset, config& conf, names test_image_names, bool training){
+std::vector<std::vector<etl::dyn_vector<weight>>> prepare_outputs(thread_pool& pool, const Dataset& dataset, const config& conf, names test_image_names, bool training){
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features(test_image_names.size());
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t e){
@@ -855,23 +855,9 @@ std::vector<std::vector<etl::dyn_vector<weight>>> compute_reference(thread_pool&
 
     cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(), [&](auto& training_image, std::size_t e) {
         ref_a[e] = standard_features(conf, dataset.word_images.at(training_image + ".png"));
-
-#ifdef GLOBAL_MEAN_SCALING
-        auto scale = global_mean_scaling(ref_a[e], conf, false);
-#endif
-
-#ifdef GLOBAL_LINEAR_SCALING
-        auto scale = global_linear_scaling(ref_a[e], conf, false);
-#endif
-
-#ifdef GLOBAL_SCALING
-        for (std::size_t i = 0; i < ref_a.size(); ++i) {
-            for (std::size_t f = 0; f < ref_a[i].size(); ++f) {
-                ref_a[e][i][f] = scale(ref_a[i][f], conf.scale_a[f], conf.scale_b[f]);
-            }
-        }
-#endif
     });
+
+    scale(ref_a, conf, false);
 
     return ref_a;
 }
