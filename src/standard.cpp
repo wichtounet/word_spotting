@@ -862,7 +862,7 @@ std::vector<std::vector<etl::dyn_vector<weight>>> compute_reference(thread_pool&
     return ref_a;
 }
 
-parameters get_parameters(config& /*conf*/){
+parameters get_parameters(const config& /*conf*/){
     parameters parameters;
 
     parameters.sc_band = 0.1;
@@ -871,7 +871,7 @@ parameters get_parameters(config& /*conf*/){
 }
 
 template <typename Dataset, typename Set>
-void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names train_word_names, names test_image_names, bool training) {
+void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, names train_word_names, names test_image_names, bool training) {
     thread_pool pool;
 
     auto parameters = get_parameters(conf);
@@ -952,7 +952,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, config& conf, names tr
 }
 
 template <typename Dataset>
-void extract_features(const Dataset& dataset, config& conf, const std::vector<std::string>& test_image_names, bool training) {
+void extract_features(const Dataset& dataset, const config& conf, const std::vector<std::string>& test_image_names, bool training) {
     std::cout << "Extract features ..." << std::endl;
 
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features;

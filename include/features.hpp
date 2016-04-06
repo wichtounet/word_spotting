@@ -9,7 +9,7 @@
 #define WORD_SPOTTER_FEATURES_HPP
 
 template <typename Features>
-void export_features(config& conf, const std::vector<std::string>& images, Features& all_features, const std::string& suffix) {
+void export_features(const config& conf, const std::vector<std::string>& images, Features& all_features, const std::string& suffix) {
     for (std::size_t t = 0; t < images.size(); ++t) {
         auto features_path = conf.data_full_path + images[t] + suffix;
         decltype(auto) features = all_features[t];
@@ -30,7 +30,7 @@ void export_features(config& conf, const std::vector<std::string>& images, Featu
 }
 
 template <typename Features>
-void export_features_flat(config& conf, const std::vector<std::string>& images, Features& all_features, const std::string& suffix) {
+void export_features_flat(const config& conf, const std::vector<std::string>& images, Features& all_features, const std::string& suffix) {
     for (std::size_t t = 0; t < images.size(); ++t) {
         auto features_path = conf.data_full_path + images[t] + suffix;
         decltype(auto) features = all_features[t];
