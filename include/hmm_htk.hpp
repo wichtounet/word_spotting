@@ -21,6 +21,7 @@
 #include "dll/dbn.hpp" //Timers
 
 #include "dataset.hpp" //names
+#include "utils.hpp" //names
 
 //#define SPACE_MODEL
 //#define HMM_VERBOSE
@@ -75,8 +76,7 @@ inline auto exec_command(const std::string& command) {
     return std::make_pair(exit_code, output.str());
 }
 
-template <typename Dataset>
-hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_word_names) {
+inline hmm_p train_global_hmm(const config& conf, const spot_dataset& dataset, names train_word_names) {
     dll::auto_timer timer("htk_global_hmm_train");
 
     // The folders
@@ -382,8 +382,7 @@ hmm_p train_global_hmm(const config& conf, const Dataset& dataset, names train_w
     return base_folder;
 }
 
-template <typename Dataset>
-hmm_p prepare_test_keywords(const Dataset& dataset, names training_images) {
+inline hmm_p prepare_test_keywords(const spot_dataset& dataset, names training_images) {
     dll::auto_timer timer("htk_prepare_test_keywords");
 
     const decltype(auto) label = dataset.word_labels.at(training_images[0]);
@@ -666,8 +665,7 @@ inline void keyword_likelihood_many(const config& conf, const hmm_p& base_folder
     }
 }
 
-template <typename Dataset>
-double hmm_distance(const Dataset& dataset, const std::string& test_image, names training_images, double global_acc, double keyword_acc) {
+inline double hmm_distance(const spot_dataset& dataset, const std::string& test_image, names training_images, double global_acc, double keyword_acc) {
     auto pixel_width = dataset.word_images.at(test_image).size().width;
 
     double ref_width = 0;
