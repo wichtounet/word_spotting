@@ -11,10 +11,16 @@
 
 #include <random>
 #include <set>
+#include <sstream>
+#include <fstream>
 
 #include <sys/stat.h> //mkdir
 
-#include "cpp_utils/io.hpp"
+#include "cpp_utils/io.hpp" //Binary write
+
+#include "dll/dbn.hpp" //Timers
+
+#include "dataset.hpp" //names
 
 //#define SPACE_MODEL
 //#define HMM_VERBOSE
@@ -49,18 +55,8 @@ const std::string bin_hvite      = "HVite";
 const std::string bin_hparse     = "HParse";
 const std::string bin_debug_args = " -A -D -V -T 1 ";
 
-inline std::size_t select_gaussians(const config& conf){
-    if(conf.washington){
-        return n_hmm_gaussians_gw;
-    } else if(conf.parzival){
-        return n_hmm_gaussians_par;
-    } else if(conf.iam){
-        return n_hmm_gaussians_iam;
-    } else {
-        std::cout << "ERROR: Dataset is not handled in select_gaussians" << std::endl;
-        return 0;
-    }
-}
+std::size_t select_gaussians(const config& conf);
+void write_log(const std::string& result, const std::string& file);
 
 inline auto exec_command(const std::string& command) {
     std::stringstream output;
@@ -77,16 +73,6 @@ inline auto exec_command(const std::string& command) {
     auto exit_code = WEXITSTATUS(status);
 
     return std::make_pair(exit_code, output.str());
-}
-
-inline void write_log(const std::string& result, const std::string& file){
-#ifdef WRITE_LOG
-    std::ofstream os(file);
-    os << result;
-#else
-    cpp_unused(result);
-    cpp_unused(file);
-#endif
 }
 
 template <typename Dataset>
