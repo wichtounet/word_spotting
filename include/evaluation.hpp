@@ -61,9 +61,7 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
 
             std::cout << "Prepare features" << std::endl;
 
-            auto train_features_a = functor(train_word_names);
-
-            hmm_htk::prepare_train_features(train_word_names, train_features_a);
+            hmm_htk::prepare_train_features(train_word_names, functor);
             hmm_htk::prepare_test_features(test_image_names, test_features_a);
 
             global_hmm = hmm_htk::train_global_hmm(conf, dataset, train_word_names);

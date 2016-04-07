@@ -502,14 +502,34 @@ void prepare_features(const std::string& folder_name, names test_image_names, co
 
 template <typename V1>
 void prepare_test_features(names test_image_names, const V1& test_features_a) {
-    dll::auto_timer timer("htk_train_features");
+    dll::auto_timer timer("htk_test_features");
     prepare_features("test", test_image_names, test_features_a, false);
 }
 
-template <typename V1>
-void prepare_train_features(names test_image_names, const V1& test_features_a) {
-    dll::auto_timer timer("htk_test_features");
-    prepare_features("train", test_image_names, test_features_a, false);
+template <typename Functor>
+void prepare_train_features(names train_image_names, Functor functor) {
+    dll::auto_timer timer("htk_train_features");
+
+    static constexpr const std::size_t limit = 1000;
+
+    std::vector<std::string> current_batch;
+    current_batch.reserve(limit);
+
+        std::cout << train_image_names.size() << std::endl;
+
+    for(std::size_t i = 0; i < train_image_names.size();){
+        current_batch.clear();
+
+        auto end = std::min(i + limit, train_image_names.size());
+        std::copy(train_image_names.begin() + i, train_image_names.begin() + end, std::back_inserter(current_batch));
+
+        std::cout << i << ":" << end << std::endl;
+
+        auto train_features_a = functor(current_batch);
+        prepare_features("train", current_batch, train_features_a, false);
+
+        i += (end - i);
+    }
 }
 
 inline void global_likelihood_many(const config& conf, const hmm_p& base_folder, names test_image_names, std::vector<double>& global_likelihoods, std::size_t t, std::size_t start, std::size_t end) {
