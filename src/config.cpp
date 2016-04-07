@@ -40,6 +40,7 @@ void print_usage() {
     std::cout << " -hmm : Use HMM (with mlpack) in place of DTW" << std::endl;
     std::cout << " -htk : Use HTK in place of mlpack" << std::endl;
     std::cout << " -hmm-var: Use variable number of HMM states instead of fixed ones" << std::endl;
+    std::cout << " -distribute: Use the full grid (only for -hmm -htk)" << std::endl;
 }
 
 config parse_args(int argc, char** argv) {
@@ -51,8 +52,7 @@ config parse_args(int argc, char** argv) {
 
     std::size_t i = 0;
     for (; i < conf.args.size(); ++i) {
-        if (conf.args[i] == "-0") {
-            conf.method = Method::Marti2001;
+        if (conf.args[i] == "-0") { conf.method = Method::Marti2001;
         } else if (conf.args[i] == "-1") {
             conf.method = Method::Holistic;
         } else if (conf.args[i] == "-2") {
@@ -97,6 +97,8 @@ config parse_args(int argc, char** argv) {
             conf.htk = true;
         } else if (conf.args[i] == "-hmm-var") {
             conf.hmm_var = true;
+        } else if (conf.args[i] == "-distribute") {
+            conf.distribute = true;
         } else if (conf.args[i] == "-washington") {
             conf.washington = true;
             conf.parzival   = false;
