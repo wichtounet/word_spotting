@@ -523,8 +523,6 @@ void prepare_train_features(names train_image_names, Functor functor) {
         auto end = std::min(i + limit, train_image_names.size());
         std::copy(train_image_names.begin() + i, train_image_names.begin() + end, std::back_inserter(current_batch));
 
-        std::cout << i << ":" << end << std::endl;
-
         auto train_features_a = functor(current_batch);
         prepare_features("train", current_batch, train_features_a, false);
 
