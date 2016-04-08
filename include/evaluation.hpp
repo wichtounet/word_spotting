@@ -7,10 +7,15 @@
 
 #pragma once
 
+#include <iostream>
+#include <atomic>
+#include <mutex>
+#include <algorithm>
+
 #include "dll/util/timers.hpp"
 
-#include "hmm_mlpack.hpp"
 #include "hmm_htk.hpp"
+#include "hmm_mlpack.hpp"
 
 using thread_pool = cpp::default_thread_pool<>;
 
@@ -25,17 +30,7 @@ struct parameters {
  * \param train_names The used train names
  * \return A vector of all the relevant training images
  */
-inline std::vector<std::string> select_training_images(const spot_dataset& dataset, names keyword, names train_names) {
-    std::vector<std::string> training_images;
-
-    for (auto& labels : dataset.word_labels) {
-        if (keyword == labels.second && std::find(train_names.begin(), train_names.end(), labels.first) != train_names.end()) {
-            training_images.push_back(labels.first);
-        }
-    }
-
-    return training_images;
-}
+std::vector<std::string> select_training_images(const spot_dataset& dataset, names keyword, names train_names);
 
 template <typename Ref, typename Features, typename RefFunctor>
 std::vector<std::pair<std::string, weight>> compute_distances(const config& conf,
