@@ -8,8 +8,11 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 struct grid_info {
     std::string password;
     std::vector<std::string> machines;
 };
+
+grid_info load_grid_info();
