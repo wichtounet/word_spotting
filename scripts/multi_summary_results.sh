@@ -68,3 +68,8 @@ echo "G-RP:  $grp"
 
 echo "L-MAP: $lmap"
 echo "L-RP:  $lrp"
+
+rm global_rel_file
+rm global_top_file
+rm local_rel_file
+rm local_top_file
