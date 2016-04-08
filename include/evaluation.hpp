@@ -16,7 +16,6 @@
 
 #include "hmm_htk.hpp"
 #include "hmm_mlpack.hpp"
-#include "grid.hpp"
 
 using thread_pool = cpp::default_thread_pool<>;
 
@@ -42,7 +41,6 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
     if(conf.hmm && conf.htk){
         static hmm_htk::hmm_p global_hmm;
         static std::vector<double> global_likelihoods;
-        static grid_info grid;
 
         //Either frakking compiler or me is too stupid, so we need this workaround
         auto& global_l = global_likelihoods;
@@ -51,10 +49,6 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
             std::cout << "Prepare global HMM" << std::endl;
 
             std::cout << "Prepare features" << std::endl;
-
-            if(conf.distribute){
-                grid = load_grid_info();
-            }
 
             hmm_htk::prepare_train_features(train_word_names, functor);
             hmm_htk::prepare_test_features(test_image_names, test_features_a);

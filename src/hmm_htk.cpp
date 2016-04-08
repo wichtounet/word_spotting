@@ -11,6 +11,7 @@
 
 #include "config.hpp"
 #include "hmm_htk.hpp"
+#include "grid.hpp"
 
 //#define SPACE_MODEL
 //#define HMM_VERBOSE
@@ -438,6 +439,12 @@ void hmm_htk::global_likelihood_all(const config& conf, thread_pool& pool, const
     std::cout << "Prepare global likelihoods" << std::endl;
 
     global_likelihoods.resize(test_images);
+
+    grid_info grid;
+
+    if(conf.distribute){
+        grid = load_grid_info();
+    }
 
     cpp::parallel_foreach_n(pool, 0, threads, [&](auto t) {
         auto start = t * n;
