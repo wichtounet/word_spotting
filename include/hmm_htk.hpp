@@ -97,8 +97,6 @@ void prepare_train_features(names train_image_names, Functor functor) {
     std::vector<std::string> current_batch;
     current_batch.reserve(limit);
 
-        std::cout << train_image_names.size() << std::endl;
-
     for(std::size_t i = 0; i < train_image_names.size();){
         current_batch.clear();
 
