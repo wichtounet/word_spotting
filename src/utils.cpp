@@ -10,6 +10,23 @@
 
 #include "utils.hpp"
 
+std::pair<int, std::string> exec_command(const std::string& command) {
+    std::stringstream output;
+
+    char buffer[1024];
+
+    FILE* stream = popen(command.c_str(), "r");
+
+    while (fgets(buffer, 1024, stream) != NULL) {
+        output << buffer;
+    }
+
+    auto status = pclose(stream);
+    auto exit_code = WEXITSTATUS(status);
+
+    return std::make_pair(exit_code, output.str());
+}
+
 etl::dyn_matrix<weight, 3> mat_for_patches(const config& conf, const cv::Mat& image) {
     cv::Mat buffer_image;
 

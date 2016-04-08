@@ -18,6 +18,8 @@
 
 cv::Mat elastic_distort(const cv::Mat& clean_image);
 
+std::pair<int, std::string> exec_command(const std::string& command);
+
 template <typename T>
 std::ostream& operator<<(std::ostream& stream, const std::vector<T>& vec) {
     std::string comma = "";
