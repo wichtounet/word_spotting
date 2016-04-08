@@ -100,8 +100,8 @@ gmm_p train_global_hmm(names train_word_names, RefFunctor functor) {
     return gmm;
 }
 
-template <typename Dataset, typename Ref>
-hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
+template <typename Ref>
+hmm_p train_ref_hmm(const spot_dataset& dataset, Ref& ref_a, names training_images) {
     dll::auto_timer timer("hmm_train");
 
     auto characters = dataset.word_labels.at(training_images[0]).size();
@@ -235,8 +235,8 @@ hmm_p train_ref_hmm(const Dataset& dataset, Ref& ref_a, names training_images) {
     return hmm;
 }
 
-template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, const std::string& test_image, const V1& test_features, names training_images) {
+template <typename V1>
+double hmm_distance(const spot_dataset& dataset, const gmm_p& gmm, const hmm_p& hmm, const std::string& test_image, const V1& test_features, names training_images) {
     auto pixel_width = dataset.word_images.at(test_image).size().width;
 
     double ref_width = 0;
@@ -334,16 +334,16 @@ gmm_p train_global_hmm(names /*train_word_names*/, RefFunctor /*functor*/) {
     return -1;
 }
 
-template <typename Dataset, typename Ref>
-hmm_p train_ref_hmm(const Dataset& /*dataset*/, Ref& /*ref_a*/, names /*training_images*/) {
+template <typename Ref>
+hmm_p train_ref_hmm(const spot_dataset& /*dataset*/, Ref& /*ref_a*/, names /*training_images*/) {
     //Disabled HMM
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;
 
     return -1;
 }
 
-template <typename Dataset, typename V1>
-double hmm_distance(const Dataset& /*dataset*/, const gmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, const std::string& /*test_image*/, const V1& /*test_features*/, names /*training_images*/) {
+template <typename V1>
+double hmm_distance(const spot_dataset& /*dataset*/, const gmm_p& /*global_hmm*/, const hmm_p& /*hmm*/, const std::string& /*test_image*/, const V1& /*test_features*/, names /*training_images*/) {
     //Disabled HMM
 
     std::cerr << "HMM has been disabled, -hmm should not be used" << std::endl;

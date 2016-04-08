@@ -836,8 +836,7 @@ void scale(std::vector<std::vector<etl::dyn_vector<weight>>>& test_features, con
 #endif
 }
 
-template <typename Dataset>
-std::vector<std::vector<etl::dyn_vector<weight>>> prepare_outputs(thread_pool& pool, const Dataset& dataset, const config& conf, names test_image_names, bool training){
+std::vector<std::vector<etl::dyn_vector<weight>>> prepare_outputs(thread_pool& pool, const spot_dataset& dataset, const config& conf, names test_image_names, bool training){
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features(test_image_names.size());
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t e){
@@ -849,8 +848,7 @@ std::vector<std::vector<etl::dyn_vector<weight>>> prepare_outputs(thread_pool& p
     return test_features;
 }
 
-template <typename Dataset>
-std::vector<std::vector<etl::dyn_vector<weight>>> compute_reference(thread_pool& pool, const Dataset& dataset, const config& conf, names training_images) {
+std::vector<std::vector<etl::dyn_vector<weight>>> compute_reference(thread_pool& pool, const spot_dataset& dataset, const config& conf, names training_images) {
     std::vector<std::vector<etl::dyn_vector<weight>>> ref_a(training_images.size());
 
     cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(), [&](auto& training_image, std::size_t e) {
@@ -870,8 +868,8 @@ parameters get_parameters(const config& /*conf*/){
     return parameters;
 }
 
-template <typename Dataset, typename Set>
-void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, names train_word_names, names test_image_names, bool training) {
+template <typename Set>
+void evaluate_dtw(const spot_dataset& dataset, const Set& set, const config& conf, names train_word_names, names test_image_names, bool training) {
     thread_pool pool;
 
     auto parameters = get_parameters(conf);
@@ -951,8 +949,7 @@ void evaluate_dtw(const Dataset& dataset, const Set& set, const config& conf, na
     std::cout << "Mean AP: " << mean_ap << std::endl;
 }
 
-template <typename Dataset>
-void extract_features(const Dataset& dataset, const config& conf, const std::vector<std::string>& test_image_names, bool training) {
+void extract_features(const spot_dataset& dataset, const config& conf, const std::vector<std::string>& test_image_names, bool training) {
     std::cout << "Extract features ..." << std::endl;
 
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features;

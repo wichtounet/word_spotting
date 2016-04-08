@@ -185,9 +185,9 @@ void normalize_features(const config& conf, bool training, Features& features){
 #endif
 }
 
-template <bool DBN_Patch, typename Dataset, typename DBN>
+template <bool DBN_Patch, typename DBN>
 features_t<DBN_Patch, DBN> prepare_outputs(
-    thread_pool& pool, const Dataset& dataset, const DBN& dbn, const config& conf,
+    thread_pool& pool, const spot_dataset& dataset, const DBN& dbn, const config& conf,
     names test_image_names, bool training) {
 
     features_t<DBN_Patch, DBN> test_features_a(test_image_names.size());
@@ -226,9 +226,9 @@ features_t<DBN_Patch, DBN> prepare_outputs(
     return test_features_a;
 }
 
-template <bool DBN_Patch, typename Dataset, typename DBN>
+template <bool DBN_Patch, typename DBN>
 features_t<DBN_Patch, DBN> compute_reference(
-    thread_pool& pool, const Dataset& dataset, const DBN& dbn, const config& conf,
+    thread_pool& pool, const spot_dataset& dataset, const DBN& dbn, const config& conf,
     names training_images) {
 
     features_t<DBN_Patch, DBN> ref_a(training_images.size());
@@ -263,8 +263,8 @@ features_t<DBN_Patch, DBN> compute_reference(
     return ref_a;
 }
 
-template <bool DBN_Patch, typename TF, typename KV, typename Dataset, typename DBN>
-double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywords, const Dataset& dataset, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters) {
+template <bool DBN_Patch, typename TF, typename KV, typename DBN>
+double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywords, const spot_dataset& dataset, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters) {
     // 2. Evaluate the performances
 
     std::vector<double> ap(keywords.size());
@@ -296,8 +296,8 @@ double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywor
     return mean_ap;
 }
 
-template <bool DBN_Patch, typename Dataset, typename Set, typename DBN>
-void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters& param) {
+template <bool DBN_Patch, typename Set, typename DBN>
+void optimize_parameters(const spot_dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters& param) {
     std::vector<double> sc_band_values;
 
     for (double sc = 0.01; sc < 0.03; sc += 0.001) {
@@ -350,8 +350,8 @@ void optimize_parameters(const Dataset& dataset, const Set& set, config& conf, c
     param = best_param;
 }
 
-template <bool DBN_Patch, typename Dataset, typename Set, typename DBN>
-void evaluate_patches(const Dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters, bool features) {
+template <bool DBN_Patch, typename Set, typename DBN>
+void evaluate_patches(const spot_dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters, bool features) {
     thread_pool pool;
 
     if (features) {

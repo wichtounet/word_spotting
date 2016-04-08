@@ -25,8 +25,7 @@ struct parameters {
  * \param train_names The used train names
  * \return A vector of all the relevant training images
  */
-template <typename Dataset>
-std::vector<std::string> select_training_images(const Dataset& dataset, names keyword, names train_names) {
+inline std::vector<std::string> select_training_images(const spot_dataset& dataset, names keyword, names train_names) {
     std::vector<std::string> training_images;
 
     for (auto& labels : dataset.word_labels) {
@@ -38,9 +37,9 @@ std::vector<std::string> select_training_images(const Dataset& dataset, names ke
     return training_images;
 }
 
-template <typename Dataset, typename Ref, typename Features, typename RefFunctor>
+template <typename Ref, typename Features, typename RefFunctor>
 std::vector<std::pair<std::string, weight>> compute_distances(const config& conf,
-    thread_pool& pool, const Dataset& dataset, Features& test_features_a, Ref& ref_a,
+    thread_pool& pool, const spot_dataset& dataset, Features& test_features_a, Ref& ref_a,
     names training_images, names test_image_names, names train_word_names, parameters parameters, RefFunctor functor) {
     std::vector<std::pair<std::string, weight>> diffs_a(test_image_names.size());
 

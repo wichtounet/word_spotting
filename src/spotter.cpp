@@ -26,8 +26,8 @@ namespace {
 
 using string_vector = std::vector<std::string>;
 
-template <typename Dataset, typename Set>
-void extract_names(Dataset& dataset, Set& set, string_vector& train_image_names, string_vector& train_word_names, string_vector& test_image_names, string_vector& valid_image_names) {
+template <typename Set>
+void extract_names(spot_dataset& dataset, Set& set, string_vector& train_image_names, string_vector& train_word_names, string_vector& test_image_names, string_vector& valid_image_names) {
     std::cout << set.train_set.size() << " training line images in set" << std::endl;
     std::cout << set.validation_set.size() << " validation line images in set" << std::endl;
     std::cout << set.test_set.size() << " test line images in set" << std::endl;
