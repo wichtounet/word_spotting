@@ -428,6 +428,25 @@ hmm_htk::hmm_p hmm_htk::prepare_test_keywords(const spot_dataset& dataset, names
     return folder;
 }
 
+void hmm_htk::global_likelihoods_all(const config& conf, thread_pool& pool, const hmm_p& base_folder, names test_image_names, std::vector<double>& global_likelihoods){
+    dll::auto_timer timer("htk_global_likelihoods");
+
+    const auto test_images = test_image_names.size();
+    const auto threads     = std::thread::hardware_concurrency();
+    const auto n           = test_images / threads;
+
+    std::cout << "Prepare global likelihoods" << std::endl;
+
+    global_likelihoods.resize(test_images);
+
+    cpp::parallel_foreach_n(pool, 0, threads, [&](auto t) {
+        auto start = t * n;
+        auto end   = (t == threads - 1) ? test_images : (t + 1) * n;
+
+        global_likelihood_many(conf, base_folder, test_image_names, global_likelihoods, t, start, end);
+    });
+}
+
 void hmm_htk::global_likelihood_many(const config& conf, const hmm_p& base_folder, names test_image_names, std::vector<double>& global_likelihoods, std::size_t t, std::size_t start, std::size_t end) {
     const auto n_hmm_gaussians = select_gaussians(conf);
 

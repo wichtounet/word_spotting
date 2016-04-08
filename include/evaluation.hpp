@@ -66,16 +66,7 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
 
             global_hmm = hmm_htk::train_global_hmm(conf, dataset, train_word_names);
 
-            std::cout << "Prepare global likelihoods" << std::endl;
-
-            global_likelihoods.resize(test_image_names.size());
-
-            cpp::parallel_foreach_n(pool, 0, threads, [&](auto t){
-                auto start = t * n;
-                auto end = (t == threads - 1) ? test_images : (t + 1) * n;
-
-                hmm_htk::global_likelihood_many(conf, global, test_image_names, global_l, t, start, end);
-            });
+            hmm_htk::global_likelihoods_all(conf, pool, global_hmm, test_image_names, global_likelihoods);
 
             std::cout << ".... global done" << std::endl;
         }

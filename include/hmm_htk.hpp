@@ -27,13 +27,17 @@ namespace hmm_htk {
 
 using hmm_p = std::string;
 
+using thread_pool = cpp::default_thread_pool<>;
+
 std::size_t select_gaussians(const config& conf);
 void write_log(const std::string& result, const std::string& file);
 
 hmm_p train_global_hmm(const config& conf, const spot_dataset& dataset, names train_word_names);
 hmm_p prepare_test_keywords(const spot_dataset& dataset, names training_images);
 
+void global_likelihoods_all(const config& conf, thread_pool& pool, const hmm_p& base_folder, names test_image_names, std::vector<double>& global_likelihoods);
 void global_likelihood_many(const config& conf, const hmm_p& base_folder, names test_image_names, std::vector<double>& global_likelihoods, std::size_t t, std::size_t start, std::size_t end);
+
 void keyword_likelihood_many(const config& conf, const hmm_p& base_folder, const hmm_p& folder, names test_image_names, std::vector<double>& keyword_likelihoods, std::size_t t, std::size_t start);
 double hmm_distance(const spot_dataset& dataset, const std::string& test_image, names training_images, double global_acc, double keyword_acc);
 
