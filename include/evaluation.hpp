@@ -45,12 +45,7 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
         static grid_info grid;
 
         //Either frakking compiler or me is too stupid, so we need this workaround
-        auto& global = global_hmm;
         auto& global_l = global_likelihoods;
-
-        auto threads = std::thread::hardware_concurrency();
-        auto test_images = test_image_names.size();
-        auto n = test_images / threads;
 
         if(global_hmm.empty()){
             std::cout << "Prepare global HMM" << std::endl;
@@ -66,7 +61,7 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
 
             global_hmm = hmm_htk::train_global_hmm(conf, dataset, train_word_names);
 
-            hmm_htk::global_likelihoods_all(conf, pool, global_hmm, test_image_names, global_likelihoods);
+            hmm_htk::global_likelihood_all(conf, pool, global_hmm, test_image_names, global_likelihoods);
 
             std::cout << ".... global done" << std::endl;
         }
@@ -75,11 +70,9 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
 
         // Compute the keywords likelihoods
 
-        std::vector<double> keyword_likelihoods(test_image_names.size());
+        std::vector<double> keyword_likelihoods;
 
-        cpp::parallel_foreach_n(pool, 0, threads, [&](auto t){
-            hmm_htk::keyword_likelihood_many(conf, global, hmm, test_image_names, keyword_likelihoods, t, t * n);
-        });
+        hmm_htk::keyword_likelihood_all(conf, pool, global_hmm, hmm, test_image_names, keyword_likelihoods);
 
         // Compute the final distances
 
