@@ -167,6 +167,21 @@ hmm_htk::hmm_p hmm_htk::train_global_hmm(const config& conf, const spot_dataset&
         }
     }
 
+    thread_pool pool; //TODO Use the global thread pool
+    auto train_size = train_word_names.size();
+    std::size_t n = train_size / pool.size();
+
+    for(std::size_t t = 0 ; t < pool.size(); ++t){
+        std::ofstream os(features_file + "." + std::to_string(t));
+
+        auto start = t * n;
+        auto end   = t == pool.size() - 1 ? train_size : (t + 1) * n;
+
+        for(std::size_t i = start; i < end; ++i){
+            os << base_folder + "/train/" + train_word_names[i] << ".htk\n";
+        }
+    }
+
     // Generate the means/variances/covariances/init_mmf files
 
     {
@@ -338,19 +353,47 @@ hmm_htk::hmm_p hmm_htk::train_global_hmm(const config& conf, const spot_dataset&
         }
 
         for(std::size_t i = 0; i < n_hmm_iterations; ++i){
-            const std::string herest_log_file      = folder + "/herest_" + std::to_string(g) + "_" + std::to_string(i) + ".log";
+            cpp::parallel_foreach_n(pool, 0, pool.size(), [&](auto t) {
+                const std::string herest_log_file = folder + "/herest_" + std::to_string(g) + "_" + std::to_string(i) + +"_p" + std::to_string(t + 1) + ".log";
+
+                std::string herest_command =
+                    bin_herest +
+                    bin_debug_args +
+                    " -C " + htk_config_file +
+                    " -v " + std::to_string(herest_min_variance) +
+                    " -p " + std::to_string(t+1) +
+                    " -M " + folder +
+                    " -I " + mlf_file +
+                    " -H " + mmf_file +
+                    " -s " + stats_file +
+                    " -S " + features_file + "." + std::to_string(t) +
+                    " " + letters_file;
+
+                auto herest_result = exec_command(herest_command);
+
+                write_log(herest_result.second, herest_log_file);
+
+                if(herest_result.first){
+                    std::cout << "HERest failed with result code: " << herest_result.first << std::endl;
+                    std::cout << "Command: " << herest_command << std::endl;
+                    std::cout << herest_result.second << std::endl;
+                }
+            });
+
+            const std::string herest_log_file = folder + "/herest_" + std::to_string(g) + "_" + std::to_string(i) + ".log";
 
             std::string herest_command =
                 bin_herest +
                 bin_debug_args +
                 " -C " + htk_config_file +
                 " -v " + std::to_string(herest_min_variance) +
+                " -p 0 " +
                 " -M " + folder +
                 " -I " + mlf_file +
                 " -H " + mmf_file +
                 " -s " + stats_file +
-                " -S " + features_file +
-                " " + letters_file;
+                " " + letters_file +
+                " " + folder + "/HER*.acc";
 
             auto herest_result = exec_command(herest_command);
 
@@ -631,8 +674,6 @@ void hmm_htk::keyword_likelihood_all(const config& conf, thread_pool& pool, cons
     const auto n           = test_images / threads;
 
     keyword_likelihoods.resize(test_images);
-
-    return;
 
     cpp::parallel_foreach_n(pool, 0, threads, [&](auto t){
         keyword_likelihood_many(conf, base_folder, folder, test_image_names, keyword_likelihoods, t, t * n);
