@@ -10,7 +10,13 @@
 
 #include "utils.hpp"
 
+//#define DEBUG_COMMAND
+
 std::pair<int, std::string> exec_command(const std::string& command) {
+#ifdef DEBUG_COMMAND
+    std::cout << "Command " << command << std::endl;
+#endif
+
     std::stringstream output;
 
     char buffer[1024];
@@ -25,6 +31,17 @@ std::pair<int, std::string> exec_command(const std::string& command) {
     auto exit_code = WEXITSTATUS(status);
 
     return std::make_pair(exit_code, output.str());
+}
+
+std::pair<int, std::string> exec_command_safe(const std::string& command) {
+    auto result = exec_command(command);
+
+    if(result.first){
+        std::cout << "Command failed: " << command << std::endl;
+        std::cout << result.second << std::endl;
+    }
+
+    return result;
 }
 
 etl::dyn_matrix<weight, 3> mat_for_patches(const config& conf, const cv::Mat& image) {

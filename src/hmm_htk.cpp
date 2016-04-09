@@ -18,9 +18,9 @@
 //#define WRITE_LOG
 
 // Number of gaussians for the HMM
-constexpr const std::size_t n_hmm_gaussians_gw  = 7;
-constexpr const std::size_t n_hmm_gaussians_iam = 12;
+constexpr const std::size_t n_hmm_gaussians_gw  = 3;
 constexpr const std::size_t n_hmm_gaussians_par = 15;
+constexpr const std::size_t n_hmm_gaussians_iam = 12;
 
 // Number of training iterations for the HMM
 constexpr const std::size_t n_hmm_iterations = 4;
@@ -408,7 +408,7 @@ hmm_htk::hmm_p hmm_htk::prepare_test_keywords(const spot_dataset& dataset, names
 #endif
     }
 
-    // Generate the global wordnet (used for testing)
+    // Generate the keyword wordnet (used for testing)
 
     {
         std::string hparse_command =
@@ -429,29 +429,145 @@ hmm_htk::hmm_p hmm_htk::prepare_test_keywords(const spot_dataset& dataset, names
     return folder;
 }
 
+void parse_hvite_results(const std::string& result, std::size_t start, std::vector<double>& likelihoods, names image_names){
+    std::istringstream f(result);
+    std::string line;
+    std::size_t i = start;
+    while (std::getline(f, line)) {
+        if (line.find("File: ") == 0) {
+            if (!line.find(image_names[i])) {
+                std::cout << "I hate HTK" << std::endl;
+            }
+
+            // Go to the next line
+            std::getline(f, line);
+
+            if (line.find(" == ") != std::string::npos) {
+                auto begin = line.find("[Ac=");
+                auto end = line.find(" ", begin + 1);
+                std::string log_likelihood_str(line.begin() + begin + 4, line.begin() + end);
+                likelihoods[i] = -std::atof(log_likelihood_str.c_str());
+            } else {
+#ifdef HMM_VERBOSE
+                std::cout << "global accuracy was not found for image " << test_image_names[i] << std::endl;
+#endif
+                likelihoods[i] = 1e8;
+            }
+
+            ++i;
+        }
+    }
+}
+
 void hmm_htk::global_likelihood_all(const config& conf, thread_pool& pool, const hmm_p& base_folder, names test_image_names, std::vector<double>& global_likelihoods){
     dll::auto_timer timer("htk_global_likelihoods");
 
-    const auto test_images = test_image_names.size();
-    const auto threads     = std::thread::hardware_concurrency();
-    const auto n           = test_images / threads;
-
     std::cout << "Prepare global likelihoods" << std::endl;
+
+    const auto test_images = test_image_names.size();
 
     global_likelihoods.resize(test_images);
 
-    grid_info grid;
-
     if(conf.distribute){
-        grid = load_grid_info();
+        auto grid = load_grid_info();
+
+        const auto n_hmm_gaussians = select_gaussians(conf);
+
+        auto threads = 8;
+        auto m       = grid.machines.size();
+        auto n       = test_images / (threads * m);
+
+        std::string remote_base_folder = "/home/wicht/dev/word_spotting/";
+
+        std::uniform_int_distribution<unsigned int> dist;
+        std::random_device rd;
+        std::default_random_engine engine(rd());
+        auto dist_folder = ".hmm_dist/" + std::to_string(dist(engine)) + "/";
+        auto abs_dist_folder = remote_base_folder + dist_folder;
+
+        std::string ssh = "sshpass -p " + grid.password + " ssh ";
+        std::string scp = "sshpass -p " + grid.password + " scp ";
+
+        thread_pool machine_pool(m);
+
+        cpp::parallel_foreach_n(machine_pool, 0, m, [&](auto i) {
+            decltype(auto) machine = grid.machines[i];
+
+            // Local files
+            const std::string hmm_info_file       = base_folder + "/global/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
+            const std::string htk_config_file     = base_folder + "/global/htk_config";
+            const std::string letters_file        = base_folder + "/global/letters";
+            const std::string global_wordnet_file = base_folder + "/global/grammar.wnet";
+            const std::string spelling_file       = base_folder + "/global/spelling";
+            const std::string test_features       = base_folder + "/test/";
+
+            // Remote Files for scp
+            const std::string remote_hmm_info_file       = abs_dist_folder + "/global/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
+            const std::string remote_htk_config_file     = abs_dist_folder + "/global/htk_config";
+            const std::string remote_letters_file        = abs_dist_folder + "/global/letters";
+            const std::string remote_global_wordnet_file = abs_dist_folder + "/global/grammar.wnet";
+            const std::string remote_spelling_file       = abs_dist_folder + "/global/spelling";
+            const std::string remote_test_features       = abs_dist_folder + "/test/";
+
+            exec_command_safe(ssh + machine + " mkdir -p " + abs_dist_folder + "/global/");
+            exec_command_safe(scp + hmm_info_file + " " + machine + ":" + remote_hmm_info_file);
+            exec_command_safe(scp + htk_config_file + " " + machine + ":" + remote_htk_config_file);
+            exec_command_safe(scp + letters_file + " " + machine + ":" + remote_letters_file);
+            exec_command_safe(scp + global_wordnet_file + " " + machine + ":" + remote_global_wordnet_file);
+            exec_command_safe(scp + spelling_file + " " + machine + ":" + remote_spelling_file);
+            exec_command_safe(scp + " -r " + test_features + " " + machine + ":" + remote_test_features);
+
+            thread_pool t_pool(threads);
+
+            cpp::parallel_foreach_n(pool, 0, threads, [&](auto t) {
+                const std::string lst_file        = base_folder + "/global/" + std::to_string(i) + "_" + std::to_string(t) + ".lst";
+                const std::string remote_lst_file = abs_dist_folder + "/global/thread_" + std::to_string(t) + ".lst";
+
+                auto index = i * t + t;
+                auto start = index * n;
+                auto end   = index == m * threads - 1 ? test_images : (index + 1) * n;
+
+                {
+                    std::ofstream os(lst_file);
+                    for (std::size_t i = start; i < end; ++i) {
+                        os << abs_dist_folder << "/test/" << test_image_names[i] << ".htk\n";
+                    }
+                }
+
+                exec_command_safe(scp + lst_file + " " + machine + ":" + remote_lst_file);
+
+                //Run HVite
+
+                std::string hvite_command =
+                    bin_hvite +
+                    bin_debug_args +
+                    " -C " + remote_htk_config_file +
+                    " -w " + remote_global_wordnet_file +
+                    " -H " + remote_hmm_info_file +
+                    " -S " + remote_lst_file +
+                    " " + remote_spelling_file +
+                    " " + remote_letters_file;
+
+                auto hvite_result = exec_command_safe(ssh + machine + " " + hvite_command);
+
+                if(!hvite_result.first){
+                    decltype(auto) result = hvite_result.second;
+
+                    parse_hvite_results(result, start, global_likelihoods, test_image_names);
+                }
+            });
+        });
+    } else {
+        const auto threads = std::thread::hardware_concurrency();
+        const auto n       = test_images / threads;
+
+        cpp::parallel_foreach_n(pool, 0, threads, [&](auto t) {
+            auto start = t * n;
+            auto end   = (t == threads - 1) ? test_images : (t + 1) * n;
+
+            global_likelihood_many(conf, base_folder, test_image_names, global_likelihoods, t, start, end);
+        });
     }
-
-    cpp::parallel_foreach_n(pool, 0, threads, [&](auto t) {
-        auto start = t * n;
-        auto end   = (t == threads - 1) ? test_images : (t + 1) * n;
-
-        global_likelihood_many(conf, base_folder, test_image_names, global_likelihoods, t, start, end);
-    });
 }
 
 void hmm_htk::global_likelihood_many(const config& conf, const hmm_p& base_folder, names test_image_names, std::vector<double>& global_likelihoods, std::size_t t, std::size_t start, std::size_t end) {
@@ -503,33 +619,7 @@ void hmm_htk::global_likelihood_many(const config& conf, const hmm_p& base_folde
 
         decltype(auto) result = hvite_result.second;
 
-        std::istringstream f(result);
-        std::string line;
-        std::size_t i = start;
-        while (std::getline(f, line)) {
-            if(line.find("File: ") == 0){
-                if(!line.find(test_image_names[i])){
-                    std::cout << "I hate HTK" << std::endl;
-                }
-
-                // Go to the next line
-                std::getline(f, line);
-
-                if (line.find(" == ") != std::string::npos) {
-                    auto begin = line.find("[Ac=");
-                    auto end = line.find(" ", begin + 1);
-                    std::string log_likelihood_str(line.begin() + begin + 4, line.begin() + end);
-                    global_likelihoods[i] = -std::atof(log_likelihood_str.c_str());
-                } else {
-#ifdef HMM_VERBOSE
-                    std::cout << "global accuracy was not found for image " << test_image_names[i] << std::endl;
-#endif
-                    global_likelihoods[i] = 1e8;
-                }
-
-                ++i;
-            }
-        }
+        parse_hvite_results(result, start, global_likelihoods, test_image_names);
     }
 }
 
@@ -541,6 +631,8 @@ void hmm_htk::keyword_likelihood_all(const config& conf, thread_pool& pool, cons
     const auto n           = test_images / threads;
 
     keyword_likelihoods.resize(test_images);
+
+    return;
 
     cpp::parallel_foreach_n(pool, 0, threads, [&](auto t){
         keyword_likelihood_many(conf, base_folder, folder, test_image_names, keyword_likelihoods, t, t * n);
