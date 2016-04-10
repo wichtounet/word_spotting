@@ -512,7 +512,7 @@ void hmm_htk::global_likelihood_all(const config& conf, thread_pool& pool, const
     global_likelihoods.resize(test_images);
 
     if(conf.distribute){
-        auto grid = load_grid_info();
+        decltype(auto) grid = load_grid_info();
 
         const auto n_hmm_gaussians = select_gaussians(conf);
 
@@ -527,6 +527,8 @@ void hmm_htk::global_likelihood_all(const config& conf, thread_pool& pool, const
         std::default_random_engine engine(rd());
         auto dist_folder = ".hmm_dist/" + std::to_string(dist(engine)) + "/";
         auto abs_dist_folder = remote_base_folder + dist_folder;
+
+        grid.dist_folder = dist_folder;
 
         std::string ssh = "sshpass -p " + grid.password + " ssh ";
         std::string scp = "sshpass -p " + grid.password + " scp ";
@@ -670,14 +672,83 @@ void hmm_htk::keyword_likelihood_all(const config& conf, thread_pool& pool, cons
     dll::auto_timer timer("htk_local_likelihoods");
 
     const auto test_images = test_image_names.size();
-    const auto threads     = std::thread::hardware_concurrency();
-    const auto n           = test_images / threads;
 
     keyword_likelihoods.resize(test_images);
 
-    cpp::parallel_foreach_n(pool, 0, threads, [&](auto t){
-        keyword_likelihood_many(conf, base_folder, folder, test_image_names, keyword_likelihoods, t, t * n);
-    });
+    if(conf.distribute){
+        decltype(auto) grid = load_grid_info();
+
+        const auto n_hmm_gaussians = select_gaussians(conf);
+
+        auto threads = 8;
+        auto m       = grid.machines.size();
+        auto n       = test_images / (threads * m);
+
+        std::string remote_base_folder = "/home/wicht/dev/word_spotting/";
+
+        auto dist_folder = grid.dist_folder;
+        auto abs_dist_folder = remote_base_folder + dist_folder;
+
+        std::string ssh = "sshpass -p " + grid.password + " ssh ";
+        std::string scp = "sshpass -p " + grid.password + " scp ";
+
+        thread_pool machine_pool(m);
+
+        cpp::parallel_foreach_n(machine_pool, 0, m, [&](auto i) {
+            decltype(auto) machine = grid.machines[i];
+
+            // Remote Files for scp
+            const std::string remote_hmm_info_file       = abs_dist_folder + "/global/trained_" + std::to_string(n_hmm_gaussians) + ".mmf";
+            const std::string remote_htk_config_file     = abs_dist_folder + "/global/htk_config";
+            const std::string remote_letters_file        = abs_dist_folder + "/global/letters";
+            const std::string remote_global_wordnet_file = abs_dist_folder + "/global/grammar.wnet";
+            const std::string remote_spelling_file       = abs_dist_folder + "/global/spelling";
+            const std::string remote_test_features       = abs_dist_folder + "/test/";
+
+            // Keyword files
+            const std::string keyword_wordnet_file = folder + "/grammar.wnet";
+            const std::string remote_keyword_wordnet_file = abs_dist_folder + "/keyword.wnet";
+
+            exec_command_safe(scp + keyword_wordnet_file + " " + machine + ":" + remote_keyword_wordnet_file);
+
+            thread_pool t_pool(threads);
+
+            cpp::parallel_foreach_n(pool, 0, threads, [&](auto t) {
+                const std::string lst_file        = base_folder + "/global/" + std::to_string(i) + "_" + std::to_string(t) + ".lst";
+                const std::string remote_lst_file = abs_dist_folder + "/global/thread_" + std::to_string(t) + ".lst";
+
+                auto index = i * t + t;
+                auto start = index * n;
+
+                //Run HVite
+
+                std::string hvite_command =
+                    bin_hvite +
+                    bin_debug_args +
+                    " -C " + remote_htk_config_file +
+                    " -w " + remote_keyword_wordnet_file +
+                    " -H " + remote_hmm_info_file +
+                    " -S " + remote_lst_file +
+                    " " + remote_spelling_file +
+                    " " + remote_letters_file;
+
+                auto hvite_result = exec_command_safe(ssh + machine + " " + hvite_command);
+
+                if(!hvite_result.first){
+                    decltype(auto) result = hvite_result.second;
+
+                    parse_hvite_results(result, start, keyword_likelihoods, test_image_names);
+                }
+            });
+        });
+    } else {
+        const auto threads     = std::thread::hardware_concurrency();
+        const auto n           = test_images / threads;
+
+        cpp::parallel_foreach_n(pool, 0, threads, [&](auto t) {
+            keyword_likelihood_many(conf, base_folder, folder, test_image_names, keyword_likelihoods, t, t * n);
+        });
+    }
 }
 
 void hmm_htk::keyword_likelihood_many(const config& conf, const hmm_p& base_folder, const hmm_p& folder, names test_image_names, std::vector<double>& keyword_likelihoods, std::size_t t, std::size_t start) {
