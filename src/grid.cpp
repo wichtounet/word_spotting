@@ -10,26 +10,28 @@
 
 #include "grid.hpp"
 
-grid_info load_grid_info(){
-    grid_info info;
+grid_info& load_grid_info(){
+    static grid_info info;
 
-    {
-        std::ifstream is(".grid_passwd");
-        is >> info.password;
-    }
-
-    std::cout << "Grid Password loaded" << std::endl;
-
-    {
-        std::ifstream is(".grid_machines");
-
-        std::string line;
-        while(std::getline(is, line)){
-            info.machines.push_back(line);
+    if (info.password.empty()) {
+        {
+            std::ifstream is(".grid_passwd");
+            is >> info.password;
         }
-    }
 
-    std::cout << info.machines.size() << " grid machines loaded" << std::endl;
+        std::cout << "Grid Password loaded" << std::endl;
+
+        {
+            std::ifstream is(".grid_machines");
+
+            std::string line;
+            while (std::getline(is, line)) {
+                info.machines.push_back(line);
+            }
+        }
+
+        std::cout << info.machines.size() << " grid machines loaded" << std::endl;
+    }
 
     return info;
 }

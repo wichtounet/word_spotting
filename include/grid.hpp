@@ -13,6 +13,7 @@
 struct grid_info {
     std::string password;
     std::vector<std::string> machines;
+    std::string dist_folder;
 };
 
-grid_info load_grid_info();
+grid_info& load_grid_info();
