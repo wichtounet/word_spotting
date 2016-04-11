@@ -38,6 +38,11 @@
 #include "features.hpp"   //Features exporting
 #include "evaluation.hpp" //evaluation utilities
 
+#define LOCAL_FRAME_NORMALIZATION
+//#define LOCAL_L2_NORMALIZATION
+//#define GLOBAL_FRAME_NORMALIZATION
+#define GLOBAL_L2_NORMALIZATION
+
 //#define LOCAL_LINEAR_SCALING
 #define LOCAL_MEAN_SCALING
 #include "scaling.hpp" //Scaling functions
@@ -133,12 +138,12 @@ void normalize_patch_features(Patch& features){
     }
 #endif
 
-#ifdef GLOBAL_L2_NORMALIZATION
-    features /= std::sqrt(etl::sum(features + features) + 16.0 * 16.0);
-#endif
-
 #ifdef GLOBAL_FRAME_NORMALIZATION
     features /= etl::sum(features);
+#endif
+
+#ifdef GLOBAL_L2_NORMALIZATION
+    features /= std::sqrt(etl::sum(features + features) + 16.0 * 16.0);
 #endif
 }
 
