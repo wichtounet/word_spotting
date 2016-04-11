@@ -564,7 +564,7 @@ void hmm_htk::global_likelihood_all(const config& conf, thread_pool& pool, const
 
             thread_pool t_pool(threads);
 
-            cpp::parallel_foreach_n(pool, 0, threads, [&](auto t) {
+            cpp::parallel_foreach_n(t_pool, 0, threads, [&](auto t) {
                 const std::string lst_file        = base_folder + "/global/" + std::to_string(i) + "_" + std::to_string(t) + ".lst";
                 const std::string remote_lst_file = abs_dist_folder + "/global/thread_" + std::to_string(t) + ".lst";
 
@@ -713,7 +713,7 @@ void hmm_htk::keyword_likelihood_all(const config& conf, thread_pool& pool, cons
 
             thread_pool t_pool(threads);
 
-            cpp::parallel_foreach_n(pool, 0, threads, [&](auto t) {
+            cpp::parallel_foreach_n(t_pool, 0, threads, [&](auto t) {
                 const std::string lst_file        = base_folder + "/global/" + std::to_string(i) + "_" + std::to_string(t) + ".lst";
                 const std::string remote_lst_file = abs_dist_folder + "/global/thread_" + std::to_string(t) + ".lst";
 
