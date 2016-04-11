@@ -166,12 +166,12 @@ void normalize_features(const config& conf, bool training, Features& features){
     cpp_unused(conf);
     cpp_unused(training);
 
-#ifdef GLOBAL_MEAN_SCALING
-    auto scale = global_mean_scaling(features, conf, training);
-#endif
-
 #ifdef GLOBAL_LINEAR_SCALING
     auto scale = global_linear_scaling(features, conf, training);
+#endif
+
+#ifdef GLOBAL_MEAN_SCALING
+    auto scale = global_mean_scaling(features, conf, training);
 #endif
 
 #ifdef GLOBAL_SCALING
