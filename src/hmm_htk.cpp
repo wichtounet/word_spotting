@@ -19,7 +19,7 @@
 
 // Number of gaussians for the HMM
 constexpr const std::size_t n_hmm_gaussians_gw  = 3;
-constexpr const std::size_t n_hmm_gaussians_par = 9;
+constexpr const std::size_t n_hmm_gaussians_par = 5;
 constexpr const std::size_t n_hmm_gaussians_iam = 7;
 
 // Number of training iterations for the HMM
