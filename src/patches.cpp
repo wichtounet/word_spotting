@@ -762,7 +762,7 @@ void patches_train(
                     dll::conv_rbm_desc<
                         K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
                     dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
-                /*, dll::batch_mode*/>::dbn_t;
+                , dll::batch_mode>::dbn_t;
         using cdbn_test_t =
             dll::dbn_desc<
                 dll::dbn_layers<
