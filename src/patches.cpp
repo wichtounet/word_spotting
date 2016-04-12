@@ -754,7 +754,7 @@ void patches_train(
         using cdbn_train_t =
             dll::dbn_desc<
                 dll::dbn_layers<
-                    dll::augment_layer_desc<dll::elastic<third::elastic_augment, 17>>::layer_t,
+                    //dll::augment_layer_desc<dll::elastic<third::elastic_augment, 17>>::layer_t,
                     dll::patches_layer_padh_desc<third::patch_width, third::patch_height, 1, third::train_stride, 1, dll::weight_type<weight>>::layer_t,
                     dll::conv_rbm_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
@@ -791,8 +791,8 @@ void patches_train(
         constexpr const std::size_t L3 = 1000;
 #elif defined(THIRD_MODERN)
         // Distort -> Patches - CRBM -> MP
-        constexpr const std::size_t L1 = 2;
-        constexpr const std::size_t L2 = 4;
+        constexpr const std::size_t L1 = 1;
+        constexpr const std::size_t L2 = 3;
         constexpr const std::size_t L3 = 1000;
 #else
         constexpr const std::size_t L1        = 0;
