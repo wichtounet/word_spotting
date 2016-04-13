@@ -4,6 +4,8 @@
 
 folder=$1
 
+echo "TREC evaluation of $1"
+
 if [ -d "$folder" ]; then
     gmap=`/home/wichtounet/dev/trec_eval/trec_eval -q $folder/global_rel_file $folder/global_top_file | /usr/bin/zgrep "map\s*all" | cut -f3`
     grp=`/home/wichtounet/dev/trec_eval/trec_eval -q $folder/global_rel_file $folder/global_top_file | /usr/bin/zgrep "\(R-prec\)\s*all" | cut -f3`
@@ -16,5 +18,7 @@ if [ -d "$folder" ]; then
     echo "L-RP:  $lrp"
 else
     echo "The directory \"$folder\" does not exist"
+    if [ -d "results/$folder" ]; then
+        $0 results/$folder
+    fi
 fi
-
