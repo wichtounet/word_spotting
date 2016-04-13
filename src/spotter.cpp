@@ -227,6 +227,7 @@ int main(int argc, char** argv) {
         conf.downscale = 4;
     }
 
+    std::cout << std::string(11, '#') << " Keyword spotting " << std::string(11, '#') << std::endl;
     std::cout << "  Method: " << method_to_string(conf.method) << std::endl;
 
     if(conf.hmm && conf.htk){
@@ -237,18 +238,29 @@ int main(int argc, char** argv) {
         std::cout << "    Eval: DTW" << std::endl;
     }
 
+    bool ok = true;
+    int ret = 0;
+
     if (conf.command == "evaluate") {
         conf.load = true;
-        return command_train(conf);
+        ret = command_train(conf);
     } else if (conf.command == "train") {
-        return command_train(conf);
+        ret = command_train(conf);
     } else if (conf.command == "features") {
-        return command_features(conf);
+        ret = command_features(conf);
     } else if (conf.command == "evaluate_features") {
-        return command_evaluate_features(conf);
+        ret = command_evaluate_features(conf);
+    } else {
+        ok = false;
     }
 
-    print_usage();
+    std::cout << std::string(40, '#') << std::endl;
 
-    return -1;
+    if(!ok){
+        print_usage();
+
+        return -1;
+    }
+
+    return ret;
 }
