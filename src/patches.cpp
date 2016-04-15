@@ -627,7 +627,7 @@ void patches_train(
         }
 
         if (!conf.hmm) {
-            if (features || conf.load || conf.fix) {
+            if (conf.fix) {
                 std::cout << "Switch to optimal parameters" << std::endl;
                 params.sc_band = 0.06;
                 std::cout << "\tsc_band: " << params.sc_band << std::endl;
@@ -670,7 +670,7 @@ void patches_train(
                     dll::conv_rbm_mp_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
                     dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t>>::dbn_t;
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t>, dll::batch_mode>::dbn_t;
 #elif defined(THIRD_CRBM_PMP_3)
         using cdbn_t =
             dll::dbn_desc<
@@ -699,7 +699,7 @@ void patches_train(
                     dll::conv_rbm_desc<
                         K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
                     dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
-                /*, dll::batch_mode*/>::dbn_t;
+                , dll::batch_mode>::dbn_t;
 #elif defined(THIRD_CRBM_MP_3)
         using cdbn_t =
             dll::dbn_desc<
@@ -756,24 +756,21 @@ void patches_train(
                 dll::dbn_layers<
                     //dll::augment_layer_desc<dll::elastic<third::elastic_augment, 17>>::layer_t,
                     dll::patches_layer_padh_desc<third::patch_width, third::patch_height, 1, third::train_stride, 1, dll::weight_type<weight>>::layer_t,
-                    dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
-                    dll::conv_rbm_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
+                    dll::conv_rbm_mp_desc<
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
+                    dll::conv_rbm_mp_desc<
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t>
                 , dll::batch_mode>::dbn_t;
         using cdbn_test_t =
             dll::dbn_desc<
                 dll::dbn_layers<
+                    //dll::augment_layer_desc<dll::elastic<third::elastic_augment, 17>>::layer_t,
                     dll::patches_layer_padh_desc<third::patch_width, third::patch_height, 1, third::train_stride, 1, dll::weight_type<weight>>::layer_t,
-                    dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
-                    dll::conv_rbm_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
-                /*, dll::batch_mode*/>::dbn_t;
+                    dll::conv_rbm_mp_desc<
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
+                    dll::conv_rbm_mp_desc<
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t>
+                , dll::batch_mode>::dbn_t;
         using cdbn_t = cdbn_test_t;
 #else
         static_assert(false, "No architecture has been selected");
@@ -792,7 +789,7 @@ void patches_train(
 #elif defined(THIRD_MODERN)
         // Distort -> Patches - CRBM -> MP
         constexpr const std::size_t L1 = 1;
-        constexpr const std::size_t L2 = 3;
+        constexpr const std::size_t L2 = 2;
         constexpr const std::size_t L3 = 1000;
 #else
         constexpr const std::size_t L1        = 0;
@@ -950,13 +947,13 @@ void patches_train(
         }
 
         if (!conf.hmm) {
-            if (features || conf.load || conf.fix) {
+            if (conf.fix) {
                 std::cout << "Switch to optimal parameters" << std::endl;
                 params.sc_band = 0.05;
                 std::cout << "\tsc_band: " << params.sc_band << std::endl;
             } else {
                 std::cout << "Optimize parameters" << std::endl;
-                optimize_parameters<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+                optimize_parameters<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, params);
             }
         }
 
@@ -1174,7 +1171,7 @@ void patches_train(
         }
 
         if (!conf.hmm) {
-            if (features || conf.load || conf.fix) {
+            if (conf.fix) {
                 std::cout << "Switch to optimal parameters" << std::endl;
                 params.sc_band = 0.05;
                 std::cout << "\tsc_band: " << params.sc_band << std::endl;
