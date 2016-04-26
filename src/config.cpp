@@ -52,7 +52,8 @@ config parse_args(int argc, char** argv) {
 
     std::size_t i = 0;
     for (; i < conf.args.size(); ++i) {
-        if (conf.args[i] == "-0") { conf.method = Method::Marti2001;
+        if (conf.args[i] == "-0") {
+            conf.method = Method::Marti2001;
         } else if (conf.args[i] == "-1") {
             conf.method = Method::Holistic;
         } else if (conf.args[i] == "-2") {
