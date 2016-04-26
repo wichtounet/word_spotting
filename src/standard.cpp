@@ -649,12 +649,32 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
 
     if(conf.method == Method::Rath2003){
         return standard_features_rath_2003(clean_image);
-    } else if(conf.method == Method::Rodriguez2008){
-        return standard_features_rodriguez_2008(clean_image);
     } else if(conf.method == Method::Vinciarelli2004){
         return standard_features_vinciarelli_2004(clean_image);
-    } else if(conf.method == Method::Terasawa2009){
-        return standard_features_terasawa_2009(clean_image);
+    } else if (conf.method == Method::Rodriguez2008 || conf.method == Method::Terasawa2009) {
+        if (conf.manmatha) {
+            const auto height = static_cast<std::size_t>(clean_image.size().height);
+            const auto width  = static_cast<std::size_t>(clean_image.size().width);
+
+            if (height % 2) {
+                cv::Mat normalized(cv::Size(width, height + 1), CV_8U);
+                normalized = cv::Scalar(255);
+
+                clean_image.copyTo(normalized(cv::Rect(0, 0, width, height)));
+
+                if (conf.method == Method::Rodriguez2008) {
+                    return standard_features_rodriguez_2008(normalized);
+                } else if (conf.method == Method::Terasawa2009) {
+                    return standard_features_terasawa_2009(normalized);
+                }
+            }
+        }
+
+        if (conf.method == Method::Rodriguez2008) {
+            return standard_features_rodriguez_2008(clean_image);
+        } else if (conf.method == Method::Terasawa2009) {
+            return standard_features_terasawa_2009(clean_image);
+        }
     }
 
     std::vector<etl::dyn_vector<weight>> features;
