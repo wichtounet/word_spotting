@@ -960,7 +960,17 @@ void extract_features(const spot_dataset& dataset, const config& conf, const std
 
     scale(test_features, conf, training);
 
-    export_features(conf, test_image_names, test_features, ".0");
+    std::string suffix = ".0";
+
+    if(conf.method == Method::Marti2001){
+        suffix = ".1";
+    } else if(conf.method == Method::Rodriguez2008){
+        suffix = ".8";
+    } else if(conf.method == Method::Terasawa2009){
+        suffix = ".9";
+    }
+
+    export_features(conf, test_image_names, test_features, suffix);
 
     std::cout << "... done" << std::endl;
 }
