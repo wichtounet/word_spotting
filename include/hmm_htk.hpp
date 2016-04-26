@@ -44,6 +44,23 @@ void keyword_likelihood_many(const config& conf, const hmm_p& base_folder, const
 double hmm_distance(const spot_dataset& dataset, const std::string& test_image, names training_images, double global_acc, double keyword_acc);
 
 template <typename V1>
+void htk_features_write(std::ostream& os, const V1& test_features){
+    const auto n_features = test_features[0].size();
+
+    cpp::binary_write(os, static_cast<int32_t>(test_features.size()));       //Number of observations
+    cpp::binary_write(os, static_cast<int32_t>(1));                          //Dummy HTK_SAMPLE_RATE
+    cpp::binary_write(os, static_cast<int16_t>(n_features * sizeof(float))); //Observation size
+    cpp::binary_write(os, static_cast<int16_t>(9));                          //Used defined sample kind = 9
+
+    //Write all the values
+    for (decltype(auto) feature_vector : test_features) {
+        for (auto feature : feature_vector) {
+            cpp::binary_write(os, static_cast<float>(feature));
+        }
+    }
+}
+
+template <typename V1>
 void prepare_features(const std::string& folder_name, names test_image_names, const V1& test_features_a, bool lst_file) {
     const std::string base_folder = ".hmm";
     const std::string folder = base_folder + "/" + folder_name;
@@ -54,8 +71,6 @@ void prepare_features(const std::string& folder_name, names test_image_names, co
     for(std::size_t t = 0; t < test_image_names.size(); ++t){
         auto& test_image = test_image_names[t];
         auto& test_features = test_features_a[t];
-
-        const auto n_features = test_features[0].size();
 
         // Local files
         const std::string features_file = folder + "/" + test_image + ".lst";
@@ -73,17 +88,7 @@ void prepare_features(const std::string& folder_name, names test_image_names, co
         {
             std::ofstream os(file_path, std::ofstream::binary);
 
-            cpp::binary_write(os, static_cast<int32_t>(test_features.size()));       //Number of observations
-            cpp::binary_write(os, static_cast<int32_t>(1));                          //Dummy HTK_SAMPLE_RATE
-            cpp::binary_write(os, static_cast<int16_t>(n_features * sizeof(float))); //Observation size
-            cpp::binary_write(os, static_cast<int16_t>(9));                          //Used defined sample kind = 9
-
-            //Write all the values
-            for (decltype(auto) feature_vector : test_features) {
-                for (auto feature : feature_vector) {
-                    cpp::binary_write(os, static_cast<float>(feature));
-                }
-            }
+            htk_features_write(os, test_features);
         }
     }
 }

@@ -8,23 +8,36 @@
 #ifndef WORD_SPOTTER_FEATURES_HPP
 #define WORD_SPOTTER_FEATURES_HPP
 
+#include "hmm_htk.hpp"
+
 template <typename Features>
 void export_features(const config& conf, const std::vector<std::string>& images, Features& all_features, const std::string& suffix) {
     for (std::size_t t = 0; t < images.size(); ++t) {
-        auto features_path = conf.data_full_path + images[t] + suffix;
         decltype(auto) features = all_features[t];
 
-        std::ofstream os(features_path);
+        {
+            auto features_path = conf.data_full_path + images[t] + suffix;
 
-        for (auto& f : features) {
-            std::string comma;
+            std::ofstream os(features_path);
 
-            for (auto& v : f) {
-                os << comma << v;
-                comma = ";";
+            for (auto& f : features) {
+                std::string comma;
+
+                for (auto& v : f) {
+                    os << comma << v;
+                    comma = ";";
+                }
+
+                os << '\n';
             }
+        }
 
-            os << '\n';
+        // Export HTK features file if asked
+        if(conf.htk){
+            auto htk_features_path = conf.data_full_path + images[t] + suffix + ".htk";
+
+            std::ofstream os(htk_features_path, std::ofstream::binary);
+            hmm_htk::htk_features_write(os, features);
         }
     }
 }
