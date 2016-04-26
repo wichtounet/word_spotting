@@ -643,6 +643,10 @@ std::vector<etl::dyn_vector<weight>> standard_features_terasawa_2009(const cv::M
 }
 
 std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& clean_image) {
+    if(conf.manmatha){
+        cv::bitwise_not(clean_image, clean_image);
+    }
+
     if(conf.method == Method::Rath2003){
         return standard_features_rath_2003(clean_image);
     } else if(conf.method == Method::Rodriguez2008){
