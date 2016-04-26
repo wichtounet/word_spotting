@@ -231,6 +231,16 @@ spot_dataset read_washington(const std::string& path) {
     return dataset;
 }
 
+spot_dataset read_manmatha(const std::string& path) {
+    spot_dataset dataset;
+
+    read_word_images(dataset, path);
+
+    load_sets_washington(dataset, path);
+
+    return dataset;
+}
+
 spot_dataset read_parzival(const std::string& path) {
     spot_dataset dataset;
 

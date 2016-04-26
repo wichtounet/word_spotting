@@ -36,6 +36,7 @@ void print_usage() {
     std::cout << " -novalid : No evaluation on the validation set" << std::endl;
     std::cout << " -washington : The dataset is Washington [default]" << std::endl;
     std::cout << " -parzival : The dataset is Parzival" << std::endl;
+    std::cout << " -manmatha : The dataset is manmatha version of GW (for export only)" << std::endl;
     std::cout << " -iam : The dataset is IAM" << std::endl;
     std::cout << " -hmm : Use HMM (with mlpack) in place of DTW" << std::endl;
     std::cout << " -htk : Use HTK in place of mlpack" << std::endl;
@@ -100,6 +101,11 @@ config parse_args(int argc, char** argv) {
             conf.hmm_var = true;
         } else if (conf.args[i] == "-distribute") {
             conf.distribute = true;
+        } else if (conf.args[i] == "-manmatha") {
+            conf.manmatha   = true;
+            conf.washington = false;
+            conf.parzival   = false;
+            conf.iam        = false;
         } else if (conf.args[i] == "-washington") {
             conf.washington = true;
             conf.parzival   = false;

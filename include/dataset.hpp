@@ -34,6 +34,7 @@ struct spot_dataset {
 };
 
 spot_dataset read_washington(const std::string& path);
+spot_dataset read_manmatha(const std::string& path);
 spot_dataset read_parzival(const std::string& path);
 spot_dataset read_iam(const std::string& path);
 

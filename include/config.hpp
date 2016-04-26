@@ -57,6 +57,7 @@ struct config {
     bool distribute = false;
 
     bool washington = true;
+    bool manmatha   = true;
     bool parzival   = false;
     bool iam        = false;
 

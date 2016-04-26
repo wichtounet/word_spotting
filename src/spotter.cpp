@@ -75,6 +75,8 @@ spot_dataset read_dataset(config& conf) {
         dataset = read_parzival(dataset_path);
     } else if(conf.iam){
         dataset = read_iam(dataset_path);
+    } else if(conf.manmatha){
+        dataset = read_manmatha(dataset_path);
     } else {
         std::cerr << "Invalid configuration of the dataset" << std::endl;
     }
@@ -82,7 +84,7 @@ spot_dataset read_dataset(config& conf) {
     std::cout << dataset.line_images.size() << " line images loaded from the dataset" << std::endl;
     std::cout << dataset.word_images.size() << " word images loaded from the dataset" << std::endl;
 
-    if (conf.washington) {
+    if (conf.washington || conf.manmatha) {
         conf.cv_full_path = dataset_path + "/sets/" + cv_set + "/";
     } else if (conf.parzival) {
         conf.cv_full_path = dataset_path + "/sets1/";
