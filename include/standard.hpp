@@ -19,4 +19,6 @@ void standard_features(const spot_dataset& dataset, const spot_dataset_set& set,
                        names train_word_names,
                        names train_image_names, names valid_image_names, names test_image_names);
 
+void standard_runtime(const spot_dataset& dataset, config& conf, names image_names);
+
 #endif

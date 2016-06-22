@@ -974,8 +974,24 @@ void evaluate_dtw(const spot_dataset& dataset, const Set& set, const config& con
     std::cout << "Mean AP: " << mean_ap << std::endl;
 }
 
-void extract_features(const spot_dataset& dataset, const config& conf, const std::vector<std::string>& test_image_names, bool training) {
-    std::cout << "Extract features ..." << std::endl;
+void load_features(const spot_dataset& dataset, const config& conf, const std::vector<std::string>& test_image_names, bool training) {
+    std::cout << "Load features ..." << std::endl;
+
+    std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
+
+    for (auto& test_image : test_image_names) {
+        test_features.push_back(standard_features(conf, dataset.word_images.at(test_image)));
+    }
+
+    scale(test_features, conf, training);
+
+    std::cout << "... done" << std::endl;
+}
+
+void extract_features(const spot_dataset& dataset, const config& conf, const std::vector<std::string>& test_image_names, bool training, bool silent = false) {
+    if(!silent){
+        std::cout << "Extract features ..." << std::endl;
+    }
 
     std::vector<std::vector<etl::dyn_vector<weight>>> test_features;
 
@@ -997,7 +1013,9 @@ void extract_features(const spot_dataset& dataset, const config& conf, const std
 
     export_features(conf, test_image_names, test_features, suffix);
 
-    std::cout << "... done" << std::endl;
+    if(!silent){
+        std::cout << "... done" << std::endl;
+    }
 }
 
 } //end of anonymous namespace
@@ -1032,4 +1050,8 @@ void standard_features(
 
     std::cout << "Extract features on test set" << std::endl;
     extract_features(dataset, conf, test_image_names, false);
+}
+
+void standard_runtime(const spot_dataset& dataset, config& conf, names image_names) {
+    extract_features(dataset, conf, image_names, true, true);
 }

@@ -181,6 +181,56 @@ int command_features(config& conf) {
     return 0;
 }
 
+std::size_t bench_runtime_std(config& conf, Method method, const spot_dataset& dataset, names image_names){
+    auto start = chrono::steady_clock::now();
+
+    conf.method = method;
+    standard_runtime(dataset, conf, image_names);
+
+    auto end = chrono::steady_clock::now();
+    auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+
+    std::cout << "   Total: " << (double(duration) / 1000 / 1000) << "ms" << std::endl;
+    std::cout << "   Image: " << (double(duration) / image_names.size() / 1000) << "us" << std::endl;
+
+    return duration;
+}
+
+int command_runtime(config& conf) {
+    if (conf.files.size() < 2) {
+        std::cout << "runtime needs the path to the dataset and the cv set to use" << std::endl;
+        return -1;
+    }
+
+    auto dataset = read_dataset(conf);
+
+    decltype(auto) cv_set = conf.files[1];
+
+    if (!dataset.sets.count(cv_set)) {
+        std::cout << "The subset \"" << cv_set << "\" does not exist" << std::endl;
+        return -1;
+    }
+
+    auto& set = dataset.sets[cv_set];
+
+    string_vector train_image_names, train_word_names, test_image_names, valid_image_names;
+
+    extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
+
+    std::cout << std::endl << "Benchmark the running time of feature extraction" << std::endl;
+
+    std::cout << std::endl << "Marti2001" << std::endl;
+    bench_runtime_std(conf, Method::Marti2001, dataset, train_image_names);
+
+    std::cout << std::endl << "Rodriguez2008" << std::endl;
+    bench_runtime_std(conf, Method::Rodriguez2008, dataset, train_image_names);
+
+    std::cout << std::endl << "Terasawa2009" << std::endl;
+    bench_runtime_std(conf, Method::Terasawa2009, dataset, train_image_names);
+
+    return 0;
+}
+
 int command_evaluate_features(config& conf) {
     if (conf.files.size() < 2) {
         std::cout << "evaluate_features needs the path to the dataset and the cv set to use" << std::endl;
@@ -250,6 +300,8 @@ int main(int argc, char** argv) {
         ret = command_train(conf);
     } else if (conf.command == "features") {
         ret = command_features(conf);
+    } else if (conf.command == "runtime") {
+        ret = command_runtime(conf);
     } else if (conf.command == "evaluate_features") {
         ret = command_evaluate_features(conf);
     } else {
