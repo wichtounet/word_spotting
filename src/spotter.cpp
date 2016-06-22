@@ -196,6 +196,20 @@ std::size_t bench_runtime_std(config& conf, Method method, const spot_dataset& d
     return duration;
 }
 
+std::size_t bench_runtime_patches(config& conf, const spot_dataset& dataset, const spot_dataset_set& set, names train_word_names, names image_names){
+    auto start = chrono::steady_clock::now();
+
+    patches_runtime(dataset, set, conf, train_word_names, image_names);
+
+    auto end = chrono::steady_clock::now();
+    auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+
+    std::cout << "   Total: " << (double(duration) / 1000 / 1000) << "ms" << std::endl;
+    std::cout << "   Image: " << (double(duration) / image_names.size() / 1000) << "us" << std::endl;
+
+    return duration;
+}
+
 int command_runtime(config& conf) {
     if (conf.files.size() < 2) {
         std::cout << "runtime needs the path to the dataset and the cv set to use" << std::endl;
@@ -227,6 +241,9 @@ int command_runtime(config& conf) {
 
     std::cout << std::endl << "Terasawa2009" << std::endl;
     bench_runtime_std(conf, Method::Terasawa2009, dataset, train_image_names);
+
+    std::cout << std::endl << "Patches" << std::endl;
+    bench_runtime_patches(conf, dataset, set, train_word_names, train_image_names);
 
     return 0;
 }

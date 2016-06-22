@@ -29,7 +29,8 @@
 #endif
 
 #include "nice_svm.hpp"
-
+#
+#include "patches.hpp"
 #include "config.hpp"
 #include "standard.hpp"
 #include "utils.hpp"
@@ -193,11 +194,13 @@ void normalize_features(const config& conf, bool training, Features& features){
 template <bool DBN_Patch, typename DBN>
 features_t<DBN_Patch, DBN> prepare_outputs(
     thread_pool& pool, const spot_dataset& dataset, const DBN& dbn, const config& conf,
-    names test_image_names, bool training) {
+    names test_image_names, bool training, bool runtime = false) {
 
     features_t<DBN_Patch, DBN> test_features_a(test_image_names.size());
 
-    std::cout << "Prepare the outputs ..." << std::endl;
+    if(!runtime){
+        std::cout << "Prepare the outputs ..." << std::endl;
+    }
 
     auto feature_extractor = [&](auto& test_image, std::size_t i) {
         auto& vec = test_features_a[i];
@@ -222,11 +225,17 @@ features_t<DBN_Patch, DBN> prepare_outputs(
         normalize_feature_vector(vec);
     };
 
-    cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), feature_extractor);
+    if(!runtime){
+        cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), feature_extractor);
+    } else {
+        cpp::foreach_i(test_image_names.begin(), test_image_names.end(), feature_extractor);
+    }
 
     normalize_features(conf, training, test_features_a);
 
-    std::cout << "... done" << std::endl;
+    if(!runtime){
+        std::cout << "... done" << std::endl;
+    }
 
     return test_features_a;
 }
@@ -356,13 +365,15 @@ void optimize_parameters(const spot_dataset& dataset, const Set& set, config& co
 }
 
 template <bool DBN_Patch, typename Set, typename DBN>
-void evaluate_patches(const spot_dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters, bool features) {
+void evaluate_patches(const spot_dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters, bool features, bool runtime = false) {
     thread_pool pool;
 
     if (features) {
-        auto test_features_a = prepare_outputs<DBN_Patch>(pool, dataset, dbn, conf, test_image_names, training);
+        auto test_features_a = prepare_outputs<DBN_Patch>(pool, dataset, dbn, conf, test_image_names, training, runtime);
 
-        export_features(conf, test_image_names, test_features_a, ".2");
+        if(!runtime){
+            export_features(conf, test_image_names, test_features_a, ".2");
+        }
     } else {
         // 0. Select the keywords
 
@@ -378,7 +389,7 @@ void evaluate_patches(const spot_dataset& dataset, const Set& set, config& conf,
 
         // 3. Prepare all the outputs
 
-        auto test_features_a = prepare_outputs<DBN_Patch>(pool, dataset, dbn, conf, test_image_names, training);
+        auto test_features_a = prepare_outputs<DBN_Patch>(pool, dataset, dbn, conf, test_image_names, training, runtime);
 
         // 4. Evaluate the performances
 
@@ -434,7 +445,7 @@ void evaluate_patches(const spot_dataset& dataset, const Set& set, config& conf,
 
 void patches_train(
     const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
-    names train_word_names, names train_image_names, names valid_image_names, names test_image_names, bool features) {
+    names train_word_names, names train_image_names, names valid_image_names, names test_image_names, bool features, bool runtime) {
 
     auto pretraining_image_names = train_image_names;
 
@@ -460,7 +471,9 @@ void patches_train(
     }
 
     if (conf.half) {
-        std::cout << "Use a half of the resolution" << std::endl;
+        if(!runtime){
+            std::cout << "Use a half of the resolution" << std::endl;
+        }
 
         copy_from_namespace(half);
 
@@ -537,7 +550,9 @@ void patches_train(
 
         memory_debug("before cdbn");
 
-        std::cout << "DBN Size: " << sizeof(cdbn_t) << std::endl;
+        if(!runtime){
+            std::cout << "DBN Size: " << sizeof(cdbn_t) << std::endl;
+        }
 
         auto cdbn = std::make_unique<cdbn_t>();
 
@@ -573,60 +588,69 @@ void patches_train(
         half::pbias_lambda_2(cdbn->template layer_get<L3>().pbias_lambda);
 #endif
 
-        cdbn->display();
-        std::cout << cdbn->output_size() << " output features" << std::endl;
+        if (!runtime) {
+            cdbn->display();
+            std::cout << cdbn->output_size() << " output features" << std::endl;
+        }
 
         constexpr const auto patch_width  = half::patch_width;
         constexpr const auto patch_height = half::patch_height;
         constexpr const auto train_stride = half::train_stride;
         constexpr const auto test_stride  = half::test_stride;
 
-        std::cout << "patch_height=" << patch_height << std::endl;
-        std::cout << "patch_width=" << patch_width << std::endl;
-        std::cout << "train_stride=" << train_stride << std::endl;
-        std::cout << "test_stride=" << test_stride << std::endl;
+        if (!runtime) {
+            std::cout << "patch_height=" << patch_height << std::endl;
+            std::cout << "patch_width=" << patch_width << std::endl;
+            std::cout << "train_stride=" << train_stride << std::endl;
+            std::cout << "test_stride=" << test_stride << std::endl;
+        }
 
         //Pass information to the next passes (evaluation)
         conf.patch_width  = patch_width;
         conf.train_stride = train_stride;
         conf.test_stride  = test_stride;
 
-        memory_debug("before training");
+        if(!runtime){
+            const std::string file_name("method_2_half.dat");
 
-        const std::string file_name("method_2_half.dat");
+            memory_debug("before training");
 
-        if (conf.load || features) {
-            cdbn->load(file_name);
-        } else {
-            std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
-            training_patches.reserve(pretraining_image_names.size() * 5);
+            if (conf.load || features) {
+                cdbn->load(file_name);
+            } else {
+                std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
+                training_patches.reserve(pretraining_image_names.size() * 5);
 
-            std::cout << "Generate patches ..." << std::endl;
+                std::cout << "Generate patches ..." << std::endl;
 
-            for (auto& name : pretraining_image_names) {
-                auto patches = mat_to_patches<cdbn_t>(conf, dataset.word_images.at(name), true);
-                std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
+                for (auto& name : pretraining_image_names) {
+                    auto patches = mat_to_patches<cdbn_t>(conf, dataset.word_images.at(name), true);
+                    std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
+                }
+
+                std::cout << "... done" << std::endl;
+
+                memory_debug("after patches extraction");
+
+                cdbn->pretrain(training_patches, half::epochs);
+                cdbn->store(file_name);
             }
 
-            std::cout << "... done" << std::endl;
-
-            memory_debug("after patches extraction");
-
-            cdbn->pretrain(training_patches, half::epochs);
-            cdbn->store(file_name);
+            memory_debug("after training");
         }
-
-        memory_debug("after training");
 
         parameters params;
         params.sc_band = 0.1;
 
-        if(global_scaling || features || !(conf.load && conf.notrain)){
-            std::cout << "Evaluate on training set" << std::endl;
-            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
+        if(global_scaling || features || runtime || !(conf.load && conf.notrain)){
+            if(!runtime){
+                std::cout << "Evaluate on training set" << std::endl;
+            }
+
+            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
         }
 
-        if (!conf.hmm) {
+        if (!conf.hmm && !runtime) {
             if (conf.fix) {
                 std::cout << "Switch to optimal parameters" << std::endl;
                 params.sc_band = 0.06;
@@ -637,13 +661,15 @@ void patches_train(
             }
         }
 
-        if(features || !(conf.load && conf.novalid)){
+        if(!runtime && (features || !(conf.load && conf.novalid))){
             std::cout << "Evaluate on validation set" << std::endl;
-            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
+            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
         }
 
-        std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
+        if(!runtime){
+            std::cout << "Evaluate on test set" << std::endl;
+            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+        }
 
 #if HALF_LEVELS < 2
         silence_l2_warnings();
@@ -653,7 +679,9 @@ void patches_train(
         silence_l3_warnings();
 #endif
     } else if (conf.third) {
-        std::cout << "Use a third of the resolution" << std::endl;
+        if(!runtime){
+            std::cout << "Use a third of the resolution" << std::endl;
+        }
 
         copy_from_namespace(third);
 
@@ -846,31 +874,37 @@ void patches_train(
         cdbn_ref->template layer_get<3>().sigma = 2.0;
 #endif
 
-        cdbn_ref->display();
-        std::cout << cdbn->output_size() << " output features" << std::endl;
+        if (!runtime) {
+            cdbn_ref->display();
+            std::cout << cdbn->output_size() << " output features" << std::endl;
+        }
 
         constexpr const auto patch_width  = third::patch_width;
         constexpr const auto patch_height = third::patch_height;
         constexpr const auto train_stride = third::train_stride;
         constexpr const auto test_stride  = third::test_stride;
 
-        std::cout << "patch_height=" << patch_height << std::endl;
-        std::cout << "patch_width=" << patch_width << std::endl;
-        std::cout << "train_stride=" << train_stride << std::endl;
-        std::cout << "test_stride=" << test_stride << std::endl;
+        if (!runtime) {
+            std::cout << "patch_height=" << patch_height << std::endl;
+            std::cout << "patch_width=" << patch_width << std::endl;
+            std::cout << "train_stride=" << train_stride << std::endl;
+            std::cout << "test_stride=" << test_stride << std::endl;
+        }
 
         //Pass information to the next passes (evaluation)
         conf.patch_width  = patch_width;
         conf.train_stride = train_stride;
         conf.test_stride  = test_stride;
 
-        const std::string file_name("method_2_third.dat");
-
 #ifdef THIRD_MODERN
         static constexpr const bool DBN_Patch = true;
 #else
         static constexpr const bool DBN_Patch = false;
 #endif
+
+        if(!runtime){
+
+        const std::string file_name("method_2_third.dat");
 
         //Train the DBN
         if (conf.load || features) {
@@ -937,16 +971,20 @@ void patches_train(
 
             cdbn->store(file_name);
         }
+        }
 
         parameters params;
         params.sc_band = 0.1;
 
-        if(global_scaling || features || !conf.notrain){
-            std::cout << "Evaluate on training set" << std::endl;
-            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
+        if(global_scaling || features || runtime || !conf.notrain){
+            if(!runtime){
+                std::cout << "Evaluate on training set" << std::endl;
+            }
+
+            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
         }
 
-        if (!conf.hmm) {
+        if (!conf.hmm && !runtime) {
             if (conf.fix) {
                 std::cout << "Switch to optimal parameters" << std::endl;
                 params.sc_band = 0.05;
@@ -957,13 +995,15 @@ void patches_train(
             }
         }
 
-        if(features || !conf.novalid){
+        if(!runtime && (features || !conf.novalid)){
             std::cout << "Evaluate on validation set" << std::endl;
-            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
+            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
         }
 
-        std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
+        if(!runtime){
+            std::cout << "Evaluate on test set" << std::endl;
+            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+        }
 
 #if defined(THIRD_RBM_1) || defined(THIRD_RBM_2) || defined(THIRD_RBM_3)
         //Silence some warnings
@@ -980,7 +1020,9 @@ void patches_train(
         silence_l3_warnings();
 #endif
     } else {
-        std::cout << "Use full resolution" << std::endl;
+        if(!runtime){
+            std::cout << "Use full resolution" << std::endl;
+        }
 
         copy_from_namespace(full);
 
@@ -1112,18 +1154,22 @@ void patches_train(
         full::pbias_lambda_2(cdbn->template layer_get<L3>().pbias_lambda);
 #endif
 
-        cdbn->display();
-        std::cout << cdbn->output_size() << " output features" << std::endl;
+        if(!runtime){
+            cdbn->display();
+            std::cout << cdbn->output_size() << " output features" << std::endl;
+        }
 
         constexpr const auto patch_width  = full::patch_width;
         constexpr const auto patch_height = full::patch_height;
         constexpr const auto train_stride = full::train_stride;
         constexpr const auto test_stride  = full::test_stride;
 
-        std::cout << "patch_height=" << patch_height << std::endl;
-        std::cout << "patch_width=" << patch_width << std::endl;
-        std::cout << "train_stride=" << train_stride << std::endl;
-        std::cout << "test_stride=" << test_stride << std::endl;
+        if(!runtime){
+            std::cout << "patch_height=" << patch_height << std::endl;
+            std::cout << "patch_width=" << patch_width << std::endl;
+            std::cout << "train_stride=" << train_stride << std::endl;
+            std::cout << "test_stride=" << test_stride << std::endl;
+        }
 
         //Pass information to the next passes (evaluation)
         conf.patch_width  = patch_width;
@@ -1132,32 +1178,34 @@ void patches_train(
 
         const std::string file_name("method_2_full.dat");
 
-        //1. Pretraining
-        if (conf.load || features) {
-            cdbn->load(file_name);
-        } else {
+        if (!runtime) {
+            //1. Pretraining
+            if (conf.load || features) {
+                cdbn->load(file_name);
+            } else {
 #ifdef FULL_CRBM_PMP_2
-            std::vector<etl::dyn_matrix<weight, 3>> training_images;
-            training_images.reserve(pretraining_image_names.size());
+                std::vector<etl::dyn_matrix<weight, 3>> training_images;
+                training_images.reserve(pretraining_image_names.size());
 
-            std::cout << "Generate images ..." << std::endl;
+                std::cout << "Generate images ..." << std::endl;
 
-            for (auto& name : pretraining_image_names) {
-                training_images.push_back(mat_for_patches(conf, dataset.word_images.at(name)));
-            }
+                for (auto& name : pretraining_image_names) {
+                    training_images.push_back(mat_for_patches(conf, dataset.word_images.at(name)));
+                }
 
-            std::cout << "... done" << std::endl;
+                std::cout << "... done" << std::endl;
 
-            cdbn->pretrain(training_images, full::epochs);
-            cdbn->store(file_name);
+                cdbn->pretrain(training_images, full::epochs);
+                cdbn->store(file_name);
 
 #else
-            patch_iterator<cdbn_t> it(conf, dataset, pretraining_image_names);
-            patch_iterator<cdbn_t> end(conf, dataset, pretraining_image_names, pretraining_image_names.size());
+                patch_iterator<cdbn_t> it(conf, dataset, pretraining_image_names);
+                patch_iterator<cdbn_t> end(conf, dataset, pretraining_image_names, pretraining_image_names.size());
 
-            cdbn->pretrain(it, end, full::epochs);
-            cdbn->store(file_name);
+                cdbn->pretrain(it, end, full::epochs);
+                cdbn->store(file_name);
 #endif
+            }
         }
 
         //2. Evaluation
@@ -1165,12 +1213,15 @@ void patches_train(
         parameters params;
         params.sc_band = 0.1;
 
-        if(global_scaling || features || !(conf.load && conf.notrain)){
-            std::cout << "Evaluate on training set" << std::endl;
-            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features);
+        if(global_scaling || runtime || features || !(conf.load && conf.notrain)){
+            if(!runtime){
+                std::cout << "Evaluate on training set" << std::endl;
+            }
+
+            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
         }
 
-        if (!conf.hmm) {
+        if (!conf.hmm && !runtime) {
             if (conf.fix) {
                 std::cout << "Switch to optimal parameters" << std::endl;
                 params.sc_band = 0.05;
@@ -1181,13 +1232,15 @@ void patches_train(
             }
         }
 
-        if(features || !(conf.load && conf.novalid)){
+        if(!runtime && (features || !(conf.load && conf.novalid))){
             std::cout << "Evaluate on validation set" << std::endl;
-            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features);
+            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
         }
 
-        std::cout << "Evaluate on test set" << std::endl;
-        evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features);
+        if(!runtime){
+            std::cout << "Evaluate on test set" << std::endl;
+            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+        }
 
 #if FULL_LEVELS < 2
         silence_l2_warnings();
@@ -1204,4 +1257,11 @@ void patches_features(
     names train_word_names, names train_image_names, names valid_image_names, names test_image_names) {
     //Generate features and save them
     patches_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names, true);
+}
+
+void patches_runtime(
+    const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
+    names train_word_names, names image_names) {
+    //Generate features and save them
+    patches_train(dataset, set, conf, train_word_names, image_names, image_names, image_names, true, true);
 }
