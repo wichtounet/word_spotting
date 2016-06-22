@@ -758,6 +758,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
 
     if(conf.method == Method::Marti2001){
         for (std::size_t i = 0; i < width - 1; ++i) {
+            //TODO Should be 3 and 4...
             features[i][5] = features[i + 1][1] - features[i][1];
             features[i][6] = features[i + 1][2] - features[i][2];
         }
