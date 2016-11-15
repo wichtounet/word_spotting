@@ -22,7 +22,7 @@
 #include "features.hpp"   //Features exporting
 #include "evaluation.hpp" //Global evaluation functions
 
-#define LOCAL_LINEAR_SCALING
+#define LOCAL_MEAN_SCALING
 #include "scaling.hpp" //Scaling functions
 
 //#define DEBUG_DISTANCES
