@@ -22,12 +22,16 @@
 #include "features.hpp"   //Features exporting
 #include "evaluation.hpp" //Global evaluation functions
 
+//#define LOCAL_LINEAR_SCALING
 #define LOCAL_MEAN_SCALING
+
 #include "scaling.hpp" //Scaling functions
 
 //#define DEBUG_DISTANCES
 
 namespace {
+
+constexpr bool rodriguez_scaling = false;
 
 const bool interpolate = false;
 
@@ -303,13 +307,15 @@ std::vector<etl::dyn_vector<weight>> standard_features_rodriguez_2008(const cv::
         features[real_x] *= (1.0 / etl::sum(features[real_x]));
     }
 
+    if (rodriguez_scaling) {
 #ifdef LOCAL_MEAN_SCALING
-    local_linear_feature_scaling(features);
+        local_linear_feature_scaling(features);
 #endif
 
 #ifdef LOCAL_MEAN_SCALING
-    local_linear_feature_scaling(features);
+        local_linear_feature_scaling(features);
 #endif
+    }
 
     return features;
 }
