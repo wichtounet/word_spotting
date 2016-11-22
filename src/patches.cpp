@@ -41,8 +41,8 @@
 
 //#define LOCAL_FRAME_NORMALIZATION
 //#define LOCAL_L2_NORMALIZATION
-#define GLOBAL_FRAME_NORMALIZATION
-//#define GLOBAL_L2_NORMALIZATION
+//#define GLOBAL_FRAME_NORMALIZATION
+#define GLOBAL_L2_NORMALIZATION
 
 //#define LOCAL_LINEAR_SCALING
 #define LOCAL_MEAN_SCALING
@@ -52,6 +52,32 @@
 #include "patches_config.hpp"
 
 namespace {
+
+void log_scaling(){
+#ifdef LOCAL_FRAME_NORMALIZATION
+    std::cout << "Local Frame Normalization" << std::endl;
+#endif
+
+#ifdef LOCAL_L2_NORMALIZATION
+    std::cout << "Local L2 Normalization" << std::endl;
+#endif
+
+#ifdef GLOBAL_FRAME_NORMALIZATION
+    std::cout << "Global Frame Normalization" << std::endl;
+#endif
+
+#ifdef GLOBAL_L2_NORMALIZATION
+    std::cout << "Global L2 Normalization" << std::endl;
+#endif
+
+#ifdef LOCAL_LINEAR_SCALING
+    std::cout << "Local Linear Scaling" << std::endl;
+#endif
+
+#ifdef LOCAL_MEAN_SCALING
+    std::cout << "Local Mean Scaling" << std::endl;
+#endif
+}
 
 template <typename DBN>
 struct patch_iterator : std::iterator<std::input_iterator_tag, typename DBN::template layer_type<0>::input_one_t> {
@@ -448,6 +474,8 @@ void patches_train(
     names train_word_names, names train_image_names, names valid_image_names, names test_image_names, bool features, bool runtime) {
 
     auto pretraining_image_names = train_image_names;
+
+    log_scaling();
 
     if (conf.all) {
         std::cout << "Use all images from pretraining" << std::endl;
