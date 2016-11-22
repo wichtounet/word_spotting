@@ -29,7 +29,7 @@
 #endif
 
 #include "nice_svm.hpp"
-#
+
 #include "patches.hpp"
 #include "config.hpp"
 #include "standard.hpp"
@@ -39,9 +39,9 @@
 #include "features.hpp"   //Features exporting
 #include "evaluation.hpp" //evaluation utilities
 
-#define LOCAL_FRAME_NORMALIZATION
+//#define LOCAL_FRAME_NORMALIZATION
 //#define LOCAL_L2_NORMALIZATION
-//#define GLOBAL_FRAME_NORMALIZATION
+#define GLOBAL_FRAME_NORMALIZATION
 //#define GLOBAL_L2_NORMALIZATION
 
 //#define LOCAL_LINEAR_SCALING
@@ -987,7 +987,7 @@ void patches_train(
         if (!conf.hmm && !runtime) {
             if (conf.fix) {
                 std::cout << "Switch to optimal parameters" << std::endl;
-                params.sc_band = 0.05;
+                params.sc_band = 0.04;
                 std::cout << "\tsc_band: " << params.sc_band << std::endl;
             } else {
                 std::cout << "Optimize parameters" << std::endl;
