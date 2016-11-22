@@ -476,7 +476,7 @@ std::vector<etl::dyn_vector<weight>> standard_features_terasawa_2009(const cv::M
 
     // 1. Compute the smoothed image
     cv::Mat L;
-    cv::GaussianBlur(clean_image_float, L, cv::Size(0, 0), 3.0, 3.0);
+    cv::GaussianBlur(clean_image_float, L, cv::Size(0, 0), 1.0, 1.0);
 
     //2. Compute vertical and horizontal gradients
     cv::Mat sGx(clean_image.size(), CV_64F);
@@ -891,10 +891,16 @@ std::vector<std::vector<etl::dyn_vector<weight>>> compute_reference(thread_pool&
     return ref_a;
 }
 
-parameters get_parameters(const config& /*conf*/){
+parameters get_parameters(const config& conf){
     parameters parameters;
 
-    parameters.sc_band = 0.12;
+    if (conf.method == Method::Terasawa2009) {
+        parameters.sc_band = 0.12;
+    } else {
+        parameters.sc_band = 0.12;
+    }
+
+    std::cout << "\tsc_band: " << parameters.sc_band << std::endl;
 
     return parameters;
 }
