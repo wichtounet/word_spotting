@@ -391,7 +391,7 @@ void optimize_parameters(const spot_dataset& dataset, const Set& set, config& co
 }
 
 template <bool DBN_Patch, typename Set, typename DBN>
-void evaluate_patches(const spot_dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters, bool features, bool runtime = false) {
+std::string evaluate_patches(const spot_dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters, bool features, bool runtime = false) {
     thread_pool pool;
 
     if (features) {
@@ -400,6 +400,8 @@ void evaluate_patches(const spot_dataset& dataset, const Set& set, config& conf,
         if(!runtime){
             export_features(conf, test_image_names, test_features_a, ".2");
         }
+
+        return {};
     } else {
         // 0. Select the keywords
 
@@ -464,6 +466,8 @@ void evaluate_patches(const spot_dataset& dataset, const Set& set, config& conf,
 
         std::cout << "Mean EER: " << mean_eer << std::endl;
         std::cout << "Mean AP: " << mean_ap << std::endl;
+
+        return result_folder;
     }
 }
 
@@ -638,9 +642,9 @@ void patches_train(
         conf.train_stride = train_stride;
         conf.test_stride  = test_stride;
 
-        if(!runtime){
-            const std::string file_name("method_2_half.dat");
+        const std::string file_name("method_2_half.dat");
 
+        if(!runtime){
             memory_debug("before training");
 
             if (conf.load || features) {
@@ -675,7 +679,11 @@ void patches_train(
                 std::cout << "Evaluate on training set" << std::endl;
             }
 
-            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
+            auto folder = evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
+
+            if(!runtime){
+                cdbn->store(folder + "/" + file_name);
+            }
         }
 
         if (!conf.hmm && !runtime) {
@@ -691,12 +699,20 @@ void patches_train(
 
         if(!runtime && (features || !(conf.load && conf.novalid))){
             std::cout << "Evaluate on validation set" << std::endl;
-            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
+
+            if(!runtime){
+                cdbn->store(folder + "/" + file_name);
+            }
         }
 
         if(!runtime){
             std::cout << "Evaluate on test set" << std::endl;
-            evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+
+            if(!runtime){
+                cdbn->store(folder + "/" + file_name);
+            }
         }
 
 #if HALF_LEVELS < 2
@@ -930,75 +946,74 @@ void patches_train(
         static constexpr const bool DBN_Patch = false;
 #endif
 
-        if(!runtime){
-
         const std::string file_name("method_2_third.dat");
 
-        //Train the DBN
-        if (conf.load || features) {
-            cdbn->load(file_name);
-        } else {
-#ifdef THIRD_MODERN
-            std::cout << "Training is done with inline distort/patches..." << std::endl;
-
-            std::vector<etl::dyn_matrix<weight, 3>> training_images;
-            training_images.reserve(pretraining_image_names.size());
-
-            std::cout << "Generate images ..." << std::endl;
-
-            for (auto& name : pretraining_image_names) {
-                training_images.push_back(mat_for_patches(conf, dataset.word_images.at(name)));
-            }
-
-            std::cout << "... done" << std::endl;
-
-            cdbn_train->pretrain(training_images, third::epochs);
-
-            // Exchance weights
-            cdbn_train->store(file_name);
-            cdbn->load(file_name);
-#else
-            if (conf.iam && !conf.sub) {
-                std::cout << "Training is done with patch iterators..." << std::endl;
-
-                if(third::elastic_augment){
-                    std::cout << "WARNING: Elastic distortions is not supported for patch_iterator yet" << std::endl;
-                }
-
-                patch_iterator<cdbn_t> it(conf, dataset, pretraining_image_names);
-                patch_iterator<cdbn_t> end(conf, dataset, pretraining_image_names, pretraining_image_names.size());
-
-                cdbn->pretrain(it, end, third::epochs);
+        if (!runtime) {
+            //Train the DBN
+            if (conf.load || features) {
+                cdbn->load(file_name);
             } else {
-                std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
-                training_patches.reserve(pretraining_image_names.size() * 10);
+#ifdef THIRD_MODERN
+                std::cout << "Training is done with inline distort/patches..." << std::endl;
 
-                std::cout << "Generate patches ..." << std::endl;
+                std::vector<etl::dyn_matrix<weight, 3>> training_images;
+                training_images.reserve(pretraining_image_names.size());
+
+                std::cout << "Generate images ..." << std::endl;
 
                 for (auto& name : pretraining_image_names) {
-                    decltype(auto) image = dataset.word_images.at(name);
-
-                    // Insert the patches from the original image
-                    auto patches = mat_to_patches<cdbn_t>(conf, image, true);
-                    std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
-
-                    // Insert the patches from the distorted versions
-                    for(std::size_t d = 0; d < third::elastic_augment; ++d){
-                        auto distorted_image = elastic_distort(image);
-
-                        auto patches = mat_to_patches<cdbn_t>(conf, distorted_image, true);
-                        std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
-                    }
+                    training_images.push_back(mat_for_patches(conf, dataset.word_images.at(name)));
                 }
 
                 std::cout << "... done" << std::endl;
 
-                cdbn->pretrain(training_patches, third::epochs);
-            }
+                cdbn_train->pretrain(training_images, third::epochs);
+
+                // Exchance weights
+                cdbn_train->store(file_name);
+                cdbn->load(file_name);
+#else
+                if (conf.iam && !conf.sub) {
+                    std::cout << "Training is done with patch iterators..." << std::endl;
+
+                    if (third::elastic_augment) {
+                        std::cout << "WARNING: Elastic distortions is not supported for patch_iterator yet" << std::endl;
+                    }
+
+                    patch_iterator<cdbn_t> it(conf, dataset, pretraining_image_names);
+                    patch_iterator<cdbn_t> end(conf, dataset, pretraining_image_names, pretraining_image_names.size());
+
+                    cdbn->pretrain(it, end, third::epochs);
+                } else {
+                    std::vector<cdbn_t::template layer_type<0>::input_one_t> training_patches;
+                    training_patches.reserve(pretraining_image_names.size() * 10);
+
+                    std::cout << "Generate patches ..." << std::endl;
+
+                    for (auto& name : pretraining_image_names) {
+                        decltype(auto) image = dataset.word_images.at(name);
+
+                        // Insert the patches from the original image
+                        auto patches = mat_to_patches<cdbn_t>(conf, image, true);
+                        std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
+
+                        // Insert the patches from the distorted versions
+                        for (std::size_t d = 0; d < third::elastic_augment; ++d) {
+                            auto distorted_image = elastic_distort(image);
+
+                            auto patches = mat_to_patches<cdbn_t>(conf, distorted_image, true);
+                            std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
+                        }
+                    }
+
+                    std::cout << "... done" << std::endl;
+
+                    cdbn->pretrain(training_patches, third::epochs);
+                }
 #endif
 
-            cdbn->store(file_name);
-        }
+                cdbn->store(file_name);
+            }
         }
 
         parameters params;
@@ -1009,7 +1024,11 @@ void patches_train(
                 std::cout << "Evaluate on training set" << std::endl;
             }
 
-            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
+            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
+
+            if(!runtime){
+                cdbn->store(folder + "/" + file_name);
+            }
         }
 
         if (!conf.hmm && !runtime) {
@@ -1025,12 +1044,20 @@ void patches_train(
 
         if(!runtime && (features || !conf.novalid)){
             std::cout << "Evaluate on validation set" << std::endl;
-            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
+
+            if(!runtime){
+                cdbn->store(folder + "/" + file_name);
+            }
         }
 
         if(!runtime){
             std::cout << "Evaluate on test set" << std::endl;
-            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+
+            if(!runtime){
+                cdbn->store(folder + "/" + file_name);
+            }
         }
 
 #if defined(THIRD_RBM_1) || defined(THIRD_RBM_2) || defined(THIRD_RBM_3)
@@ -1246,7 +1273,11 @@ void patches_train(
                 std::cout << "Evaluate on training set" << std::endl;
             }
 
-            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
+            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
+
+            if(!runtime){
+                cdbn->store(folder + "/" + file_name);
+            }
         }
 
         if (!conf.hmm && !runtime) {
@@ -1262,12 +1293,20 @@ void patches_train(
 
         if(!runtime && (features || !(conf.load && conf.novalid))){
             std::cout << "Evaluate on validation set" << std::endl;
-            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
+
+            if(!runtime){
+                cdbn->store(folder + "/" + file_name);
+            }
         }
 
         if(!runtime){
             std::cout << "Evaluate on test set" << std::endl;
-            evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+
+            if(!runtime){
+                cdbn->store(folder + "/" + file_name);
+            }
         }
 
 #if FULL_LEVELS < 2
