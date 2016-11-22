@@ -56,18 +56,25 @@ cat results/${cv2}/local_top_file | sed -e "s/cv1/cv2/" >> local_top_file
 cat results/${cv3}/local_top_file | sed -e "s/cv1/cv3/" >> local_top_file
 cat results/${cv4}/local_top_file | sed -e "s/cv1/cv4/" >> local_top_file
 
-gmap=`$trec -q global_rel_file global_top_file | ${grep} "map\s*all" | cut -f3`
-grp=`$trec -q global_rel_file global_top_file | ${grep} "\(R-prec\)\s*all" | cut -f3`
-lmap=`$trec -q local_rel_file local_top_file | ${grep} "map\s*all" | cut -f3`
-lrp=`$trec -q local_rel_file local_top_file | ${grep} "\(R-prec\)\s*all" | cut -f3`
+if [ "$5" == "raw" ]; then
+    echo "Global results"
+    $trec -q global_rel_file global_top_file | ${grep} "\sall"
+    echo "Local results"
+    $trec -q local_rel_file local_top_file | ${grep} "\sall"
+else
+    gmap=`$trec -q global_rel_file global_top_file | ${grep} "map\s*all" | cut -f3`
+    grp=`$trec -q global_rel_file global_top_file | ${grep} "\(R-prec\)\s*all" | cut -f3`
+    lmap=`$trec -q local_rel_file local_top_file | ${grep} "map\s*all" | cut -f3`
+    lrp=`$trec -q local_rel_file local_top_file | ${grep} "\(R-prec\)\s*all" | cut -f3`
 
-echo "Global Summary:"
+    echo "Global Summary:"
 
-echo "G-MAP: $gmap"
-echo "G-RP:  $grp"
+    echo "G-MAP: $gmap"
+    echo "G-RP:  $grp"
 
-echo "L-MAP: $lmap"
-echo "L-RP:  $lrp"
+    echo "L-MAP: $lmap"
+    echo "L-RP:  $lrp"
+fi
 
 rm global_rel_file
 rm global_top_file
