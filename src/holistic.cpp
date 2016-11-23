@@ -14,11 +14,11 @@
 
 #include "cpp_utils/parallel.hpp"
 
-#include "dll/conv_rbm.hpp"
-#include "dll/conv_rbm_mp.hpp"
+#include "dll/rbm/conv_rbm.hpp"
+#include "dll/rbm/conv_rbm_mp.hpp"
+#include "dll/pooling/avgp_layer.hpp"
+#include "dll/pooling/mp_layer.hpp"
 #include "dll/dbn.hpp"
-#include "dll/avgp_layer.hpp"
-#include "dll/mp_layer.hpp"
 
 #ifndef OPENCV_23
 #include "dll/ocv_visualizer.hpp"
@@ -66,10 +66,10 @@ void holistic_train(
 
         std::cout << "Compute features" << std::endl;
 
-        std::vector<typename dbn_t::output_t> test_features_a;
+        std::vector<decltype(dbn->template prepare_one_output<typename dbn_t::input_t>())> test_features_a;
 
         for (std::size_t i = 0; i < test_image_names.size(); ++i) {
-            test_features_a.emplace_back(dbn->prepare_one_output());
+            test_features_a.emplace_back(dbn->template prepare_one_output<typename dbn_t::input_t>());
         }
 
         cpp::default_thread_pool<> pool;
@@ -78,7 +78,7 @@ void holistic_train(
                                 [&test_features_a, &dbn, &dataset, &conf](auto& test_image, std::size_t i) {
                                     auto test_v = holistic_mat<dbn_t>(conf, dataset.word_images.at(test_image));
 
-                                    dbn->activation_probabilities(test_v, test_features_a[i]);
+                                    test_features_a[i] = dbn->activation_probabilities(test_v);
                                 });
 
         std::cout << "... done" << std::endl;
@@ -121,9 +121,9 @@ void holistic_train(
                 ++evaluated;
 
                 auto ref_v = holistic_mat<dbn_t>(conf, dataset.word_images.at(training_image + ".png"));
-                auto ref_a = dbn->prepare_one_output();
+                auto ref_a = dbn->template prepare_one_output<typename dbn_t::input_t>();
 
-                dbn->activation_probabilities(ref_v, ref_a);
+                ref_a = dbn->activation_probabilities(ref_v);
 
                 std::vector<std::pair<std::string, weight>> diffs_a;
 
@@ -330,12 +330,12 @@ void holistic_train(
 
             if (conf.svm) {
                 std::vector<std::vector<double>> training_samples(train_image_names.size());
-                std::vector<cdbn_t::output_one_t> training_features;
+                std::vector<decltype(cdbn->template prepare_one_output<typename cdbn_t::input_t>())> training_features;
                 std::vector<std::size_t> training_labels(train_image_names.size());
 
                 for (auto& train_image_name : train_image_names) {
                     cpp_unused(train_image_name);
-                    training_features.emplace_back(cdbn->prepare_one_output());
+                    training_features.emplace_back(cdbn->template prepare_one_output<typename cdbn_t::input_t>());
                 }
 
                 cpp::default_thread_pool<> pool;
@@ -348,7 +348,7 @@ void holistic_train(
 
                     auto test_v = holistic_mat<cdbn_t>(conf, dataset.word_images.at(test_image));
 
-                    cdbn->activation_probabilities(test_v, training_features[i]);
+                    training_features[i] = cdbn->activation_probabilities(test_v);
 
                     std::copy(training_features[i].begin(), training_features[i].end(), std::back_inserter(training_samples[i]));
 

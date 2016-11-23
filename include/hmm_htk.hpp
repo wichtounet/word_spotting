@@ -18,7 +18,7 @@
 
 #include "cpp_utils/io.hpp" //Binary write
 
-#include "dll/dbn.hpp" //Timers
+#include "dll/util/timers.hpp" //Timers
 
 #include "dataset.hpp" //names
 #include "utils.hpp" //names

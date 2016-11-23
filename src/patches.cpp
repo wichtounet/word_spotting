@@ -14,15 +14,15 @@
 
 #include "cpp_utils/parallel.hpp"
 
-#include "dll/conv_rbm.hpp"
-#include "dll/conv_rbm_mp.hpp"
+#include "dll/rbm/conv_rbm.hpp"
+#include "dll/rbm/conv_rbm_mp.hpp"
+#include "dll/pooling/avgp_layer.hpp"
+#include "dll/pooling/mp_layer.hpp"
+#include "dll/patches/patches_layer.hpp"
+#include "dll/patches/patches_layer_pad.hpp"
+#include "dll/transform/lcn_layer.hpp"
+#include "dll/augment/augment_layer.hpp"
 #include "dll/dbn.hpp"
-#include "dll/avgp_layer.hpp"
-#include "dll/mp_layer.hpp"
-#include "dll/lcn_layer.hpp"
-#include "dll/patches_layer.hpp"
-#include "dll/patches_layer_pad.hpp"
-#include "dll/augment_layer.hpp"
 
 #ifndef OPENCV_23
 #include "dll/ocv_visualizer.hpp"
@@ -144,10 +144,10 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, typename DBN::tem
 };
 
 template <bool DBN_Patch, typename DBN>
-using features_t = typename std::conditional_t<
-    DBN_Patch,
-    std::vector<typename DBN::output_t>,
-    std::vector<std::vector<typename DBN::output_t>>>;
+using dbn_output_t = decltype(std::declval<DBN>().template prepare_one_output<typename DBN::input_one_t>());
+
+template <bool DBN_Patch, typename DBN>
+using features_t = std::vector<std::vector<dbn_output_t<DBN_Patch, DBN>>>;
 
 template <typename Patch>
 void normalize_patch_features(Patch& features){
@@ -234,16 +234,15 @@ features_t<DBN_Patch, DBN> prepare_outputs(
         //Get features from DBN
         cpp::static_if<DBN_Patch>([&](auto f) {
             auto image = mat_for_patches(conf, dataset.word_images.at(test_image));
-            f(dbn).activation_probabilities(image, vec);
+            vec = f(dbn).activation_probabilities(image);
         }).else_([&](auto f) {
             auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(test_image), training);
 
             vec.reserve(patches.size());
 
             for(auto& patch : patches){
-                f(vec).push_back(f(dbn).prepare_one_output());
-                auto& features = vec.back();
-                f(dbn).activation_probabilities(patch, features);
+                f(vec).push_back(f(dbn).template prepare_one_output<typename DBN::input_t>());
+                vec.back() = f(dbn).activation_probabilities(patch);
 
             }
         });
@@ -279,16 +278,15 @@ features_t<DBN_Patch, DBN> compute_reference(
         //Get features from DBN
         cpp::static_if<DBN_Patch>([&](auto f) {
             auto image = mat_for_patches(conf, dataset.word_images.at(test_image + ".png"));
-            f(dbn).activation_probabilities(image, vec);
+            vec = f(dbn).activation_probabilities(image);
         }).else_([&](auto f) {
             auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(test_image + ".png"), false);
 
             vec.reserve(patches.size());
 
             for(auto& patch : patches){
-                f(vec).push_back(f(dbn).prepare_one_output());
-                auto& features = vec.back();
-                f(dbn).activation_probabilities(patch, features);
+                f(vec).push_back(f(dbn).template prepare_one_output<typename DBN::input_t>());
+                vec.back() = f(dbn).activation_probabilities(patch);
 
             }
         });
@@ -1034,7 +1032,7 @@ void patches_train(
         if (!conf.hmm && !runtime) {
             if (conf.fix) {
                 std::cout << "Switch to optimal parameters" << std::endl;
-                params.sc_band = 0.04;
+                params.sc_band = 0.05;
                 std::cout << "\tsc_band: " << params.sc_band << std::endl;
             } else {
                 std::cout << "Optimize parameters" << std::endl;
