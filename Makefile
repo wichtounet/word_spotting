@@ -17,7 +17,7 @@ endif
 endif
 
 # Vectorization
-CXX_FLAGS += -DETL_VECTORIZE_FULL
+CXX_FLAGS += -DETL_VECTORIZE_FULL -DETL_PARALLEL
 
 # Configure HMM
 ifneq (,$(SPOTTER_NO_HMM))
@@ -47,6 +47,11 @@ CXX_FLAGS += -DETL_BLAS_MODE $(shell pkg-config --cflags cblas)
 LD_FLAGS += $(shell pkg-config --libs cblas)
 endif
 endif
+endif
+
+ifneq (,$(SPOTTER_CUDNN))
+CXX_FLAGS += -DETL_CUDNN_MODE $(shell pkg-config --cflags cudnn)
+LD_FLAGS += $(shell pkg-config --libs cudnn)
 endif
 
 ifneq (,$(SPOTTER_OLD))
