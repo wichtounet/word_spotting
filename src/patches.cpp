@@ -658,7 +658,7 @@ void patches_train(
                     std::move(patches.begin(), patches.end(), std::back_inserter(training_patches));
                 }
 
-                std::cout << "... done" << std::endl;
+                std::cout << "... " << training_patches.size() << " patches extracted" << std::endl;
 
                 memory_debug("after patches extraction");
 
@@ -1004,7 +1004,7 @@ void patches_train(
                         }
                     }
 
-                    std::cout << "... done" << std::endl;
+                    std::cout << "... " << training_patches.size() << " patches extracted" << std::endl;
 
                     cdbn->pretrain(training_patches, third::epochs);
                 }
@@ -1246,7 +1246,7 @@ void patches_train(
                     training_images.push_back(mat_for_patches(conf, dataset.word_images.at(name)));
                 }
 
-                std::cout << "... done" << std::endl;
+                std::cout << "... " << training_images.size() << " patches extracted" << std::endl;
 
                 cdbn->pretrain(training_images, full::epochs);
                 cdbn->store(file_name);
