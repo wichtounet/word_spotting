@@ -650,7 +650,11 @@ std::vector<etl::dyn_vector<weight>> standard_features_terasawa_2009(const cv::M
 
 std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const cv::Mat& clean_image) {
     if(conf.manmatha){
+#ifdef OPENCV_23
+        std::cout << "ERROR: Manmantha configuration cannot be used with old opencv" << std::endl;
+#else
         cv::bitwise_not(clean_image, clean_image);
+#endif
     }
 
     if(conf.method == Method::Rath2003){
