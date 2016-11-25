@@ -670,7 +670,11 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
                 cv::Mat normalized(cv::Size(width, height + 1), CV_8U);
                 normalized = cv::Scalar(255);
 
+#ifdef OPENCV_23
+                std::cout << "ERROR: Manmantha configuration cannot be used with old opencv" << std::endl;
+#else
                 clean_image.copyTo(normalized(cv::Rect(0, 0, width, height)));
+#endif
 
                 if (conf.method == Method::Rodriguez2008) {
                     return standard_features_rodriguez_2008(normalized);
