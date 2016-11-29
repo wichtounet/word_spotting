@@ -35,7 +35,7 @@ constexpr const std::size_t train_stride = 1;
 constexpr const std::size_t test_stride  = 1;
 
 constexpr const std::size_t NF1          = 9;
-constexpr const std::size_t K1           = 8;
+constexpr const std::size_t K1           = 12;
 constexpr const std::size_t C1           = 2;
 constexpr const std::size_t B1           = 128;
 constexpr const dll::unit_type HT1       = dll::unit_type::BINARY;
@@ -44,7 +44,7 @@ constexpr const dll::sparsity_method SM1 = dll::sparsity_method::LEE;
 constexpr const bool shuffle_1           = false;
 
 constexpr const std::size_t NF2          = 3;
-constexpr const std::size_t K2           = 8;
+constexpr const std::size_t K2           = 12;
 constexpr const std::size_t C2           = 2;
 constexpr const std::size_t B2           = 128;
 constexpr const dll::unit_type HT2       = dll::unit_type::BINARY;
