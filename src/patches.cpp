@@ -787,6 +787,18 @@ void patches_train(
                     dll::conv_rbm_desc<
                         K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, dll::weight_type<weight>, dll::batch_size<third::B3>, dll::momentum, dll::weight_decay<third::DT3>, dll::hidden<third::HT3>, dll::sparsity<third::SM3>, dll::shuffle_cond<shuffle_3>, dll::clipping_cond<clipping_3>, dll::dbn_only>::layer_t,
                     dll::mp_layer_3d_desc<K3, NH3_1, NH3_1, 1, C3, C3, dll::weight_type<weight>>::layer_t>>::dbn_t;
+#elif defined(THIRD_PATCH_CRBM_MP_2)
+        using cdbn_t =
+            dll::dbn_desc<
+                dll::dbn_layers<
+                    dll::patches_layer_padh_desc<third::patch_width, third::patch_height, 1, third::train_stride, 1, dll::weight_type<weight>>::layer_t,
+                    dll::conv_rbm_desc<
+                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::clipping_cond<clipping_1>, dll::dbn_only>::layer_t,
+                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
+                    dll::conv_rbm_desc<
+                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::clipping_cond<clipping_2>, dll::dbn_only>::layer_t,
+                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
+                , dll::batch_mode>::dbn_t;
 #elif defined(THIRD_RBM_1)
         using cdbn_t =
             dll::dbn_desc<
@@ -855,6 +867,11 @@ void patches_train(
         constexpr const std::size_t L1 = 0;
         constexpr const std::size_t L2 = 2;
         constexpr const std::size_t L3 = 4;
+#elif defined(THIRD_PATCH_CRBM_MP_2)
+        //Max pooling layers models have more layers
+        constexpr const std::size_t L1 = 1;
+        constexpr const std::size_t L2 = 3;
+        constexpr const std::size_t L3 = 5;
 #elif defined(THIRD_COMPLEX_2)
         // CRBM -> LCN -> MP
         constexpr const std::size_t L1 = 0;
@@ -873,8 +890,11 @@ void patches_train(
 
         auto cdbn = std::make_unique<cdbn_t>();
 
-#ifdef THIRD_MODERN
+#if defined(THIRD_MODERN)
         auto cdbn_train = std::make_unique<cdbn_train_t>();
+        auto& cdbn_ref = cdbn_train;
+#elif defined(THIRD_PATCH_CRBM_MP_2)
+        auto cdbn_train = std::make_unique<cdbn_t>();
         auto& cdbn_ref = cdbn_train;
 #else
         auto& cdbn_ref = cdbn;
@@ -945,7 +965,7 @@ void patches_train(
         conf.train_stride = train_stride;
         conf.test_stride  = test_stride;
 
-#ifdef THIRD_MODERN
+#if defined(THIRD_MODERN) || defined(THIRD_PATCH_CRBM_MP_2)
         static constexpr const bool DBN_Patch = true;
 #else
         static constexpr const bool DBN_Patch = false;
@@ -958,7 +978,7 @@ void patches_train(
             if (conf.load || features) {
                 cdbn->load(file_name);
             } else {
-#ifdef THIRD_MODERN
+#if defined(THIRD_MODERN) || defined(THIRD_PATCH_CRBM_MP_2)
                 std::cout << "Training is done with inline distort/patches..." << std::endl;
 
                 std::vector<etl::dyn_matrix<weight, 3>> training_images;

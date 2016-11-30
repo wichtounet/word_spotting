@@ -20,6 +20,7 @@ namespace third {
 //#define THIRD_CRBM_MP_1  //One layers of CRBM with Max Pooling after each layer (C1)
 #define THIRD_CRBM_MP_2  //Two layers of CRBM with Max Pooling after each layer (C1/C2)
 //#define THIRD_CRBM_MP_3  //Three layers of CRBM with Max Pooling after each layer (C1/C2/C3)
+//#define THIRD_PATCH_CRBM_MP_2  //Patches -> Two layers of CRBM with Max Pooling after each layer (C1/C2)
 
 //#define THIRD_COMPLEX_2 //Architecture to play around LCN
 //#define THIRD_MODERN    //Architecture to play around
@@ -84,7 +85,7 @@ const auto pbias_0 = [](weight& value) { value = 1.0 * value; };
 const auto pbias_1 = [](weight& value) { value = 1.0 * value; };
 const auto pbias_2 = [](weight& value) { value = 1.0 * value; };
 
-#ifdef THIRD_CRBM_MP_2
+#if defined(THIRD_CRBM_MP_2) || defined(THIRD_PATCH_CRBM_MP_2)
 const auto pbias_lambda_0 = [](weight& value) { value = 10.0 * value; };
 const auto pbias_lambda_1 = [](weight& value) { value = 10.0 * value; };
 const auto pbias_lambda_2 = [](weight& value) { value = 1.0 * value; };
