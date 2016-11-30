@@ -902,8 +902,8 @@ void patches_train(
         third::wd_l2_1(cdbn_ref->template layer_get<L2>().l2_weight_cost);
         third::pbias_1(cdbn_ref->template layer_get<L2>().pbias);
         third::pbias_lambda_1(cdbn_ref->template layer_get<L2>().pbias_lambda);
-        third::sparsity_target_1(cdbn_ref->template layer_get<L1>().sparsity_target);
-        third::clip_norm_2(cdbn_ref->template layer_get<L1>().gradient_clip);
+        third::sparsity_target_1(cdbn_ref->template layer_get<L2>().sparsity_target);
+        third::clip_norm_2(cdbn_ref->template layer_get<L2>().gradient_clip);
 #endif
 
 #if THIRD_LEVELS >= 3
@@ -914,8 +914,8 @@ void patches_train(
         third::wd_l2_2(cdbn_ref->template layer_get<L3>().l2_weight_cost);
         third::pbias_2(cdbn_ref->template layer_get<L3>().pbias);
         third::pbias_lambda_2(cdbn_ref->template layer_get<L3>().pbias_lambda);
-        third::sparsity_target_2(cdbn_ref->template layer_get<L1>().sparsity_target);
-        third::clip_norm_3(cdbn_ref->template layer_get<L1>().gradient_clip);
+        third::sparsity_target_2(cdbn_ref->template layer_get<L3>().sparsity_target);
+        third::clip_norm_3(cdbn_ref->template layer_get<L3>().gradient_clip);
 #endif
 
 #ifdef THIRD_COMPLEX_2
