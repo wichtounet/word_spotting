@@ -1032,7 +1032,11 @@ void patches_train(
         if (!conf.hmm && !runtime) {
             if (conf.fix) {
                 std::cout << "Switch to optimal parameters" << std::endl;
-                params.sc_band = 0.05;
+                if(conf.parzival){
+                    params.sc_band = 0.04;
+                } else {
+                    params.sc_band = 0.05;
+                }
                 std::cout << "\tsc_band: " << params.sc_band << std::endl;
             } else {
                 std::cout << "Optimize parameters" << std::endl;
