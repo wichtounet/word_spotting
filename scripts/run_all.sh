@@ -23,7 +23,7 @@ else
     exit 1
 fi
 
-options="-2"
+options="-2 -fix"
 
 if [ "$2" == "third" ]; then
     mode="third"
@@ -108,7 +108,7 @@ done
 for machine in ${!machines[@]}; do
     (
     sshpass -p "$password" scp config_${machine}.hpp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/include/${config_file}
-    sshpass -p "$password" ssh ${user}@${machines[machine]} 'cd /home/wicht/dev/word_spotting; make clean; make release_debug;'
+    sshpass -p "$password" ssh ${user}@${machines[machine]} 'cd /home/wicht/dev/word_spotting; make clean; make -j9 release;'
     ) &
 done
 
@@ -119,7 +119,7 @@ wait
 for machine in ${!machines[@]}; do
     (
     echo "Start execution on ${machines[machine]}"
-    sshpass -p "$password" ssh ${user}@${machines[machine]} "cd ~/dev/word_spotting; rm -rf results/*; ./release_debug/bin/spotter ${options} train ~/datasets/${dataset} ${set} > grid.log ;"
+    sshpass -p "$password" ssh ${user}@${machines[machine]} "cd ~/dev/word_spotting; rm -rf results/*; ./release/bin/spotter ${options} train ~/datasets/${dataset} ${set} > grid.log ;"
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/grid.log ${stamp}/${machine}.log
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/method_2_${mode}.dat ${stamp}/${machine}.dat
     sshpass -p "$password" scp ${user}@${machines[machine]}:/home/wicht/dev/word_spotting/results/1/global_rel_file ${stamp}/${machine}_train_global_rel_file
