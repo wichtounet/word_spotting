@@ -64,6 +64,7 @@ static_assert(false, "Invalid configuration");
     cpp_unused(L2);           \
     cpp_unused(NH2_1);        \
     cpp_unused(NH2_2);        \
+    cpp_unused(clipping_2);   \
     cpp_unused(shuffle_2);
 
 #define silence_l3_warnings() \
@@ -72,30 +73,34 @@ static_assert(false, "Invalid configuration");
     cpp_unused(L3);           \
     cpp_unused(NH3_1);        \
     cpp_unused(NH3_2);        \
+    cpp_unused(clipping_3);   \
     cpp_unused(shuffle_3);
 
-#define copy_from_namespace(ns)                                      \
-    static constexpr const std::size_t K1        = ns::K1;           \
-    static constexpr const std::size_t C1        = ns::C1;           \
-    static constexpr const std::size_t NF1       = ns::NF1;          \
-    static constexpr const std::size_t NV1_1     = ns::patch_height; \
-    static constexpr const std::size_t NV1_2     = ns::patch_width;  \
-    static constexpr const std::size_t NH1_1     = NV1_1 - NF1 + 1;  \
-    static constexpr const std::size_t NH1_2     = NV1_2 - NF1 + 1;  \
-    static constexpr const std::size_t shuffle_1 = ns::shuffle_1;    \
-    static constexpr const std::size_t K2        = ns::K2;           \
-    static constexpr const std::size_t C2        = ns::C2;           \
-    static constexpr const std::size_t NF2       = ns::NF2;          \
-    static constexpr const std::size_t NV2_1     = NH1_1 / C1;       \
-    static constexpr const std::size_t NV2_2     = NH1_2 / C1;       \
-    static constexpr const std::size_t NH2_1     = NV2_1 - NF2 + 1;  \
-    static constexpr const std::size_t NH2_2     = NV2_2 - NF2 + 1;  \
-    static constexpr const std::size_t shuffle_2 = ns::shuffle_2;    \
-    static constexpr const std::size_t K3        = ns::K3;           \
-    static constexpr const std::size_t C3        = ns::C3;           \
-    static constexpr const std::size_t NF3       = ns::NF3;          \
-    static constexpr const std::size_t NV3_1     = NH2_1 / C2;       \
-    static constexpr const std::size_t NV3_2     = NH2_2 / C2;       \
-    static constexpr const std::size_t NH3_1     = NV3_1 - NF3 + 1;  \
-    static constexpr const std::size_t NH3_2     = NV3_2 - NF3 + 1;  \
-    static constexpr const std::size_t shuffle_3 = ns::shuffle_3
+#define copy_from_namespace(ns)                                       \
+    static constexpr const std::size_t K1         = ns::K1;           \
+    static constexpr const std::size_t C1         = ns::C1;           \
+    static constexpr const std::size_t NF1        = ns::NF1;          \
+    static constexpr const std::size_t NV1_1      = ns::patch_height; \
+    static constexpr const std::size_t NV1_2      = ns::patch_width;  \
+    static constexpr const std::size_t NH1_1      = NV1_1 - NF1 + 1;  \
+    static constexpr const std::size_t NH1_2      = NV1_2 - NF1 + 1;  \
+    static constexpr const std::size_t shuffle_1  = ns::shuffle_1;    \
+    static constexpr const std::size_t clipping_1 = ns::clipping_1;   \
+    static constexpr const std::size_t K2         = ns::K2;           \
+    static constexpr const std::size_t C2         = ns::C2;           \
+    static constexpr const std::size_t NF2        = ns::NF2;          \
+    static constexpr const std::size_t NV2_1      = NH1_1 / C1;       \
+    static constexpr const std::size_t NV2_2      = NH1_2 / C1;       \
+    static constexpr const std::size_t NH2_1      = NV2_1 - NF2 + 1;  \
+    static constexpr const std::size_t NH2_2      = NV2_2 - NF2 + 1;  \
+    static constexpr const std::size_t shuffle_2  = ns::shuffle_2;    \
+    static constexpr const std::size_t clipping_2 = ns::clipping_2;   \
+    static constexpr const std::size_t K3         = ns::K3;           \
+    static constexpr const std::size_t C3         = ns::C3;           \
+    static constexpr const std::size_t NF3        = ns::NF3;          \
+    static constexpr const std::size_t NV3_1      = NH2_1 / C2;       \
+    static constexpr const std::size_t NV3_2      = NH2_2 / C2;       \
+    static constexpr const std::size_t NH3_1      = NV3_1 - NF3 + 1;  \
+    static constexpr const std::size_t NH3_2      = NV3_2 - NF3 + 1;  \
+    static constexpr const std::size_t shuffle_3  = ns::shuffle_3;    \
+    static constexpr const std::size_t clipping_3 = ns::clipping_3;

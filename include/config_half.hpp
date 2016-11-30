@@ -76,6 +76,11 @@ const auto pbias_lambda_0 = [](weight& value) { value = 2.0 * value; };
 const auto pbias_lambda_1 = [](weight& value) { value = 2.0 * value; };
 const auto pbias_lambda_2 = [](weight& value) { value = 1.0 * value; };
 
+// Not yet implemented for half
+constexpr const bool clipping_1          = false;
+constexpr const bool clipping_2          = false;
+constexpr const bool clipping_3          = false;
+
 } // end of namespace half
 
 #endif

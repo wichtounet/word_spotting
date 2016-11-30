@@ -42,6 +42,7 @@ constexpr const dll::unit_type HT1       = dll::unit_type::BINARY;
 constexpr const dll::decay_type DT1      = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM1 = dll::sparsity_method::LEE;
 constexpr const bool shuffle_1           = false;
+constexpr const bool clipping_1          = false;
 
 constexpr const std::size_t NF2          = 3;
 constexpr const std::size_t K2           = 12;
@@ -51,6 +52,7 @@ constexpr const dll::unit_type HT2       = dll::unit_type::BINARY;
 constexpr const dll::decay_type DT2      = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM2 = dll::sparsity_method::LEE;
 constexpr const bool shuffle_2           = false;
+constexpr const bool clipping_2          = false;
 
 constexpr const std::size_t NF3          = 3;
 constexpr const std::size_t K3           = 48;
@@ -60,6 +62,7 @@ constexpr const dll::unit_type HT3       = dll::unit_type::BINARY;
 constexpr const dll::decay_type DT3      = dll::decay_type::L2;
 constexpr const dll::sparsity_method SM3 = dll::sparsity_method::NONE;
 constexpr const bool shuffle_3           = true;
+constexpr const bool clipping_3          = false;
 
 const auto rate_0 = [](weight& value) { value = 0.1 * value; };
 const auto rate_1 = [](weight& value) { value = 0.1 * value; };
@@ -94,6 +97,10 @@ const auto pbias_lambda_2 = [](weight& value) { value = 1.0 * value; };
 const auto sparsity_target_0 = [](weight& value) { value = 10.0 * value; };
 const auto sparsity_target_1 = [](weight& value) { value = 1.0 * value; };
 const auto sparsity_target_2 = [](weight& value) { value = 1.0 * value; };
+
+const auto clip_norm_1 = [](weight& t) { t = 5.0; };
+const auto clip_norm_2 = [](weight& t) { t = 5.0; };
+const auto clip_norm_3 = [](weight& t) { t = 5.0; };
 
 } // end of namespace third
 
