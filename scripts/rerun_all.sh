@@ -46,9 +46,8 @@ if [ ! -d run/${old_stamp} ]; then
     exit
 fi
 
-all_option=""
+options=""
 dataset="washington"
-dataset_option=""
 
 # Discards the first three parameters
 shift 4
@@ -80,7 +79,7 @@ do
     shift
 done
 
-options="$option $all_option $dataset_option"
+options="$options $option"
 
 config_file="config_${mode}.hpp"
 
