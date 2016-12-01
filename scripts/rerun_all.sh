@@ -50,19 +50,35 @@ all_option=""
 dataset="washington"
 dataset_option=""
 
-if [ "$5" == "all" ]; then
-    all_option="-all"
-fi
+# Discards the first three parameters
+shift 4
 
-if [ "$5" == "parzival" ]; then
-    dataset_option="-parzival"
-    dataset="parzival"
-fi
+while [ "$1" ]
+do
+    if [ "$1" == "all" ]; then
+        options="$options -all"
+    fi
 
-if [ "$5" == "iam" ]; then
-    dataset_option="-iam"
-    dataset="iam"
-fi
+    if [ "$1" == "parzival" ]; then
+        options="$options -parzival"
+        dataset="parzival"
+    fi
+
+    if [ "$1" == "iam" ]; then
+        options="$options -iam"
+        dataset="iam"
+    fi
+
+    if [ "$1" == "hmm" ]; then
+        options="$options -hmm -htk"
+    fi
+
+    if [ "$1" == "sub" ]; then
+        options="$options -sub"
+    fi
+
+    shift
+done
 
 options="$option $all_option $dataset_option"
 

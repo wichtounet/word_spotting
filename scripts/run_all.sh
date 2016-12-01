@@ -65,6 +65,10 @@ do
         options="$options -hmm -htk"
     fi
 
+    if [ "$1" == "sub" ]; then
+        options="$options -sub"
+    fi
+
     shift
 done
 
