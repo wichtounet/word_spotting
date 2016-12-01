@@ -490,14 +490,14 @@ void patches_train(
     }
 
     if(conf.sub){
-        std::cout << "Use only 100 images from pretraining" << std::endl;
+        std::cout << "Use only 200 images from pretraining" << std::endl;
 
         static std::random_device rd;
         static std::mt19937_64 g(rd());
 
         std::shuffle(pretraining_image_names.begin(), pretraining_image_names.end(), g);
 
-        pretraining_image_names.resize(100);
+        pretraining_image_names.resize(200);
     }
 
     if (conf.half) {
