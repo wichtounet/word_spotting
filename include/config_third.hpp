@@ -35,25 +35,25 @@ constexpr const std::size_t epochs       = 10;
 constexpr const std::size_t train_stride = 1;
 constexpr const std::size_t test_stride  = 1;
 
-constexpr const std::size_t NF1          = 9;
-constexpr const std::size_t K1           = 12;
-constexpr const std::size_t C1           = 2;
-constexpr const std::size_t B1           = 128;
-constexpr const dll::unit_type HT1       = dll::unit_type::RELU;
-constexpr const dll::decay_type DT1      = dll::decay_type::L2;
-constexpr const dll::sparsity_method SM1 = dll::sparsity_method::NONE;
-constexpr const bool shuffle_1           = false;
-constexpr const bool clipping_1          = true;
+constexpr const std::size_t NF1          = 9;                          // 9 for GW
+constexpr const std::size_t K1           = 12;                         // 8 for GW
+constexpr const std::size_t C1           = 2;                          // 2 for GW
+constexpr const std::size_t B1           = 128;                        // 128 for GW
+constexpr const dll::unit_type HT1       = dll::unit_type::RELU;      // BINARY for GW
+constexpr const dll::decay_type DT1      = dll::decay_type::L2;        // L2 for GW
+constexpr const dll::sparsity_method SM1 = dll::sparsity_method::NONE; // LEE for GW
+constexpr const bool shuffle_1           = false;                      // false for GW
+constexpr const bool clipping_1          = true;                       // false for GW
 
-constexpr const std::size_t NF2          = 3;
-constexpr const std::size_t K2           = 12;
-constexpr const std::size_t C2           = 2;
-constexpr const std::size_t B2           = 128;
-constexpr const dll::unit_type HT2       = dll::unit_type::RELU;
-constexpr const dll::decay_type DT2      = dll::decay_type::L2;
-constexpr const dll::sparsity_method SM2 = dll::sparsity_method::NONE;
-constexpr const bool shuffle_2           = false;
-constexpr const bool clipping_2          = true;
+constexpr const std::size_t NF2          = 3;                          // 3 for GW
+constexpr const std::size_t K2           = 12;                         // 8 for GW
+constexpr const std::size_t C2           = 2;                          // 2 for GW
+constexpr const std::size_t B2           = 128;                        // 128 for GW
+constexpr const dll::unit_type HT2       = dll::unit_type::RELU;      // BINARY for GW
+constexpr const dll::decay_type DT2      = dll::decay_type::L2;        // L2 for GW
+constexpr const dll::sparsity_method SM2 = dll::sparsity_method::NONE; // LEE for GW
+constexpr const bool shuffle_2           = false;                      // false for GW
+constexpr const bool clipping_2          = true;                       // false for GW
 
 constexpr const std::size_t NF3          = 3;
 constexpr const std::size_t K3           = 48;
@@ -66,7 +66,7 @@ constexpr const bool shuffle_3           = true;
 constexpr const bool clipping_3          = false;
 
 const auto rate_0 = [](weight& value) { value = 0.1 * value; };
-const auto rate_1 = [](weight& value) { value = 0.001 * value; };
+const auto rate_1 = [](weight& value) { value = 0.1 * value; };
 const auto rate_2 = [](weight& value) { value = 1.0 * value; };
 
 const auto momentum_0 = [](weight& ini, weight& fin) { ini = 0.9; fin = 0.9; };
@@ -78,7 +78,7 @@ const auto wd_l1_1 = [](weight& value) { value = 1.0 * value; };
 const auto wd_l1_2 = [](weight& value) { value = 1.0 * value; };
 
 const auto wd_l2_0 = [](weight& value) { value = 1.0 * value; };
-const auto wd_l2_1 = [](weight& value) { value = 10.0 * value; };
+const auto wd_l2_1 = [](weight& value) { value = 1.0 * value; };
 const auto wd_l2_2 = [](weight& value) { value = 1.0 * value; };
 
 const auto pbias_0 = [](weight& value) { value = 1.0 * value; };
