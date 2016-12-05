@@ -902,18 +902,10 @@ std::vector<std::vector<etl::dyn_vector<weight>>> compute_reference(thread_pool&
 parameters get_parameters(const config& conf){
     parameters parameters;
 
-    if (conf.method == Method::Terasawa2009) {
-        if(conf.parzival){
-            parameters.sc_band = 0.14;
-        } else {
-            parameters.sc_band = 0.12;
-        }
+    if(conf.parzival){
+        parameters.sc_band = 0.14;
     } else {
-        if(conf.parzival){
-            parameters.sc_band = 0.14;
-        } else {
-            parameters.sc_band = 0.12;
-        }
+        parameters.sc_band = 0.12;
     }
 
     std::cout << "\tsc_band: " << parameters.sc_band << std::endl;
