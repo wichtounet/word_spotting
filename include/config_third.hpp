@@ -65,8 +65,8 @@ constexpr const dll::sparsity_method SM3 = dll::sparsity_method::NONE;
 constexpr const bool shuffle_3           = true;
 constexpr const bool clipping_3          = false;
 
-const auto rate_0 = [](weight& value) { value = 10e-4; };
-const auto rate_1 = [](weight& value) { value = 10e-6; };
+const auto rate_0 = [](weight& value) { value = 10e-4; }; //0.1 * value for GW
+const auto rate_1 = [](weight& value) { value = 10e-6; }; //0.1 * value for GW
 const auto rate_2 = [](weight& value) { value = 1.0 * value; };
 
 const auto momentum_0 = [](weight& ini, weight& fin) { ini = 0.9; fin = 0.9; };
