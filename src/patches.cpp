@@ -161,7 +161,7 @@ void normalize_patch_features(Patch& features){
 
 #ifdef LOCAL_L2_NORMALIZATION
     for (std::size_t i = 0; i < etl::dim<0>(features); ++i) {
-        features(i) /= std::sqrt(etl::sum(features(i) + features(i)) + 16.0 * 16.0);
+        features(i) /= std::sqrt(etl::sum(features(i) >> features(i)) + 16.0 * 16.0);
     }
 #endif
 
@@ -170,7 +170,7 @@ void normalize_patch_features(Patch& features){
 #endif
 
 #ifdef GLOBAL_L2_NORMALIZATION
-    features /= std::sqrt(etl::sum(features + features) + 16.0 * 16.0);
+    features /= std::sqrt(etl::sum(features >> features) + 16.0 * 16.0);
 #endif
 }
 
