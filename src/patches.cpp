@@ -1045,6 +1045,8 @@ void patches_train(
         params.sc_band = 0.1;
 
         if(global_scaling || features || runtime || !conf.notrain){
+            dll::auto_timer timer("evaluate:train");
+
             if(!runtime){
                 std::cout << "Evaluate on training set" << std::endl;
             }
@@ -1072,6 +1074,8 @@ void patches_train(
         }
 
         if(!runtime && (features || !conf.novalid)){
+            dll::auto_timer timer("evaluate:validation");
+
             std::cout << "Evaluate on validation set" << std::endl;
             auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
 
@@ -1081,6 +1085,8 @@ void patches_train(
         }
 
         if(!runtime){
+            dll::auto_timer timer("evaluate:test");
+
             std::cout << "Evaluate on test set" << std::endl;
             auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
 

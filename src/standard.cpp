@@ -1045,17 +1045,22 @@ void standard_train(
     names train_word_names, names train_image_names, names valid_image_names, names test_image_names) {
 
     if (!conf.notrain) {
+        dll::auto_timer timer("evaluate:train");
         std::cout << "Evaluate on training set" << std::endl;
         evaluate_dtw(dataset, set, conf, train_word_names, train_image_names, true);
     }
 
     if (!conf.novalid) {
+        dll::auto_timer timer("evaluate:validation");
         std::cout << "Evaluate on validation set" << std::endl;
         evaluate_dtw(dataset, set, conf, train_word_names, valid_image_names, false);
     }
 
-    std::cout << "Evaluate on test set" << std::endl;
-    evaluate_dtw(dataset, set, conf, train_word_names, test_image_names, false);
+    {
+        dll::auto_timer timer("evaluate:test");
+        std::cout << "Evaluate on test set" << std::endl;
+        evaluate_dtw(dataset, set, conf, train_word_names, test_image_names, false);
+    }
 }
 
 void standard_features(

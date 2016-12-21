@@ -26,7 +26,7 @@ constexpr const std::size_t n_hmm_gaussians_iam = 7;
 constexpr const std::size_t n_hmm_iterations = 4;
 
 // Number of states per character
-constexpr const auto n_states_per_char_std     = 20;
+constexpr const auto n_states_per_char_std     = 10;
 constexpr const auto n_states_per_char_patches = 20;
 
 // Number of states per space character
