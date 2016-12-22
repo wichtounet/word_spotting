@@ -298,7 +298,8 @@ hmm_htk::hmm_p hmm_htk::train_global_hmm(const config& conf, const spot_dataset&
     if (conf.hmm_var) {
         std::cout << "    " << " variable number of states per character" << std::endl;
     } else {
-        std::cout << "    " << n_states_per_space << " states per character" << std::endl;
+        std::cout << "    " << n_states_per_char << " states per character" << std::endl;
+        std::cout << "    " << n_states_per_space << " states per sparce character" << std::endl;
     }
 
     for(std::size_t g = 1; g <= n_hmm_gaussians; ++g){
