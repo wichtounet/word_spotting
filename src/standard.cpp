@@ -31,6 +31,16 @@
 
 namespace {
 
+void log_scaling(){
+#ifdef LOCAL_LINEAR_SCALING
+    std::cout << "Local Linear Scaling" << std::endl;
+#endif
+
+#ifdef LOCAL_MEAN_SCALING
+    std::cout << "Local Mean Scaling" << std::endl;
+#endif
+}
+
 constexpr bool rodriguez_scaling = false;
 
 const bool interpolate = false;
@@ -1044,6 +1054,8 @@ void standard_train(
     const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
     names train_word_names, names train_image_names, names valid_image_names, names test_image_names) {
 
+    log_scaling();
+
     if (!conf.notrain) {
         dll::auto_timer timer("evaluate:train");
         std::cout << "Evaluate on training set" << std::endl;
@@ -1066,6 +1078,8 @@ void standard_train(
 void standard_features(
     const spot_dataset& dataset, const spot_dataset_set& /*set*/, config& conf,
     names /*train_word_names*/, names train_image_names, names valid_image_names, names test_image_names) {
+
+    log_scaling();
 
     std::cout << "Extract features on training set" << std::endl;
     extract_features(dataset, conf, train_image_names, true);
