@@ -71,6 +71,8 @@ void read_line_transcriptions(spot_dataset& dataset, const std::string& path) {
 }
 
 void read_images(std::unordered_map<std::string, cv::Mat>& map, const std::string& file_path) {
+    std::cout << "Read images from '" << file_path << "'" << std::endl;
+
     struct dirent* entry;
     auto dir = opendir(file_path.c_str());
 
