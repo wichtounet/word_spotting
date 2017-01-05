@@ -70,13 +70,13 @@ spot_dataset read_dataset(config& conf) {
     spot_dataset dataset;
 
     if(conf.washington){
-        dataset = read_washington(dataset_path);
+        dataset = read_washington(conf, dataset_path);
     } else if(conf.parzival){
-        dataset = read_parzival(dataset_path);
+        dataset = read_parzival(conf, dataset_path);
     } else if(conf.iam){
-        dataset = read_iam(dataset_path);
+        dataset = read_iam(conf, dataset_path);
     } else if(conf.manmatha){
-        dataset = read_manmatha(dataset_path);
+        dataset = read_manmatha(conf, dataset_path);
     } else {
         std::cerr << "Invalid configuration of the dataset" << std::endl;
     }

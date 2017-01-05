@@ -42,6 +42,8 @@ void print_usage() {
     std::cout << " -htk : Use HTK in place of mlpack" << std::endl;
     std::cout << " -hmm-var: Use variable number of HMM states instead of fixed ones" << std::endl;
     std::cout << " -distribute: Use the full grid (only for -hmm -htk)" << std::endl;
+    std::cout << " -gray: Use the gray images (only for -washington)" << std::endl;
+    std::cout << " -binary: Use the binary images (only for -washington)" << std::endl;
 }
 
 config parse_args(int argc, char** argv) {
@@ -101,6 +103,10 @@ config parse_args(int argc, char** argv) {
             conf.hmm_var = true;
         } else if (conf.args[i] == "-distribute") {
             conf.distribute = true;
+        } else if (conf.args[i] == "-gray") {
+            conf.gray = true;
+        } else if (conf.args[i] == "-binary") {
+            conf.binary = true;
         } else if (conf.args[i] == "-manmatha") {
             conf.manmatha   = true;
             conf.washington = false;
@@ -121,6 +127,12 @@ config parse_args(int argc, char** argv) {
         } else {
             break;
         }
+    }
+
+    if(!conf.washington && (conf.gray || conf.binary)){
+        conf.gray = false;
+        conf.binary = false;
+        std::cerr << "error: -gray and -binary can only be used with GW data set" << std::endl;
     }
 
     conf.command = conf.args[i++];

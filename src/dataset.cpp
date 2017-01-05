@@ -95,8 +95,18 @@ void read_line_images(spot_dataset& dataset, const std::string& path) {
     read_images(dataset.line_images, path + "/data/line_images_normalized/");
 }
 
-void read_word_images(spot_dataset& dataset, const std::string& path) {
+void read_word_images(const config& /*conf*/, spot_dataset& dataset, const std::string& path) {
     read_images(dataset.word_images, path + "/data/word_images_normalized/");
+}
+
+void read_word_images_gw(const config& conf, spot_dataset& dataset, const std::string& path) {
+    if(conf.gray){
+        read_images(dataset.word_images, path + "/data/word_gray/");
+    } else if(conf.binary){
+        read_images(dataset.word_images, path + "/data/word_binary/");
+    } else {
+        read_images(dataset.word_images, path + "/data/word_images_normalized/");
+    }
 }
 
 void read_list(std::vector<std::string>& list, const std::string& path) {
@@ -215,11 +225,11 @@ void load_sets_iam(spot_dataset& dataset, const std::string& path) {
 
 } //end of anonymous namespace
 
-spot_dataset read_washington(const std::string& path) {
+spot_dataset read_washington(const config& conf, const std::string& path) {
     spot_dataset dataset;
 
     read_word_labels(dataset, path);
-    read_word_images(dataset, path);
+    read_word_images_gw(conf, dataset, path);
 
     if(dataset_read_lines){
         read_line_transcriptions(dataset, path);
@@ -231,21 +241,21 @@ spot_dataset read_washington(const std::string& path) {
     return dataset;
 }
 
-spot_dataset read_manmatha(const std::string& path) {
+spot_dataset read_manmatha(const config& conf, const std::string& path) {
     spot_dataset dataset;
 
-    read_word_images(dataset, path);
+    read_word_images(conf, dataset, path);
 
     load_sets_washington(dataset, path);
 
     return dataset;
 }
 
-spot_dataset read_parzival(const std::string& path) {
+spot_dataset read_parzival(const config& conf, const std::string& path) {
     spot_dataset dataset;
 
     read_word_labels(dataset, path);
-    read_word_images(dataset, path);
+    read_word_images(conf, dataset, path);
 
     if(dataset_read_lines){
         read_line_transcriptions(dataset, path);
@@ -257,11 +267,11 @@ spot_dataset read_parzival(const std::string& path) {
     return dataset;
 }
 
-spot_dataset read_iam(const std::string& path) {
+spot_dataset read_iam(const config& conf, const std::string& path) {
     spot_dataset dataset;
 
     read_word_labels(dataset, path);
-    read_word_images(dataset, path);
+    read_word_images(conf, dataset, path);
 
     if(dataset_read_lines){
         read_line_transcriptions(dataset, path);

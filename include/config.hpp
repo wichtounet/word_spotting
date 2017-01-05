@@ -61,6 +61,10 @@ struct config {
     bool parzival   = false;
     bool iam        = false;
 
+    // Special options for washington
+    bool gray   = false;
+    bool binary = false;
+
     //The following values are set during execution
     std::size_t downscale    = 1;
     std::size_t patch_width  = 0;
