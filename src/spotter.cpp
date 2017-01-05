@@ -86,13 +86,21 @@ spot_dataset read_dataset(config& conf) {
 
     if (conf.washington || conf.manmatha) {
         conf.cv_full_path = dataset_path + "/sets/" + cv_set + "/";
-    } else if (conf.parzival) {
-        conf.cv_full_path = dataset_path + "/sets1/";
-    } else if (conf.iam) {
-        conf.cv_full_path = dataset_path + "/sets/";
-    }
 
-    conf.data_full_path = dataset_path + "/data/word_images_normalized/";
+        if (conf.gray) {
+            conf.data_full_path = dataset_path + "/data/word_gray/";
+        } else if (conf.binary) {
+            conf.data_full_path = dataset_path + "/data/word_binary/";
+        } else {
+            conf.data_full_path = dataset_path + "/data/word_images_normalized/";
+        }
+    } else if (conf.parzival) {
+        conf.cv_full_path   = dataset_path + "/sets1/";
+        conf.data_full_path = dataset_path + "/data/word_images_normalized/";
+    } else if (conf.iam) {
+        conf.cv_full_path   = dataset_path + "/sets/";
+        conf.data_full_path = dataset_path + "/data/word_images_normalized/";
+    }
 
     return dataset;
 }
