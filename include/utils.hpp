@@ -99,53 +99,108 @@ template <typename DBN>
 std::vector<typename DBN::template layer_type<0>::input_one_t> mat_to_patches(const config& conf, const cv::Mat& image, bool train) {
     using image_t = typename DBN::template layer_type<0>::input_one_t;
 
-    cv::Mat buffer_image;
+    if(conf.grayscale){
+        cv::Mat buffer_image;
 
-    if (conf.downscale > 1) {
-        cv::Mat scaled_normalized(
-            cv::Size(std::max(1UL, static_cast<size_t>(image.size().width)), std::max(1UL, image.size().height / conf.downscale)),
-            CV_8U);
-        cv::resize(image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
-        cv::adaptiveThreshold(scaled_normalized, buffer_image, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
-    }
+        if (conf.downscale > 1) {
+            cv::Mat scaled_normalized(
+                cv::Size(std::max(1UL, static_cast<size_t>(image.size().width)), std::max(1UL, image.size().height / conf.downscale)),
+                CV_8U);
+            cv::resize(image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
+            buffer_image = scaled_normalized;
+        }
 
-    const cv::Mat& clean_image = conf.downscale > 1 ? buffer_image : image;
+        const cv::Mat& clean_image = conf.downscale > 1 ? buffer_image : image;
 
-    const auto patch_width        = conf.patch_width;
-    const auto left               = patch_width / 2;
-    const auto patch_stride       = train ? conf.train_stride : conf.test_stride;
-    const std::size_t real_width  = clean_image.size().width;
-    const std::size_t real_height = clean_image.size().height;
+        const auto patch_width        = conf.patch_width;
+        const auto left               = patch_width / 2;
+        const auto patch_stride       = train ? conf.train_stride : conf.test_stride;
+        const std::size_t real_width  = clean_image.size().width;
+        const std::size_t real_height = clean_image.size().height;
 
-    cv::Mat final_image(cv::Size(real_width + patch_width, real_height), CV_8U);
-    final_image = cv::Scalar(1.0);
+        // The image is going to be bordered by white, in order to
+        // ease handling of border
+
+        cv::Mat final_image(cv::Size(real_width + patch_width, real_height), CV_8U);
+        final_image = cv::Scalar(255);
 
 #ifdef OPENCV_23
-    //This is not efficient, but we need this because of the ANCIENT retarded grid machines
-    for (std::size_t y = 0; y < real_height; ++y) {
-        for (std::size_t x = 0; x < real_width; ++x) {
-            final_image.at<uint8_t>(y, x + left) = clean_image.at<uint8_t>(y, x);
-        }
-    }
-#else
-    clean_image.copyTo(final_image(cv::Rect(left , 0, real_width, real_height)));
-#endif
-
-    std::vector<image_t> patches;
-
-    for (std::size_t real_x = 0; real_x < real_width; real_x += patch_stride) {
-        patches.emplace_back();
-
-        auto& patch = patches.back();
-
-        for (std::size_t real_y = 0; real_y < real_height; ++real_y) {
-            for (std::size_t x = 0; x < patch_width; ++x) {
-                patch(0, real_y, x) = final_image.at<uint8_t>(real_y, real_x + x) == 0 ? 0.0 : 1.0;
+        //This is terribly inefficient, but we need this because of the ANCIENT retarded grid machines
+        for (std::size_t y = 0; y < real_height; ++y) {
+            for (std::size_t x = 0; x < real_width; ++x) {
+                final_image.at<uint8_t>(y, x + left) = clean_image.at<uint8_t>(y, x);
             }
         }
-    }
+#else
+        clean_image.copyTo(final_image(cv::Rect(left , 0, real_width, real_height)));
+#endif
 
-    return patches;
+        cv::GaussianBlur(final_image, final_image, cv::Size(0, 0), 3.0, 3.0);
+
+        std::vector<image_t> patches;
+
+        for (std::size_t real_x = 0; real_x < real_width; real_x += patch_stride) {
+            patches.emplace_back();
+
+            auto& patch = patches.back();
+
+            for (std::size_t real_y = 0; real_y < real_height; ++real_y) {
+                for (std::size_t x = 0; x < patch_width; ++x) {
+                    patch(0, real_y, x) = final_image.at<uint8_t>(real_y, real_x + x) / 255.0f;
+                }
+            }
+        }
+
+        return patches;
+    } else {
+        cv::Mat buffer_image;
+
+        if (conf.downscale > 1) {
+            cv::Mat scaled_normalized(
+                cv::Size(std::max(1UL, static_cast<size_t>(image.size().width)), std::max(1UL, image.size().height / conf.downscale)),
+                CV_8U);
+            cv::resize(image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
+            cv::adaptiveThreshold(scaled_normalized, buffer_image, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
+        }
+
+        const cv::Mat& clean_image = conf.downscale > 1 ? buffer_image : image;
+
+        const auto patch_width        = conf.patch_width;
+        const auto left               = patch_width / 2;
+        const auto patch_stride       = train ? conf.train_stride : conf.test_stride;
+        const std::size_t real_width  = clean_image.size().width;
+        const std::size_t real_height = clean_image.size().height;
+
+        cv::Mat final_image(cv::Size(real_width + patch_width, real_height), CV_8U);
+        final_image = cv::Scalar(1.0);
+
+#ifdef OPENCV_23
+        //This is not efficient, but we need this because of the ANCIENT retarded grid machines
+        for (std::size_t y = 0; y < real_height; ++y) {
+            for (std::size_t x = 0; x < real_width; ++x) {
+                final_image.at<uint8_t>(y, x + left) = clean_image.at<uint8_t>(y, x);
+            }
+        }
+#else
+        clean_image.copyTo(final_image(cv::Rect(left , 0, real_width, real_height)));
+#endif
+
+        std::vector<image_t> patches;
+
+        for (std::size_t real_x = 0; real_x < real_width; real_x += patch_stride) {
+            patches.emplace_back();
+
+            auto& patch = patches.back();
+
+            for (std::size_t real_y = 0; real_y < real_height; ++real_y) {
+                for (std::size_t x = 0; x < patch_width; ++x) {
+                    patch(0, real_y, x) = final_image.at<uint8_t>(real_y, real_x + x) == 0 ? 0.0 : 1.0;
+                }
+            }
+        }
+
+        return patches;
+    }
 }
 
 #endif
