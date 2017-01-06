@@ -305,14 +305,15 @@ int main(int argc, char** argv) {
     }
 
     std::cout << std::string(11, '#') << " Keyword spotting " << std::string(11, '#') << std::endl;
-    std::cout << "  Method: " << method_to_string(conf.method) << std::endl;
+    std::cout << "     Method: " << method_to_string(conf.method) << std::endl;
+    std::cout << "  Grayscale: " << (conf.grayscale ? "true" : "false") << std::endl;
 
-    if(conf.hmm && conf.htk){
-        std::cout << "    Eval: HMM (HTK)" << std::endl;
-    } else if(conf.hmm){
-        std::cout << "    Eval: HMM (mlpack)" << std::endl;
+    if (conf.hmm && conf.htk) {
+        std::cout << "       Eval: HMM (HTK)" << std::endl;
+    } else if (conf.hmm) {
+        std::cout << "       Eval: HMM (mlpack)" << std::endl;
     } else {
-        std::cout << "    Eval: DTW" << std::endl;
+        std::cout << "       Eval: DTW" << std::endl;
     }
 
     bool ok = true;

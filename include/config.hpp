@@ -55,6 +55,7 @@ struct config {
     bool htk        = false;
     bool hmm_var    = false;
     bool distribute = false;
+    bool grayscale  = false;
 
     bool washington = true;
     bool manmatha   = false;

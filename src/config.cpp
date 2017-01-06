@@ -103,6 +103,8 @@ config parse_args(int argc, char** argv) {
             conf.hmm_var = true;
         } else if (conf.args[i] == "-distribute") {
             conf.distribute = true;
+        } else if (conf.args[i] == "-grayscale") {
+            conf.grayscale = true;
         } else if (conf.args[i] == "-gray") {
             conf.gray = true;
         } else if (conf.args[i] == "-binary") {
