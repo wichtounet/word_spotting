@@ -15,6 +15,7 @@
 
 #include "config.hpp"
 #include "dataset.hpp"
+#include "cpp_utils/data.hpp"
 
 cv::Mat elastic_distort(const cv::Mat& clean_image);
 
@@ -137,6 +138,8 @@ std::vector<typename DBN::template layer_type<0>::input_one_t> mat_to_patches(co
 
         cv::GaussianBlur(final_image, final_image, cv::Size(0, 0), 3.0, 3.0);
 
+        static constexpr bool grayscale_norm = true;
+
         std::vector<image_t> patches;
 
         for (std::size_t real_x = 0; real_x < real_width; real_x += patch_stride) {
@@ -146,8 +149,16 @@ std::vector<typename DBN::template layer_type<0>::input_one_t> mat_to_patches(co
 
             for (std::size_t real_y = 0; real_y < real_height; ++real_y) {
                 for (std::size_t x = 0; x < patch_width; ++x) {
-                    patch(0, real_y, x) = final_image.at<uint8_t>(real_y, real_x + x) / 255.0f;
+                    if(grayscale_norm){
+                        patch(0, real_y, x) = final_image.at<uint8_t>(real_y, real_x + x);
+                    } else {
+                        patch(0, real_y, x) = final_image.at<uint8_t>(real_y, real_x + x) / 255.0f;
+                    }
                 }
+            }
+
+            if(grayscale_norm){
+                cpp::normalize(patch);
             }
         }
 
