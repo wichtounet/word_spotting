@@ -25,6 +25,7 @@ void print_usage() {
     std::cout << " -5 : Method 5 [Rodriguez2008]" << std::endl;
     std::cout << " -6 : Method 6 [Vinciarelli2004]" << std::endl;
     std::cout << " -7 : Method 7 [Terasawa2009]" << std::endl;
+    std::cout << " -8 : Benchmark of auto encoders" << std::endl;
     std::cout << " -half : Takes half resolution images only" << std::endl;
     std::cout << " -quarter : Takes quarter resolution images only" << std::endl;
     std::cout << " -third : Takes third resolution images only" << std::endl;
@@ -71,6 +72,9 @@ config parse_args(int argc, char** argv) {
             conf.method = Method::Vinciarelli2004;
         } else if (conf.args[i] == "-7") {
             conf.method = Method::Terasawa2009;
+        } else if (conf.args[i] == "-8") {
+            conf.method = Method::AE;
+            conf.third = true; // Third is assumed for the benchmark
         } else if (conf.args[i] == "-full") {
             //Simply here for consistency sake
         } else if (conf.args[i] == "-half") {

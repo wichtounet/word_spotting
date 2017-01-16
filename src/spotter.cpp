@@ -11,9 +11,10 @@
 #include "dataset.hpp" //Dataset handling
 
 //Include methods
-#include "standard.hpp" //Method 0
-#include "holistic.hpp" //Method 1
-#include "patches.hpp"  //Method 2
+#include "standard.hpp" // Method 0
+#include "holistic.hpp" // Method 1
+#include "patches.hpp"  // Method 2
+#include "ae.hpp"       // Comparison of auto encoders
 
 //Method-Agnostic commands
 #include "evaluate_features.hpp" //evaluate_patches command
@@ -140,6 +141,9 @@ int command_train(config& conf) {
             break;
         case Method::Patches:
             patches_train(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
+            break;
+        case Method::AE:
+            ae_train(dataset, set, conf, train_word_names, train_image_names, test_image_names);
             break;
     }
 

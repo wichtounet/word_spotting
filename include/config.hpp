@@ -31,6 +31,7 @@ enum class Method : std::size_t {
     Rodriguez2008,
     Vinciarelli2004,
     Terasawa2009,
+    AE,
 };
 
 std::string method_to_string(Method method);
