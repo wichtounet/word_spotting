@@ -281,29 +281,21 @@ std::string evaluate_patches_ae(const spot_dataset& dataset, const Set& set, con
     return result_folder;
 }
 
-} // end of anonymous namespace
+constexpr const auto patch_width  = 20;
+constexpr const auto patch_height = 40;
+constexpr size_t batch_size       = 128;
+constexpr size_t epochs           = 10;
+constexpr const auto train_stride = 1;
+constexpr const auto test_stride  = 1;
 
-void ae_train(
-    const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
-    names train_word_names, names train_image_names, names test_image_names) {
+using image_t = etl::fast_dyn_matrix<float, 1, patch_height, patch_width>;
 
-    auto pretraining_image_names = train_image_names;
-
-    static constexpr const auto patch_width  = 20;
-    static constexpr const auto patch_height = 40;
-    static constexpr size_t batch_size       = 128;
-    static constexpr size_t epochs           = 10;
-    static constexpr const auto train_stride = 1;
-    static constexpr const auto test_stride  = 1;
-
-    log_scaling();
-
-    std::cout << "Use a third of the resolution" << std::endl;
-
-    using network_t = dll::dbn_desc<
+template<size_t N>
+void dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches) {
+    using network_t = typename dll::dbn_desc<
         dll::dbn_layers<
-            dll::dense_desc<patch_height * patch_width, 50>::layer_t,
-            dll::dense_desc<50, patch_height * patch_width>::layer_t
+            typename dll::dense_desc<patch_height * patch_width, N>::layer_t,
+            typename dll::dense_desc<N, patch_height * patch_width>::layer_t
         >,
         dll::momentum, dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>
@@ -312,29 +304,6 @@ void ae_train(
     auto net = std::make_unique<network_t>();
 
     net->display();
-    std::cout << net->output_size() << " output features" << std::endl;
-
-    //Pass information to the next passes (evaluation)
-    conf.patch_width  = patch_width;
-    conf.train_stride = train_stride;
-    conf.test_stride  = test_stride;
-
-    //Train the DBN
-    using image_t = etl::fast_dyn_matrix<float, 1, patch_height, patch_width>;
-    std::vector<image_t> training_patches;
-    training_patches.reserve(pretraining_image_names.size() * 10);
-
-    std::cout << "Generate patches ..." << std::endl;
-
-    for (auto& name : pretraining_image_names) {
-        decltype(auto) image = dataset.word_images.at(name);
-
-        // Insert the patches from the original image
-        auto patches = mat_to_patches_t<image_t>(conf, image, true);
-        std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
-    }
-
-    std::cout << "... " << training_patches.size() << " patches extracted" << std::endl;
 
     // Configure the network
     net->learning_rate    = 0.1;
@@ -344,11 +313,47 @@ void ae_train(
     // Train as autoencoder
     net->fine_tune_ae(training_patches, epochs);
 
+    auto folder = evaluate_patches_ae<0, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
+    std::cout << "AE-Result: Dense(" << N << "):" << folder << std::endl;
+}
+
+} // end of anonymous namespace
+
+void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names train_image_names, names test_image_names) {
+    log_scaling();
+
+    std::cout << "Use a third of the resolution" << std::endl;
+
+    //Pass information to the next passes (evaluation)
+    conf.patch_width  = patch_width;
+    conf.train_stride = train_stride;
+    conf.test_stride  = test_stride;
+
+    //Train the DBN
+    using image_t = etl::fast_dyn_matrix<float, 1, patch_height, patch_width>;
+    std::vector<image_t> training_patches;
+    training_patches.reserve(train_image_names.size() * 10);
+
+    std::cout << "Generate patches ..." << std::endl;
+
+    for (auto& name : train_image_names) {
+        // Insert the patches from the original image
+        auto patches = mat_to_patches_t<image_t>(conf, dataset.word_images.at(name), true);
+        std::copy(patches.begin(), patches.end(), std::back_inserter(training_patches));
+    }
+
+    std::cout << "... " << training_patches.size() << " patches extracted" << std::endl;
+
     std::cout << "Switch to optimal parameters" << std::endl;
     parameters params;
     params.sc_band = 0.05;
     std::cout << "\tsc_band: " << params.sc_band << std::endl;
 
-    std::cout << "Evaluate on test set" << std::endl;
-    auto folder = evaluate_patches_ae<0, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
+    dense_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    dense_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    dense_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    dense_evaluate<200>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    dense_evaluate<300>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    dense_evaluate<400>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    dense_evaluate<500>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 }
