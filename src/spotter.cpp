@@ -188,6 +188,9 @@ int command_features(config& conf) {
         case Method::Patches:
             patches_features(dataset, set, conf, train_word_names, train_image_names, valid_image_names, test_image_names);
             break;
+        case Method::AE:
+            std::cerr << "AE method does not support feature extraction" << std::endl;
+            break;
     }
 
     return 0;
