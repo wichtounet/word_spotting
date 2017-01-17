@@ -96,9 +96,9 @@ typename DBN::template layer_type<0>::input_one_t holistic_mat(const config& con
     return training_image;
 }
 
-template <typename DBN>
-std::vector<typename DBN::template layer_type<0>::input_one_t> mat_to_patches(const config& conf, const cv::Mat& image, bool train) {
-    using image_t = typename DBN::template layer_type<0>::input_one_t;
+template <typename Input>
+std::vector<Input> mat_to_patches_t(const config& conf, const cv::Mat& image, bool train) {
+    using image_t = Input;
 
     if(conf.grayscale){
         cv::Mat buffer_image;
@@ -212,6 +212,12 @@ std::vector<typename DBN::template layer_type<0>::input_one_t> mat_to_patches(co
 
         return patches;
     }
+}
+
+template <typename DBN>
+std::vector<typename DBN::template layer_type<0>::input_one_t> mat_to_patches(const config& conf, const cv::Mat& image, bool train) {
+    using image_t = typename DBN::template layer_type<0>::input_one_t;
+    return mat_to_patches_t<image_t>(conf, image, train);
 }
 
 #endif
