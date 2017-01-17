@@ -168,6 +168,8 @@ std::string method_to_string(Method method){
             return "Vinciarelli2004";
         case Method::Terasawa2009:
             return "Terasawa2009";
+        case Method::AE:
+            return "AE";
     }
 
     cpp_unreachable("Unhandled method");
