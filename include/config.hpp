@@ -67,6 +67,10 @@ struct config {
     bool gray   = false;
     bool binary = false;
 
+    // Special options for auto-encoders
+    bool dense = false;
+    bool rbm   = false;
+
     //The following values are set during execution
     std::size_t downscale    = 1;
     std::size_t patch_width  = 0;

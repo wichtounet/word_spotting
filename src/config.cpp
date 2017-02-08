@@ -113,6 +113,10 @@ config parse_args(int argc, char** argv) {
             conf.gray = true;
         } else if (conf.args[i] == "-binary") {
             conf.binary = true;
+        } else if (conf.args[i] == "-dense") {
+            conf.dense = true;
+        } else if (conf.args[i] == "-rbm") {
+            conf.rbm = true;
         } else if (conf.args[i] == "-manmatha") {
             conf.manmatha   = true;
             conf.washington = false;
