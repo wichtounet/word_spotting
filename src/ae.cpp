@@ -14,6 +14,7 @@
 
 #include "cpp_utils/parallel.hpp"
 
+#include "dll/rbm/rbm.hpp"
 #include "dll/rbm/conv_rbm.hpp"
 #include "dll/rbm/conv_rbm_mp.hpp"
 #include "dll/pooling/mp_layer.hpp"
@@ -317,6 +318,33 @@ void dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, co
     std::cout << "AE-Result: Dense(" << N << "):" << folder << std::endl;
 }
 
+template<size_t N>
+void rbm_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches) {
+    using network_t = typename dll::dbn_desc<
+        dll::dbn_layers<
+            typename dll::rbm_desc<
+                patch_height * patch_width, N,
+                dll::batch_size<batch_size>,
+                dll::momentum
+        >::layer_t
+    >>::dbn_t;
+
+    auto net = std::make_unique<network_t>();
+
+    net->display();
+
+    // Configure the network
+    net->template layer_get<0>().learning_rate    = 0.1;
+    net->template layer_get<0>().initial_momentum = 0.9;
+    net->template layer_get<0>().momentum         = 0.9;
+
+    // Train as RBM
+    net->pretrain(training_patches, epochs);
+
+    auto folder = evaluate_patches_ae<0, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
+    std::cout << "AE-Result: RBM(" << N << "):" << folder << std::endl;
+}
+
 } // end of anonymous namespace
 
 void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names train_image_names, names test_image_names) {
@@ -349,11 +377,23 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
     params.sc_band = 0.05;
     std::cout << "\tsc_band: " << params.sc_band << std::endl;
 
-    dense_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    dense_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    dense_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    dense_evaluate<200>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    dense_evaluate<300>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    dense_evaluate<400>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    dense_evaluate<500>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    if (conf.dense) {
+        dense_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        dense_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        dense_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        dense_evaluate<200>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        dense_evaluate<300>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        dense_evaluate<400>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        dense_evaluate<500>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    }
+
+    if (conf.rbm) {
+        rbm_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        rbm_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        rbm_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        rbm_evaluate<200>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        rbm_evaluate<300>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        rbm_evaluate<400>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        rbm_evaluate<500>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    }
 }
