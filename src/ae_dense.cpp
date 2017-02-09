@@ -38,8 +38,11 @@ void dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, co
             typename dll::dense_desc<patch_height * patch_width, N>::layer_t,
             typename dll::dense_desc<N, patch_height * patch_width>::layer_t
         >,
-        dll::momentum, dll::trainer<dll::sgd_trainer>,
-        dll::batch_size<batch_size>
+        dll::momentum,
+        dll::weight_decay<dll::decay_type::L2>,
+        dll::trainer<dll::sgd_trainer>,
+        dll::batch_size<batch_size>,
+        dll::shuffle
     >::dbn_t;
 
     auto net = std::make_unique<network_t>();

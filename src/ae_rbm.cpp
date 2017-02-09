@@ -37,7 +37,9 @@ void rbm_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, conf
             typename dll::rbm_desc<
                 patch_height * patch_width, N,
                 dll::batch_size<batch_size>,
-                dll::momentum
+                dll::weight_decay<dll::decay_type::L2>,
+                dll::momentum,
+                dll::shuffle
         >::layer_t
     >>::dbn_t;
 
