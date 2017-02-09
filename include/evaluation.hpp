@@ -12,16 +12,17 @@
 #include <mutex>
 #include <algorithm>
 
+#include "etl/etl.hpp"
+
 #include "dll/util/timers.hpp"
 
+#include "parameters.hpp"
+
+#include "dtw.hpp"
 #include "hmm_htk.hpp"
 #include "hmm_mlpack.hpp"
 
 using thread_pool = cpp::default_thread_pool<>;
-
-struct parameters {
-    double sc_band;
-};
 
 /*!
  * \brief Select all the training images for the given keyword
