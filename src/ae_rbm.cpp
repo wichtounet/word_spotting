@@ -15,22 +15,16 @@
 #include "dll/rbm/rbm.hpp"
 #include "dll/dbn.hpp"
 
+#include "ae_config.hpp" // Must be first
+
 #include "ae_rbm.hpp"
-#include "config.hpp"
+#include "evaluation.hpp"    //Evaluation utilities
+#include "features.hpp"      //Features exporting
+#include "normalization.hpp" //Normalization functions
+#include "reports.hpp"
+#include "reports.hpp"
 #include "standard.hpp"
 #include "utils.hpp"
-#include "reports.hpp"
-#include "features.hpp"   //Features exporting
-#include "evaluation.hpp" //evaluation utilities
-
-//#define LOCAL_FRAME_NORMALIZATION
-//#define LOCAL_L2_NORMALIZATION
-//#define GLOBAL_FRAME_NORMALIZATION
-#define GLOBAL_L2_NORMALIZATION
-
-//#define LOCAL_LINEAR_SCALING
-#define LOCAL_MEAN_SCALING
-#include "scaling.hpp" //Scaling functions
 
 namespace {
 
@@ -39,74 +33,6 @@ using dbn_output_t = decltype(std::declval<DBN>().template prepare_output<L, typ
 
 template <size_t L, typename DBN>
 using features_t = std::vector<std::vector<dbn_output_t<L, DBN>>>;
-
-template <typename Patch>
-void normalize_patch_features(Patch& features){
-    cpp_unused(features);
-
-#ifdef LOCAL_FRAME_NORMALIZATION
-    for (std::size_t i = 0; i < etl::dim<0>(features); ++i) {
-        features(i) /= etl::sum(features(i));
-    }
-#endif
-
-#ifdef LOCAL_L2_NORMALIZATION
-    for (std::size_t i = 0; i < etl::dim<0>(features); ++i) {
-        features(i) /= std::sqrt(etl::sum(features(i) >> features(i)) + 16.0 * 16.0);
-    }
-#endif
-
-#ifdef GLOBAL_FRAME_NORMALIZATION
-    features /= etl::sum(features);
-#endif
-
-#ifdef GLOBAL_L2_NORMALIZATION
-    features /= std::sqrt(etl::sum(features >> features) + 16.0 * 16.0);
-#endif
-}
-
-template <typename Features>
-void normalize_feature_vector(Features& vec){
-    // 1. Normalize the features of each patch
-    for(auto& features : vec){
-        normalize_patch_features(features);
-    }
-
-    // 2. Globally normalize the features
-
-#ifdef LOCAL_LINEAR_SCALING
-    local_linear_feature_scaling(vec);
-#endif
-
-#ifdef LOCAL_MEAN_SCALING
-    local_mean_feature_scaling(vec);
-#endif
-}
-
-template <typename Features>
-void normalize_features(const config& conf, bool training, Features& features){
-    cpp_unused(features);
-    cpp_unused(conf);
-    cpp_unused(training);
-
-#ifdef GLOBAL_LINEAR_SCALING
-    auto scale = global_linear_scaling(features, conf, training);
-#endif
-
-#ifdef GLOBAL_MEAN_SCALING
-    auto scale = global_mean_scaling(features, conf, training);
-#endif
-
-#ifdef GLOBAL_SCALING
-    for (std::size_t t = 0; t < features.size(); ++t) {
-        for (std::size_t i = 0; i < features[t].size(); ++i) {
-            for (std::size_t f = 0; f < features.back().back().size(); ++f) {
-                features[t][i][f] = scale(features[t][i][f], conf.scale_a[f], conf.scale_b[f]);
-            }
-        }
-    }
-#endif
-}
 
 template <size_t L, typename Input, typename DBN>
 features_t<L, DBN> prepare_outputs_ae(
@@ -131,12 +57,12 @@ features_t<L, DBN> prepare_outputs_ae(
 
         }
 
-        normalize_feature_vector(vec);
+        spot::normalize_feature_vector(vec);
     };
 
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), feature_extractor);
 
-    normalize_features(conf, training, test_features_a);
+    spot::normalize_features(conf, training, test_features_a);
 
     std::cout << "... done" << std::endl;
 
@@ -164,12 +90,12 @@ features_t<L, DBN> compute_reference_ae(
 
         }
 
-        normalize_feature_vector(vec);
+        spot::normalize_feature_vector(vec);
     };
 
     cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(), feature_extractor);
 
-    normalize_features(conf, false, ref_a);
+    spot::normalize_features(conf, false, ref_a);
 
     return ref_a;
 }

@@ -46,7 +46,7 @@
 
 //#define LOCAL_LINEAR_SCALING
 #define LOCAL_MEAN_SCALING
-#include "scaling.hpp" //Scaling functions
+#include "normalization.hpp" //Normalization functions
 
 //The different configurations
 #include "patches_config.hpp"
@@ -149,74 +149,6 @@ using dbn_output_t = decltype(std::declval<DBN>().template prepare_one_output<ty
 template <bool DBN_Patch, typename DBN>
 using features_t = std::vector<std::vector<dbn_output_t<DBN_Patch, DBN>>>;
 
-template <typename Patch>
-void normalize_patch_features(Patch& features){
-    cpp_unused(features);
-
-#ifdef LOCAL_FRAME_NORMALIZATION
-    for (std::size_t i = 0; i < etl::dim<0>(features); ++i) {
-        features(i) /= etl::sum(features(i));
-    }
-#endif
-
-#ifdef LOCAL_L2_NORMALIZATION
-    for (std::size_t i = 0; i < etl::dim<0>(features); ++i) {
-        features(i) /= std::sqrt(etl::sum(features(i) >> features(i)) + 16.0 * 16.0);
-    }
-#endif
-
-#ifdef GLOBAL_FRAME_NORMALIZATION
-    features /= etl::sum(features);
-#endif
-
-#ifdef GLOBAL_L2_NORMALIZATION
-    features /= std::sqrt(etl::sum(features >> features) + 16.0 * 16.0);
-#endif
-}
-
-template <typename Features>
-void normalize_feature_vector(Features& vec){
-    // 1. Normalize the features of each patch
-    for(auto& features : vec){
-        normalize_patch_features(features);
-    }
-
-    // 2. Globally normalize the features
-
-#ifdef LOCAL_LINEAR_SCALING
-    local_linear_feature_scaling(vec);
-#endif
-
-#ifdef LOCAL_MEAN_SCALING
-    local_mean_feature_scaling(vec);
-#endif
-}
-
-template <typename Features>
-void normalize_features(const config& conf, bool training, Features& features){
-    cpp_unused(features);
-    cpp_unused(conf);
-    cpp_unused(training);
-
-#ifdef GLOBAL_LINEAR_SCALING
-    auto scale = global_linear_scaling(features, conf, training);
-#endif
-
-#ifdef GLOBAL_MEAN_SCALING
-    auto scale = global_mean_scaling(features, conf, training);
-#endif
-
-#ifdef GLOBAL_SCALING
-    for (std::size_t t = 0; t < features.size(); ++t) {
-        for (std::size_t i = 0; i < features[t].size(); ++i) {
-            for (std::size_t f = 0; f < features.back().back().size(); ++f) {
-                features[t][i][f] = scale(features[t][i][f], conf.scale_a[f], conf.scale_b[f]);
-            }
-        }
-    }
-#endif
-}
-
 template <bool DBN_Patch, typename DBN>
 features_t<DBN_Patch, DBN> prepare_outputs(
     thread_pool& pool, const spot_dataset& dataset, const DBN& dbn, const config& conf,
@@ -247,7 +179,7 @@ features_t<DBN_Patch, DBN> prepare_outputs(
             }
         });
 
-        normalize_feature_vector(vec);
+        spot::normalize_feature_vector(vec);
     };
 
     if(!runtime){
@@ -256,7 +188,7 @@ features_t<DBN_Patch, DBN> prepare_outputs(
         cpp::foreach_i(test_image_names.begin(), test_image_names.end(), feature_extractor);
     }
 
-    normalize_features(conf, training, test_features_a);
+    spot::normalize_features(conf, training, test_features_a);
 
     if(!runtime){
         std::cout << "... done" << std::endl;
@@ -291,12 +223,12 @@ features_t<DBN_Patch, DBN> compute_reference(
             }
         });
 
-        normalize_feature_vector(vec);
+        spot::normalize_feature_vector(vec);
     };
 
     cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(), feature_extractor);
 
-    normalize_features(conf, false, ref_a);
+    spot::normalize_features(conf, false, ref_a);
 
     return ref_a;
 }
