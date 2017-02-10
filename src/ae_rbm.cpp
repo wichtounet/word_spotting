@@ -31,7 +31,7 @@
 namespace {
 
 template<size_t N>
-void rbm_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches) {
+void rbm_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate) {
     using network_t = typename dll::dbn_desc<
         dll::dbn_layers<
             typename dll::rbm_desc<
@@ -48,7 +48,7 @@ void rbm_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, conf
     net->display();
 
     // Configure the network
-    net->template layer_get<0>().learning_rate    = 0.1;
+    net->template layer_get<0>().learning_rate    = learning_rate;
     net->template layer_get<0>().initial_momentum = 0.9;
     net->template layer_get<0>().momentum         = 0.9;
 
@@ -63,12 +63,12 @@ void rbm_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, conf
 
 void rbm_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
     if (conf.rbm) {
-        rbm_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        rbm_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        rbm_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        rbm_evaluate<200>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        rbm_evaluate<300>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        rbm_evaluate<400>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        rbm_evaluate<500>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        rbm_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3);
+        rbm_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3);
+        rbm_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4);
+        rbm_evaluate<200>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4);
+        rbm_evaluate<300>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5);
+        rbm_evaluate<400>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5);
+        rbm_evaluate<500>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5);
     }
 }

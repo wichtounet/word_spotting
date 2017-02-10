@@ -32,7 +32,7 @@
 namespace {
 
 template<size_t N>
-void dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches) {
+void dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate) {
     using network_t = typename dll::dbn_desc<
         dll::dbn_layers<
             typename dll::dense_desc<patch_height * patch_width, N>::layer_t,
@@ -50,7 +50,7 @@ void dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, co
     net->display();
 
     // Configure the network
-    net->learning_rate    = 0.1;
+    net->learning_rate    = learning_rate;
     net->initial_momentum = 0.9;
     net->momentum         = 0.9;
 
@@ -65,12 +65,12 @@ void dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, co
 
 void dense_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
     if (conf.dense) {
-        dense_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        dense_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        dense_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        dense_evaluate<200>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        dense_evaluate<300>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        dense_evaluate<400>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-        dense_evaluate<500>(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        dense_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3);
+        dense_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3);
+        dense_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4);
+        dense_evaluate<200>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4);
+        dense_evaluate<300>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5);
+        dense_evaluate<400>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5);
+        dense_evaluate<500>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5);
     }
 }
