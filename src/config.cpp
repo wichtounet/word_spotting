@@ -117,6 +117,10 @@ config parse_args(int argc, char** argv) {
             conf.dense = true;
         } else if (conf.args[i] == "-rbm") {
             conf.rbm = true;
+        } else if (conf.args[i] == "-conv") {
+            conf.conv = true;
+        } else if (conf.args[i] == "-crbm") {
+            conf.crbm = true;
         } else if (conf.args[i] == "-manmatha") {
             conf.manmatha   = true;
             conf.washington = false;
