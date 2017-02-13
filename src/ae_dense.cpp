@@ -65,7 +65,7 @@ void dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, co
 
 void dense_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
     if (conf.dense) {
-        dense_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, 2);
+        dense_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
         dense_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
         dense_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
         dense_evaluate<200>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
