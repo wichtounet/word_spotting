@@ -12,8 +12,16 @@
 
 #include "ae.hpp"
 #include "ae_config.hpp"
+
+// Dense versions
 #include "ae_dense.hpp"
 #include "ae_rbm.hpp"
+
+// Conv versions
+#include "ae_crbm.hpp"
+#include "ae_dense.hpp"
+#include "ae_conv.hpp"
+#include "ae_crbm.hpp"
 
 #include "config.hpp"
 #include "standard.hpp"
@@ -81,6 +89,9 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
     params.sc_band = 0.05;
     std::cout << "\tsc_band: " << params.sc_band << std::endl;
 
+    // Call all the modules
     dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    conv_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    crbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 }
