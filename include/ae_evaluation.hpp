@@ -165,13 +165,13 @@ std::string evaluate_patches_ae(const spot_dataset& dataset, const Set& set, con
     return result_folder;
 }
 
-template <size_t L, typename Input, typename DBN1, typename DBN2>
-features_t<L, DBN2> prepare_outputs_ae_stacked_2(
+template <size_t L1, size_t L2, typename Input, typename DBN1, typename DBN2>
+features_t<L2, DBN2> prepare_outputs_ae_stacked_2(
     thread_pool& pool, const spot_dataset& dataset, const DBN1& dbn1, const DBN2& dbn2, const config& conf,
     names test_image_names, bool training) {
 
-    features_t<L, DBN1> test_features_a(test_image_names.size());
-    features_t<L, DBN2> test_features_b(test_image_names.size());
+    features_t<L1, DBN1> test_features_a(test_image_names.size());
+    features_t<L2, DBN2> test_features_b(test_image_names.size());
 
     auto feature_extractor = [&](auto& test_image, std::size_t i) {
         auto& vec_a = test_features_a[i];
@@ -184,11 +184,11 @@ features_t<L, DBN2> prepare_outputs_ae_stacked_2(
         vec_b.reserve(patches.size());
 
         for(auto& patch : patches){
-            vec_a.push_back(dbn1.template prepare_output<0, Input>());
-            vec_a.back() = dbn1.template features_sub<0>(patch);
+            vec_a.push_back(dbn1.template prepare_output<L1, Input>());
+            vec_a.back() = dbn1.template features_sub<L1>(patch);
 
-            vec_b.push_back(dbn2.template prepare_output<0, decltype(vec_a.back())>());
-            vec_b.back() = dbn2.template features_sub<0>(vec_a.back());
+            vec_b.push_back(dbn2.template prepare_output<L2, decltype(vec_a.back())>());
+            vec_b.back() = dbn2.template features_sub<L2>(vec_a.back());
         }
 
         spot::normalize_feature_vector(vec_b);
@@ -201,13 +201,13 @@ features_t<L, DBN2> prepare_outputs_ae_stacked_2(
     return test_features_b;
 }
 
-template <size_t L, typename Input, typename DBN1, typename DBN2>
-features_t<L, DBN2> compute_reference_ae_stacked_2(
+template <size_t L1, size_t L2, typename Input, typename DBN1, typename DBN2>
+features_t<L2, DBN2> compute_reference_ae_stacked_2(
     thread_pool& pool, const spot_dataset& dataset, const DBN1& dbn1, const DBN2& dbn2, const config& conf,
     names training_images) {
 
-    features_t<L, DBN1> ref_a(training_images.size());
-    features_t<L, DBN2> ref_b(training_images.size());
+    features_t<L1, DBN1> ref_a(training_images.size());
+    features_t<L2, DBN2> ref_b(training_images.size());
 
     auto feature_extractor = [&](auto& test_image, std::size_t i) {
         auto& vec_a = ref_a[i];
@@ -220,11 +220,11 @@ features_t<L, DBN2> compute_reference_ae_stacked_2(
         vec_b.reserve(patches.size());
 
         for(auto& patch : patches){
-            vec_a.push_back(dbn1.template prepare_output<L, Input>());
-            vec_a.back() = dbn1.template features_sub<L>(patch);
+            vec_a.push_back(dbn1.template prepare_output<L1, Input>());
+            vec_a.back() = dbn1.template features_sub<L1>(patch);
 
-            vec_b.push_back(dbn2.template prepare_output<L, decltype(vec_a.back())>());
-            vec_b.back() = dbn2.template features_sub<L>(vec_a.back());
+            vec_b.push_back(dbn2.template prepare_output<L2, decltype(vec_a.back())>());
+            vec_b.back() = dbn2.template features_sub<L2>(vec_a.back());
         }
 
         spot::normalize_feature_vector(vec_b);
@@ -237,7 +237,7 @@ features_t<L, DBN2> compute_reference_ae_stacked_2(
     return ref_b;
 }
 
-template <size_t L, typename Input, typename Set, typename DBN1, typename DBN2>
+template <size_t L1, size_t L2, typename Input, typename Set, typename DBN1, typename DBN2>
 std::string evaluate_patches_ae_stacked_2(const spot_dataset& dataset, const Set& set, config& conf, const DBN1& dbn1, const DBN2& dbn2, names train_word_names, names test_image_names, bool training, parameters parameters) {
     thread_pool pool;
 
@@ -255,7 +255,7 @@ std::string evaluate_patches_ae_stacked_2(const spot_dataset& dataset, const Set
 
     // 3. Prepare all the outputs
 
-    auto test_features_a = prepare_outputs_ae_stacked_2<L, Input>(pool, dataset, dbn1, dbn2, conf, test_image_names, training);
+    auto test_features_a = prepare_outputs_ae_stacked_2<L1, L2, Input>(pool, dataset, dbn1, dbn2, conf, test_image_names, training);
 
     // 4. Evaluate the performances
 
@@ -276,13 +276,13 @@ std::string evaluate_patches_ae_stacked_2(const spot_dataset& dataset, const Set
 
         // b) Compute the reference features
 
-        auto ref_a = compute_reference_ae_stacked_2<L, Input>(pool, dataset, dbn1, dbn2, conf, training_images);
+        auto ref_a = compute_reference_ae_stacked_2<L1, L2, Input>(pool, dataset, dbn1, dbn2, conf, training_images);
 
         // c) Compute the distances
 
         auto diffs_a = compute_distances(conf, pool, dataset, test_features_a, ref_a, training_images,
             test_image_names, train_word_names,
-            parameters, [&](names train_names){ return compute_reference_ae_stacked_2<L, Input>(pool, dataset, dbn1, dbn2, conf, train_names);});
+            parameters, [&](names train_names){ return compute_reference_ae_stacked_2<L1, L2, Input>(pool, dataset, dbn1, dbn2, conf, train_names);});
 
         // d) Update the local stats
 
