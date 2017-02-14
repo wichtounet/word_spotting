@@ -37,8 +37,6 @@ features_t<L, DBN> prepare_outputs_ae(
 
     features_t<L, DBN> test_features_a(test_image_names.size());
 
-    std::cout << "Prepare the outputs ..." << std::endl;
-
     auto feature_extractor = [&](auto& test_image, std::size_t i) {
         auto& vec = test_features_a[i];
 
@@ -63,8 +61,6 @@ features_t<L, DBN> prepare_outputs_ae(
     if (normalize) {
         spot::normalize_features(conf, training, test_features_a);
     }
-
-    std::cout << "... done" << std::endl;
 
     return test_features_a;
 }
@@ -106,15 +102,15 @@ std::string evaluate_patches_ae(const spot_dataset& dataset, const Set& set, con
 
     // 0. Select the keywords
 
-    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names, false);
 
     // 1. Select a folder
 
-    auto result_folder = select_folder("./results/");
+    auto result_folder = select_folder("./results/", false);
 
     // 2. Generate the rel files
 
-    generate_rel_files(result_folder, dataset, test_image_names, keywords);
+    generate_rel_files(result_folder, dataset, test_image_names, keywords, false);
 
     // 3. Prepare all the outputs
 
@@ -160,8 +156,6 @@ std::string evaluate_patches_ae(const spot_dataset& dataset, const Set& set, con
 
     // 5. Finalize the results
 
-    std::cout << keywords.size() << " keywords evaluated" << std::endl;
-
     double mean_eer = std::accumulate(eer.begin(), eer.end(), 0.0) / eer.size();
     double mean_ap  = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
 
@@ -178,8 +172,6 @@ features_t<L, DBN2> prepare_outputs_ae_stacked_2(
 
     features_t<L, DBN1> test_features_a(test_image_names.size());
     features_t<L, DBN2> test_features_b(test_image_names.size());
-
-    std::cout << "Prepare the outputs ..." << std::endl;
 
     auto feature_extractor = [&](auto& test_image, std::size_t i) {
         auto& vec_a = test_features_a[i];
@@ -205,8 +197,6 @@ features_t<L, DBN2> prepare_outputs_ae_stacked_2(
     cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), feature_extractor);
 
     spot::normalize_features(conf, training, test_features_b);
-
-    std::cout << "... done" << std::endl;
 
     return test_features_b;
 }
@@ -253,15 +243,15 @@ std::string evaluate_patches_ae_stacked_2(const spot_dataset& dataset, const Set
 
     // 0. Select the keywords
 
-    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names, false);
 
     // 1. Select a folder
 
-    auto result_folder = select_folder("./results/");
+    auto result_folder = select_folder("./results/", false);
 
     // 2. Generate the rel files
 
-    generate_rel_files(result_folder, dataset, test_image_names, keywords);
+    generate_rel_files(result_folder, dataset, test_image_names, keywords, false);
 
     // 3. Prepare all the outputs
 
@@ -306,8 +296,6 @@ std::string evaluate_patches_ae_stacked_2(const spot_dataset& dataset, const Set
     std::cout << "... done" << std::endl;
 
     // 5. Finalize the results
-
-    std::cout << keywords.size() << " keywords evaluated" << std::endl;
 
     double mean_eer = std::accumulate(eer.begin(), eer.end(), 0.0) / eer.size();
     double mean_ap  = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();

@@ -16,9 +16,11 @@
 #include "reports.hpp"
 
 void generate_rel_files(
-    const std::string& result_folder, const spot_dataset& dataset,
-    const std::vector<std::string>& test_image_names, const std::vector<std::vector<std::string>>& keywords) {
-    std::cout << "Generate relevance files..." << std::endl;
+        const std::string& result_folder, const spot_dataset& dataset,
+        const std::vector<std::string>& test_image_names, const std::vector<std::vector<std::string>>& keywords, bool verbose) {
+    if(verbose){
+        std::cout << "Generate relevance files..." << std::endl;
+    }
 
     std::ofstream global_relevance_stream(result_folder + "/global_rel_file");
     std::ofstream local_relevance_stream(result_folder + "/local_rel_file");
@@ -41,7 +43,9 @@ void generate_rel_files(
         }
     }
 
-    std::cout << "... done" << std::endl;
+    if(verbose){
+        std::cout << "... done" << std::endl;
+    }
 }
 
 void update_stats(std::size_t k, const std::string& result_folder, const spot_dataset& dataset, const std::vector<std::string>& keyword, std::vector<std::pair<std::string, weight>> diffs_a, std::vector<double>& eer, std::vector<double>& ap, std::ofstream& global_top_stream, std::ofstream& local_top_stream, const std::vector<std::string>& test_image_names) {
@@ -176,8 +180,10 @@ void update_stats_light(std::size_t k, const spot_dataset& dataset, const std::v
     ap[k] /= ap_updates;
 }
 
-std::string select_folder(const std::string& base_folder) {
-    std::cout << "Select a folder ..." << std::endl;
+std::string select_folder(const std::string& base_folder, bool verbose) {
+    if(verbose){
+        std::cout << "Select a folder ..." << std::endl;
+    }
 
     mkdir(base_folder.c_str(), 0777);
 
@@ -195,7 +201,9 @@ std::string select_folder(const std::string& base_folder) {
     std::ofstream os(stamp_file.c_str());
     os << ++current_stamp;
 
-    std::cout << "... " << result_folder << std::endl;
+    if(verbose){
+        std::cout << "... " << result_folder << std::endl;
+    }
 
     return result_folder;
 }

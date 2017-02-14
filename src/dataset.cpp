@@ -285,7 +285,7 @@ spot_dataset read_iam(const config& conf, const std::string& path) {
     return dataset;
 }
 
-std::vector<std::vector<std::string>> select_keywords(const spot_dataset& dataset, const spot_dataset_set& set, names train_word_names, names test_image_names) {
+std::vector<std::vector<std::string>> select_keywords(const spot_dataset& dataset, const spot_dataset_set& set, names train_word_names, names test_image_names, bool verbose) {
     std::vector<std::vector<std::string>> keywords;
 
     for (auto& keyword : set.keywords) {
@@ -308,7 +308,9 @@ std::vector<std::vector<std::string>> select_keywords(const spot_dataset& datase
         }
     }
 
-    std::cout << "Selected " << keywords.size() << " keyword out of " << set.keywords.size() << std::endl;
+    if(verbose){
+         std::cout << "Selected " << keywords.size() << " keyword out of " << set.keywords.size() << std::endl;
+    }
 
     return keywords;
 }

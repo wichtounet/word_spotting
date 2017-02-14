@@ -18,13 +18,14 @@
 
 #include "dataset.hpp"
 
-std::string select_folder(const std::string& base_folder);
+std::string select_folder(const std::string& base_folder, bool verbose = true);
 
 void generate_rel_files(
     const std::string& result_folder,
     const spot_dataset& dataset,
     const std::vector<std::string>& test_image_names,
-    const std::vector<std::vector<std::string>>& keywords);
+    const std::vector<std::vector<std::string>>& keywords,
+    bool verbose = true);
 
 void update_stats(
     std::size_t k,

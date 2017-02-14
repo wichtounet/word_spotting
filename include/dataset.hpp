@@ -40,6 +40,6 @@ spot_dataset read_manmatha(const config& conf, const std::string& path);
 spot_dataset read_parzival(const config& conf, const std::string& path);
 spot_dataset read_iam(const config& conf, const std::string& path);
 
-std::vector<std::vector<std::string>> select_keywords(const spot_dataset& dataset, const spot_dataset_set& set, names train_word_names, names test_image_names);
+std::vector<std::vector<std::string>> select_keywords(const spot_dataset& dataset, const spot_dataset_set& set, names train_word_names, names test_image_names, bool verbose = true);
 
 #endif
