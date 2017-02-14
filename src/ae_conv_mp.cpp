@@ -5,13 +5,6 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
-#include <iostream>
-#include <string>
-
-#include "memory.hpp" //First for debug reasons
-
-#include "cpp_utils/parallel.hpp"
-
 #include "dll/neural/conv_layer.hpp"
 #include "dll/neural/deconv_layer.hpp"
 #include "dll/pooling/mp_layer.hpp"
@@ -22,13 +15,6 @@
 #include "ae_config.hpp" // Must be first
 
 #include "ae_conv.hpp"
-#include "config.hpp"
-#include "evaluation.hpp"    //evaluation utilities
-#include "features.hpp"      //Features exporting
-#include "normalization.hpp" //Normalization functions
-#include "reports.hpp"
-#include "standard.hpp"
-#include "utils.hpp"
 
 #include "ae_evaluation.hpp"
 

@@ -7,6 +7,21 @@
 
 #pragma once
 
+#include "memory.hpp" //First for debug reasons
+
+#include "cpp_utils/parallel.hpp"
+
+#include <iostream>
+#include <string>
+
+#include "evaluation.hpp"    //Evaluation utilities
+#include "features.hpp"      //Features exporting
+#include "normalization.hpp" //Normalization functions
+#include "reports.hpp"
+#include "reports.hpp"
+#include "standard.hpp"
+#include "utils.hpp"
+
 namespace spot {
 
 template <size_t L, typename DBN>

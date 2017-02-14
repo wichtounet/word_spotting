@@ -5,26 +5,12 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
-#include <iostream>
-#include <string>
-
-#include "memory.hpp" //First for debug reasons
-
-#include "cpp_utils/parallel.hpp"
-
 #include "dll/rbm/rbm.hpp"
 #include "dll/dbn.hpp"
 
 #include "ae_config.hpp" // Must be first
 
 #include "ae_rbm.hpp"
-#include "evaluation.hpp"    //Evaluation utilities
-#include "features.hpp"      //Features exporting
-#include "normalization.hpp" //Normalization functions
-#include "reports.hpp"
-#include "reports.hpp"
-#include "standard.hpp"
-#include "utils.hpp"
 
 #include "ae_evaluation.hpp"
 
