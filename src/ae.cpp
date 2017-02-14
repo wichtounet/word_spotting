@@ -93,8 +93,9 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
     dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
-    deep_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     deep_rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    deep_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    stacked_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
     conv_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     crbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
