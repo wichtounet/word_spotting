@@ -98,5 +98,7 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
     stacked_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
     conv_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+
     crbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 }
