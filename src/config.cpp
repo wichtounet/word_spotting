@@ -121,6 +121,8 @@ config parse_args(int argc, char** argv) {
             conf.conv = true;
         } else if (conf.args[i] == "-crbm") {
             conf.crbm = true;
+        } else if (conf.args[i] == "-deep") {
+            conf.deep = true;
         } else if (conf.args[i] == "-manmatha") {
             conf.manmatha   = true;
             conf.washington = false;

@@ -69,6 +69,7 @@ struct config {
 
     // Special options for auto-encoders
     bool dense = false;
+    bool deep  = false;
     bool rbm   = false;
     bool conv  = false;
     bool crbm  = false;
