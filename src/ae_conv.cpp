@@ -103,7 +103,7 @@ void conv_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, 
     net->fine_tune_ae(training_patches, epochs);
 
     auto folder = spot::evaluate_patches_ae<0, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
-    std::cout << "AE-Result: Conv(" << K << "):" << folder << std::endl;
+    std::cout << "AE-Result: Conv-MP(" << K << "):" << folder << std::endl;
 }
 
 } // end of anonymous namespace
