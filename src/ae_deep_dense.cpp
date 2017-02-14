@@ -47,7 +47,7 @@ void deep_dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& se
     // Train as autoencoder
     net->fine_tune_ae(training_patches, epochs);
 
-    auto folder = spot::evaluate_patches_ae<0, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
+    auto folder = spot::evaluate_patches_ae<1, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
     std::cout << "AE-Result: Deep-Dense(" << N << "):" << folder << std::endl;
 }
 
