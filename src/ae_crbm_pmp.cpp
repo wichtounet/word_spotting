@@ -17,7 +17,7 @@
 namespace {
 
 template<size_t K>
-void crbm_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate, size_t epochs) {
+void crbm_pmp_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate, size_t epochs) {
     static constexpr size_t K1 = 17;
 
     static constexpr size_t NH1_1 = patch_height - K1 + 1;
@@ -56,15 +56,15 @@ void crbm_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, con
 
 void crbm_pmp_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
     if (conf.crbm) {
-        crbm_evaluate<1>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
-        crbm_evaluate<2>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
-        crbm_evaluate<3>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
-        crbm_evaluate<4>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
-        crbm_evaluate<5>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
-        crbm_evaluate<6>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
-        crbm_evaluate<7>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
-        crbm_evaluate<8>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
-        crbm_evaluate<9>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
-        crbm_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
+        crbm_pmp_evaluate<1>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
+        crbm_pmp_evaluate<2>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
+        crbm_pmp_evaluate<3>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
+        crbm_pmp_evaluate<4>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
+        crbm_pmp_evaluate<5>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
+        crbm_pmp_evaluate<6>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
+        crbm_pmp_evaluate<7>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
+        crbm_pmp_evaluate<8>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
+        crbm_pmp_evaluate<9>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
+        crbm_pmp_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-6, epochs);
     }
 }
