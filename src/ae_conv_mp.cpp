@@ -31,6 +31,7 @@ void conv_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, 
         dll::dbn_layers<
             typename dll::conv_desc<1, patch_height, patch_width, K, NH1_1, NH1_2>::layer_t,
             typename dll::mp_layer_3d_desc<K, NH1_1, NH1_2, 1, 2, 2>::layer_t,
+
             typename dll::upsample_layer_3d_desc<K, NH1_1 / 2, NH1_2 / 2, 1, 2, 2>::layer_t,
             typename dll::deconv_desc<K, NH1_1, NH1_2, 1, K1, K1>::layer_t
         >,
