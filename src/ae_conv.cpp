@@ -60,14 +60,14 @@ void conv_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, con
 void conv_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
     if (conf.conv) {
         conv_evaluate<1>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
-        conv_evaluate<2>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
-        conv_evaluate<3>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
-        conv_evaluate<4>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
-        conv_evaluate<5>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
-        conv_evaluate<6>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
-        conv_evaluate<7>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
-        conv_evaluate<8>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
-        conv_evaluate<9>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
-        conv_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
+        conv_evaluate<2>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5, epochs);
+        conv_evaluate<3>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5, epochs);
+        conv_evaluate<4>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5, epochs);
+        conv_evaluate<5>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5, epochs);
+        conv_evaluate<6>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5, epochs);
+        conv_evaluate<7>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5, epochs);
+        conv_evaluate<8>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5, epochs);
+        conv_evaluate<9>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5, epochs);
+        conv_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5, epochs);
     }
 }
