@@ -66,7 +66,7 @@ void conv_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, 
 } // end of anonymous namespace
 
 void conv_mp_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
-    if (conf.conv && !conv.deep) {
+    if (conf.conv && !conf.deep) {
         conv_mp_evaluate<1>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
         conv_mp_evaluate<2>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
         conv_mp_evaluate<3>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
