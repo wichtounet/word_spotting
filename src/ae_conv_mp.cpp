@@ -31,6 +31,7 @@ void conv_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, 
         dll::dbn_layers<
             typename dll::conv_desc<1, patch_height, patch_width, K, NH1_1, NH1_2>::layer_t,
             typename dll::mp_layer_3d_desc<K, NH1_1, NH1_2, 1, 2, 2>::layer_t,
+
             typename dll::upsample_layer_3d_desc<K, NH1_1 / 2, NH1_2 / 2, 1, 2, 2>::layer_t,
             typename dll::deconv_desc<K, NH1_1, NH1_2, 1, K1, K1>::layer_t
         >,
@@ -65,7 +66,7 @@ void conv_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, 
 } // end of anonymous namespace
 
 void conv_mp_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
-    if (conf.conv) {
+    if (conf.conv && !conf.deep) {
         conv_mp_evaluate<1>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
         conv_mp_evaluate<2>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
         conv_mp_evaluate<3>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);

@@ -99,6 +99,7 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
 
     conv_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    deep_conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
     crbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     crbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);

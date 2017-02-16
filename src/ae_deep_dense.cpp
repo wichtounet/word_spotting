@@ -54,7 +54,7 @@ void deep_dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& se
 } // end of anonymous namespace
 
 void deep_dense_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
-    if (conf.dense && !conf.deep) {
+    if (conf.dense && conf.deep) {
         deep_dense_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
         deep_dense_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
         deep_dense_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-4, epochs);
