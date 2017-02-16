@@ -114,4 +114,7 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
 
     // Deep Conv+pooling modules
     deep_conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    stacked_conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    deep_crbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    deep_crbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 }
