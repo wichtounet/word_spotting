@@ -78,7 +78,7 @@ void stacked_dense_evaluate(const spot_dataset& dataset, const spot_dataset_set&
     net2->fine_tune_ae(int_features_flat, epochs);
 
     auto folder = spot::evaluate_patches_ae_stacked_2<0, 0, image_t>(dataset, set, conf, *net1, *net2, train_word_names, test_image_names, false, params);
-    std::cout << "AE-Result: Deep-Dense(" << N << "):" << folder << std::endl;
+    std::cout << "AE-Result: Stacked-Dense(" << N << "):" << folder << std::endl;
 }
 
 } // end of anonymous namespace
