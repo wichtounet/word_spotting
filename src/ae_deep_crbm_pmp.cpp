@@ -18,6 +18,8 @@ namespace {
 
 template<size_t K>
 void deep_crbm_pmp_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate, size_t epochs) {
+    static constexpr size_t KK = 6;
+
     static constexpr size_t K1 = 9;
     static constexpr size_t K2 = 3;
 
@@ -31,13 +33,13 @@ void deep_crbm_pmp_evaluate(const spot_dataset& dataset, const spot_dataset_set&
         dll::dbn_layers<
             typename dll::conv_rbm_mp_desc<
                 1, patch_height, patch_width,
-                K, NH1_1, NH1_2, 2,
+                KK, NH1_1, NH1_2, 2,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
                 dll::momentum
             >::layer_t,
             typename dll::conv_rbm_mp_desc<
-                K, NH1_1 / 2, NH1_2 / 2,
+                KK, NH1_1 / 2, NH1_2 / 2,
                 K, NH2_1, NH2_2, 2,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,

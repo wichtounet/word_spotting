@@ -22,6 +22,8 @@ namespace {
 
 template<size_t K>
 void deep_conv_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate, size_t epochs) {
+    static constexpr size_t KK = 6;
+
     static constexpr size_t K1 = 9;
     static constexpr size_t K2 = 3;
 
@@ -33,17 +35,17 @@ void deep_conv_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& 
 
     using network_t = typename dll::dbn_desc<
         dll::dbn_layers<
-            typename dll::conv_desc<1, patch_height, patch_width, K, NH1_1, NH1_2>::layer_t,
-            typename dll::mp_layer_3d_desc<K, NH1_1, NH1_2, 1, 2, 2>::layer_t,
+            dll::conv_desc<1, patch_height, patch_width, KK, NH1_1, NH1_2>::layer_t,
+            dll::mp_layer_3d_desc<KK, NH1_1, NH1_2, 1, 2, 2>::layer_t,
 
-            typename dll::conv_desc<K, NH1_1 / 2, NH1_2 / 2, K, NH2_1, NH2_2>::layer_t,
+            typename dll::conv_desc<KK, NH1_1 / 2, NH1_2 / 2, K, NH2_1, NH2_2>::layer_t,
             typename dll::mp_layer_3d_desc<K, NH2_1, NH2_2, 1, 2, 2>::layer_t,
 
             typename dll::upsample_layer_3d_desc<K, NH2_1 / 2, NH2_2 / 2, 1, 2, 2>::layer_t,
-            typename dll::deconv_desc<K, NH2_1, NH2_2, K, K2, K2>::layer_t,
+            typename dll::deconv_desc<K, NH2_1, NH2_2, KK, K2, K2>::layer_t,
 
-            typename dll::upsample_layer_3d_desc<K, NH1_1 / 2, NH1_2 / 2, 1, 2, 2>::layer_t,
-            typename dll::deconv_desc<K, NH1_1, NH1_2, 1, K1, K1>::layer_t
+            dll::upsample_layer_3d_desc<KK, NH1_1 / 2, NH1_2 / 2, 1, 2, 2>::layer_t,
+            dll::deconv_desc<KK, NH1_1, NH1_2, 1, K1, K1>::layer_t
         >,
         dll::momentum,
         dll::weight_decay<dll::decay_type::L2>,
