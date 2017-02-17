@@ -123,6 +123,8 @@ config parse_args(int argc, char** argv) {
             conf.crbm = true;
         } else if (conf.args[i] == "-deep") {
             conf.deep = true;
+        } else if (conf.args[i] == "-hybrid") {
+            conf.hybrid = true;
         } else if (conf.args[i] == "-manmatha") {
             conf.manmatha   = true;
             conf.washington = false;

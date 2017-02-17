@@ -68,11 +68,12 @@ struct config {
     bool binary = false;
 
     // Special options for auto-encoders
-    bool dense = false;
-    bool deep  = false;
-    bool rbm   = false;
-    bool conv  = false;
-    bool crbm  = false;
+    bool dense  = false;
+    bool deep   = false;
+    bool rbm    = false;
+    bool conv   = false;
+    bool crbm   = false;
+    bool hybrid = false;
 
     //The following values are set during execution
     std::size_t downscale    = 1;
