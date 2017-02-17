@@ -78,15 +78,17 @@ void deep_crbm_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& 
 
 void deep_crbm_mp_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
     if (conf.crbm && conf.deep) {
-        deep_crbm_mp_evaluate<1>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
-        deep_crbm_mp_evaluate<2>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
-        deep_crbm_mp_evaluate<3>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
-        deep_crbm_mp_evaluate<4>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
-        deep_crbm_mp_evaluate<5>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
-        deep_crbm_mp_evaluate<6>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
-        deep_crbm_mp_evaluate<7>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
-        deep_crbm_mp_evaluate<8>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
-        deep_crbm_mp_evaluate<9>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
-        deep_crbm_mp_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-3, epochs);
+        const auto lr = 1e-3;
+
+        deep_crbm_mp_evaluate<1>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        deep_crbm_mp_evaluate<2>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        deep_crbm_mp_evaluate<3>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        deep_crbm_mp_evaluate<4>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        deep_crbm_mp_evaluate<5>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        deep_crbm_mp_evaluate<6>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        deep_crbm_mp_evaluate<7>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        deep_crbm_mp_evaluate<8>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        deep_crbm_mp_evaluate<9>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        deep_crbm_mp_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
     }
 }
