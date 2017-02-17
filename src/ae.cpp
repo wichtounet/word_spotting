@@ -22,6 +22,7 @@
 #include "ae_dense.hpp"
 #include "ae_conv.hpp"
 #include "ae_crbm.hpp"
+#include "ae_hybrid.hpp"
 
 #include "config.hpp"
 #include "standard.hpp"
@@ -117,4 +118,7 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
     stacked_conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     deep_crbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     deep_crbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+
+    // Hybrid
+    hybrid_rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 }
