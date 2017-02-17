@@ -68,7 +68,7 @@ void deep_crbm_pmp_evaluate(const spot_dataset& dataset, const spot_dataset_set&
     net->pretrain(training_patches, epochs);
 
     auto folder = spot::evaluate_patches_ae<0, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
-    std::cout << "AE-Result: CRBM-PMP(" << K << "):" << folder << std::endl;
+    std::cout << "AE-Result: Deep-CRBM-PMP(" << K << "):" << folder << std::endl;
 }
 
 } // end of anonymous namespace
