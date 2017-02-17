@@ -68,12 +68,12 @@ void deep_conv_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& 
     net->fine_tune_ae(training_patches, epochs);
 
     // Results before the MP
-    auto folder = spot::evaluate_patches_ae<3, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
-    std::cout << "AE-Result: Deep-Conv-MP(3)(" << K << "):" << folder << std::endl;
+    auto folder = spot::evaluate_patches_ae<2, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
+    std::cout << "AE-Result: Deep-Conv-MP(2)(" << K << "):" << folder << std::endl;
 
     // Results after the MP
-    folder = spot::evaluate_patches_ae<4, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
-    std::cout << "AE-Result: Deep-Conv-MP(4)(" << K << "):" << folder << std::endl;
+    folder = spot::evaluate_patches_ae<2, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
+    std::cout << "AE-Result: Deep-Conv-MP(3)(" << K << "):" << folder << std::endl;
 }
 
 } // end of anonymous namespace

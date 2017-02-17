@@ -70,8 +70,11 @@ void deep_crbm_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& 
     // Train as RBM
     net->pretrain(training_patches, epochs);
 
-    auto folder = spot::evaluate_patches_ae<1, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
-    std::cout << "AE-Result: Deep-CRBM-MP(" << K << "):" << folder << std::endl;
+    auto folder = spot::evaluate_patches_ae<2, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
+    std::cout << "AE-Result: Deep-CRBM-MP(2)(" << K << "):" << folder << std::endl;
+
+    folder = spot::evaluate_patches_ae<3, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
+    std::cout << "AE-Result: Deep-CRBM-MP(3)(" << K << "):" << folder << std::endl;
 }
 
 } // end of anonymous namespace
