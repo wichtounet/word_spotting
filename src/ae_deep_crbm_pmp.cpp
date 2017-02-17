@@ -74,7 +74,7 @@ void deep_crbm_pmp_evaluate(const spot_dataset& dataset, const spot_dataset_set&
 } // end of anonymous namespace
 
 void deep_crbm_pmp_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
-    if (conf.crbm && !conf.deep) {
+    if (conf.crbm && conf.deep) {
         const auto lr = 1e-3;
 
         deep_crbm_pmp_evaluate<1>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
