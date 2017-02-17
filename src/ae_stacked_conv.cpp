@@ -40,7 +40,8 @@ void stacked_conv_evaluate(const spot_dataset& dataset, const spot_dataset_set& 
         dll::weight_decay<dll::decay_type::L2>,
         dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>,
-        dll::shuffle
+        dll::shuffle,
+        dll::batch_mode
     >::dbn_t;
 
     using network2_t = typename dll::dbn_desc<
@@ -52,7 +53,8 @@ void stacked_conv_evaluate(const spot_dataset& dataset, const spot_dataset_set& 
         dll::weight_decay<dll::decay_type::L2>,
         dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>,
-        dll::shuffle
+        dll::shuffle,
+        dll::batch_mode
     >::dbn_t;
 
     auto net1 = std::make_unique<network1_t>();

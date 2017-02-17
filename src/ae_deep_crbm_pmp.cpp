@@ -34,18 +34,19 @@ void deep_crbm_pmp_evaluate(const spot_dataset& dataset, const spot_dataset_set&
                 K, NH1_1, NH1_2, 2,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
-                dll::momentum,
-                dll::shuffle
+                dll::momentum
             >::layer_t,
             typename dll::conv_rbm_mp_desc<
                 K, NH1_1 / 2, NH1_2 / 2,
                 K, NH2_1, NH2_2, 2,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
-                dll::momentum,
-                dll::shuffle
+                dll::momentum
             >::layer_t
-    >>::dbn_t;
+        >,
+        dll::shuffle,
+        dll::batch_mode
+    >::dbn_t;
 
     auto net = std::make_unique<network_t>();
 
