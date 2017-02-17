@@ -59,7 +59,7 @@ void deep_crbm_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& 
     std::cout << net->output_size() << " features" << std::endl;
 
     // Configure the network
-    net->template layer_get<0>().learning_rate    = learning_rate;
+    net->template layer_get<0>().learning_rate    = 1e-6;
     net->template layer_get<0>().initial_momentum = 0.9;
     net->template layer_get<0>().momentum         = 0.9;
 
