@@ -64,6 +64,9 @@ ifneq (,$(SPOTTER_MEMORY))
 CXX_FLAGS += -DMEMORY_DEBUG
 endif
 
+# Uncomment the next line for better template error debugging
+#CXX_FLAGS += -ftemplate-backtrace-limit=0
+
 $(eval $(call auto_folder_compile,src))
 $(eval $(call auto_add_executable,spotter))
 
