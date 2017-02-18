@@ -67,7 +67,7 @@ void hybrid_rbm_evaluate(const spot_dataset& dataset, const spot_dataset_set& se
 } // end of anonymous namespace
 
 void hybrid_rbm_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
-    if (conf.hybrid) {
+    if (conf.hybrid && conf.rbm) {
         const auto lr = 1e-3;
 
         hybrid_rbm_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
