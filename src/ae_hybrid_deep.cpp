@@ -21,7 +21,7 @@ namespace {
 
 template<size_t N>
 void hybrid_deep_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate, size_t epochs) {
-    static constexpr size_t KK = 9;
+    static constexpr size_t KK = 6;
     static constexpr size_t K1 = 9;
 
     static constexpr size_t NH1_1 = patch_height - K1 + 1;
