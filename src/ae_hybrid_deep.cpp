@@ -21,6 +21,7 @@ namespace {
 
 template<size_t N>
 void hybrid_deep_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate, size_t epochs) {
+    static constexpr size_t KK = 9;
     static constexpr size_t K1 = 9;
 
     static constexpr size_t NH1_1 = patch_height - K1 + 1;
@@ -28,10 +29,10 @@ void hybrid_deep_evaluate(const spot_dataset& dataset, const spot_dataset_set& s
 
     using network_t = typename dll::dbn_desc<
         dll::dbn_layers<
-            dll::conv_desc<1, patch_height, patch_width, 6, NH1_1, NH1_2>::layer_t,
-            typename dll::dense_desc<6 * NH1_1 * NH1_2, N>::layer_t,
-            typename dll::dense_desc<N, 6 * NH1_1 * NH1_2>::layer_t,
-            dll::deconv_desc<6, NH1_1, NH1_2, 1, K1, K1>::layer_t
+            dll::conv_desc<1, patch_height, patch_width, KK, NH1_1, NH1_2>::layer_t,
+            typename dll::dense_desc<KK * NH1_1 * NH1_2, N>::layer_t,
+            typename dll::dense_desc<N, KK * NH1_1 * NH1_2>::layer_t,
+            dll::deconv_desc<KK, NH1_1, NH1_2, 1, K1, K1>::layer_t
         >,
         dll::momentum,
         dll::weight_decay<dll::decay_type::L2>,
