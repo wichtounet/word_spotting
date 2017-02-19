@@ -123,4 +123,8 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
     hybrid_rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     hybrid_deep_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     hybrid_stacked_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+
+    // Hybrid + Pooling
+    hybrid_rbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    hybrid_rbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 }
