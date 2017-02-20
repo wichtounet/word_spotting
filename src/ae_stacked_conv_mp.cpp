@@ -95,7 +95,7 @@ void stacked_conv_mp_evaluate(const spot_dataset& dataset, const spot_dataset_se
     net2->fine_tune_ae(int_features_flat, epochs);
 
     auto folder = spot::evaluate_patches_ae_stacked_2<1, 1, image_t>(dataset, set, conf, *net1, *net2, train_word_names, test_image_names, false, params);
-    std::cout << "AE-Result: Stacked-Conv-Mp(" << K << "):" << folder << std::endl;
+    std::cout << "AE-Result: Stacked-Conv-MP(" << K << "):" << folder << std::endl;
 }
 
 } // end of anonymous namespace
