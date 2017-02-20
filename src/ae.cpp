@@ -13,16 +13,15 @@
 #include "ae.hpp"
 #include "ae_config.hpp"
 
-// Dense versions
+// All the AE modules
 #include "ae_dense.hpp"
 #include "ae_rbm.hpp"
-
-// Conv versions
 #include "ae_crbm.hpp"
 #include "ae_dense.hpp"
 #include "ae_conv.hpp"
 #include "ae_crbm.hpp"
 #include "ae_hybrid.hpp"
+#include "ae_denoising.hpp"
 
 #include "config.hpp"
 #include "standard.hpp"
@@ -129,4 +128,8 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
     hybrid_rbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     hybrid_deep_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     hybrid_stacked_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+
+    // Denoising
+    denoising_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    denoising_rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 }
