@@ -125,6 +125,8 @@ config parse_args(int argc, char** argv) {
             conf.deep = true;
         } else if (conf.args[i] == "-hybrid") {
             conf.hybrid = true;
+        } else if (conf.args[i] == "-denoising") {
+            conf.denoising = true;
         } else if (conf.args[i] == "-manmatha") {
             conf.manmatha   = true;
             conf.washington = false;
