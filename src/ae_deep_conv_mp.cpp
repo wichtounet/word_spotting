@@ -72,7 +72,7 @@ void deep_conv_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& 
     std::cout << "AE-Result: Deep-Conv-MP(2)(" << K << "):" << folder << std::endl;
 
     // Results after the MP
-    folder = spot::evaluate_patches_ae<2, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
+    folder = spot::evaluate_patches_ae<3, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
     std::cout << "AE-Result: Deep-Conv-MP(3)(" << K << "):" << folder << std::endl;
 }
 
