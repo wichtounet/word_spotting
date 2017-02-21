@@ -93,7 +93,7 @@ void hybrid_stacked_evaluate(const spot_dataset& dataset, const spot_dataset_set
 
 void hybrid_stacked_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches){
     //TODO Enable later again
-    return false;
+    return;
 
     if (conf.hybrid && !conf.rbm) {
         const auto lr = 1e-3;
