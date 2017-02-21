@@ -89,45 +89,47 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
     params.sc_band = 0.05;
     std::cout << "\tsc_band: " << params.sc_band << std::endl;
 
-    // Dense modules
-    dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    if (!conf.denoising) {
+        // Dense modules
+        dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
-    // Deep Dense modules
-    deep_rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    deep_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    stacked_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        // Deep Dense modules
+        deep_rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        deep_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        stacked_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
-    // Conv modules
-    conv_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    crbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        // Conv modules
+        conv_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        crbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
-    // Conv+pooling modules
-    conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    crbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    crbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        // Conv+pooling modules
+        conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        crbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        crbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
-    // Deep Conv modules
-    deep_conv_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    stacked_conv_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    deep_crbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        // Deep Conv modules
+        deep_conv_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        stacked_conv_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        deep_crbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
-    // Deep Conv+pooling modules
-    deep_conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    stacked_conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    deep_crbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    deep_crbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        // Deep Conv+pooling modules
+        deep_conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        stacked_conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        deep_crbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        deep_crbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
-    // Hybrid
-    hybrid_rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    hybrid_deep_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    hybrid_stacked_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        // Hybrid
+        hybrid_rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        hybrid_deep_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        hybrid_stacked_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
-    // Hybrid + Pooling
-    hybrid_rbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    hybrid_rbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    hybrid_deep_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    hybrid_stacked_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        // Hybrid + Pooling
+        hybrid_rbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        hybrid_rbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        hybrid_deep_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        hybrid_stacked_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    }
 
     // Denoising
     denoising_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
