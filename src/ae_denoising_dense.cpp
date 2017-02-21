@@ -39,9 +39,9 @@ void denoising_dense_evaluate(double noise, const spot_dataset& dataset, const s
 
     // Train as autoencoder
     if (noise == 0.0) {
-        net->fine_tune_dae(training_patches, epochs, noise);
-    } else {
         net->fine_tune_ae(training_patches, epochs);
+    } else {
+        net->fine_tune_dae(training_patches, epochs, noise);
     }
 
     auto folder = spot::evaluate_patches_ae<0, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);

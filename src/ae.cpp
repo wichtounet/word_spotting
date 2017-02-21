@@ -129,9 +129,20 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
         hybrid_rbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
         hybrid_deep_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
         hybrid_stacked_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    }
+    } else {
+        // Denoising dense
+        denoising_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        denoising_rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
 
-    // Denoising
-    denoising_dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
-    denoising_rbm_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        // Denoising Conv+pooling modules
+        denoising_conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        denoising_crbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        denoising_crbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+
+        // Denoising Deep Conv+pooling modules
+        denoising_deep_conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        denoising_stacked_conv_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        denoising_deep_crbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+        denoising_deep_crbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
+    }
 }
