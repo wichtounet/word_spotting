@@ -29,11 +29,12 @@ void denoising_crbm_mp_evaluate(double noise, const spot_dataset& dataset, const
                 K, NH1_1, NH1_2,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
-                dll::momentum,
-                dll::shuffle
+                dll::momentum
         >::layer_t,
         dll::mp_layer_3d_desc<K, NH1_1, NH1_2, 1, 2, 2>::layer_t
-    >>::dbn_t;
+    >,
+    dll::shuffle,
+    dll::batch_mode>::dbn_t;
 
     auto net = std::make_unique<network_t>();
 
