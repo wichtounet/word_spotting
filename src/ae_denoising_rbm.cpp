@@ -23,8 +23,7 @@ void denoising_rbm_evaluate(double noise, const spot_dataset& dataset, const spo
                 patch_height * patch_width, 50,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
-                dll::momentum,
-                dll::shuffle
+                dll::momentum
         >::layer_t
     >>::dbn_t;
 
