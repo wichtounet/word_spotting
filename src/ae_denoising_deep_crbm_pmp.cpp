@@ -46,7 +46,6 @@ void denoising_deep_crbm_pmp_evaluate(double noise, const spot_dataset& dataset,
                 dll::momentum
             >::layer_t
         >,
-        dll::shuffle,
         dll::batch_mode
     >::dbn_t;
 

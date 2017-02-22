@@ -31,7 +31,6 @@ void denoising_crbm_pmp_evaluate(double noise, const spot_dataset& dataset, cons
                 dll::momentum
         >::layer_t
     >,
-    dll::shuffle,
     dll::batch_mode>::dbn_t;
 
     auto net = std::make_unique<network_t>();
