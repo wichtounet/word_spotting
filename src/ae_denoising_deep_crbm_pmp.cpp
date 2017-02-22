@@ -78,6 +78,9 @@ void denoising_deep_crbm_pmp_evaluate(double noise, const spot_dataset& dataset,
 } // end of anonymous namespace
 
 void denoising_deep_crbm_pmp_evaluate_all(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& clean){
+    //TODO Fix denoising and batch mode
+    return;
+
     if (conf.denoising && conf.rbm) {
         auto lr = 1e-3;
 
