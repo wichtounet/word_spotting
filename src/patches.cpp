@@ -18,10 +18,7 @@
 #include "dll/rbm/conv_rbm_mp.hpp"
 #include "dll/pooling/avgp_layer.hpp"
 #include "dll/pooling/mp_layer.hpp"
-#include "dll/patches/patches_layer.hpp"
-#include "dll/patches/patches_layer_pad.hpp"
 #include "dll/transform/lcn_layer.hpp"
-#include "dll/augment/augment_layer.hpp"
 #include "dll/dbn.hpp"
 
 #ifndef OPENCV_23
@@ -449,32 +446,32 @@ void patches_train(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t>>::dbn_t;
+                        1, NV1_1, NV1_2, K1, NF1, NF1, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t>>::dbn_t;
 #elif defined(HALF_CRBM_PMP_2)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
+                        1, NV1_1, NV1_2, K1, NF1, NF1, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
                     dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t>>::dbn_t;
+                        K1, NV2_1, NV2_2, K2, NF2, NF2, C2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t>>::dbn_t;
 #elif defined(HALF_CRBM_PMP_3)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
+                        1, NV1_1, NV1_2, K1, NF1, NF1, C1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
                     dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
+                        K1, NV2_1, NV2_2, K2, NF2, NF2, C2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
                     dll::conv_rbm_mp_desc<
-                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, C3, dll::weight_type<weight>, dll::batch_size<half::B3>, dll::momentum, dll::weight_decay<half::DT3>, dll::hidden<half::HT3>, dll::sparsity<half::SM3>, dll::shuffle_cond<shuffle_3>, dll::dbn_only>::layer_t>>::dbn_t;
+                        K2, NV3_1, NV3_2, K3, NF3, NF3, C3, dll::weight_type<weight>, dll::batch_size<half::B3>, dll::momentum, dll::weight_decay<half::DT3>, dll::hidden<half::HT3>, dll::sparsity<half::SM3>, dll::shuffle_cond<shuffle_3>, dll::dbn_only>::layer_t>>::dbn_t;
 #elif defined(HALF_CRBM_MP_1)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t>,
+                        1, NV1_1, NV1_2, K1, NF1, NF1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
+                    dll::mp_3d_layer<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>>,
                 dll::batch_mode,
                 >::dbn_t;
 #elif defined(HALF_CRBM_MP_2)
@@ -482,24 +479,24 @@ void patches_train(
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
+                        1, NV1_1, NV1_2, K1, NF1, NF1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
+                    dll::mp_3d_layer<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>,
                     dll::conv_rbm_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>>::dbn_t;
+                        K1, NV2_1, NV2_2, K2, NF2, NF2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
+                    dll::mp_3d_layer<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>>>::dbn_t;
 #elif defined(HALF_CRBM_MP_3)
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
+                        1, NV1_1, NV1_2, K1, NF1, NF1, dll::weight_type<weight>, dll::batch_size<half::B1>, dll::momentum, dll::weight_decay<half::DT1>, dll::hidden<half::HT1>, dll::sparsity<half::SM1>, dll::shuffle_cond<shuffle_1>, dll::dbn_only>::layer_t,
+                    dll::mp_3d_layer<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>,
                     dll::conv_rbm_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_1, 1, C2, C2, dll::weight_type<weight>>::layer_t,
+                        K1, NV2_1, NV2_2, K2, NF2, NF2, dll::weight_type<weight>, dll::batch_size<half::B2>, dll::momentum, dll::weight_decay<half::DT2>, dll::hidden<half::HT2>, dll::sparsity<half::SM2>, dll::shuffle_cond<shuffle_2>, dll::dbn_only>::layer_t,
+                    dll::mp_3d_layer<K2, NH2_1, NH2_1, 1, C2, C2, dll::weight_type<weight>>,
                     dll::conv_rbm_desc<
-                        K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, dll::weight_type<weight>, dll::batch_size<half::B3>, dll::momentum, dll::weight_decay<half::DT3>, dll::hidden<half::HT3>, dll::sparsity<half::SM3>, dll::shuffle_cond<shuffle_3>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K3, NH3_1, NH3_1, 1, C3, C3, dll::weight_type<weight>>::layer_t>>::dbn_t;
+                        K2, NV3_1, NV3_2, K3, NF3, NF3, dll::weight_type<weight>, dll::batch_size<half::B3>, dll::momentum, dll::weight_decay<half::DT3>, dll::hidden<half::HT3>, dll::sparsity<half::SM3>, dll::shuffle_cond<shuffle_3>, dll::dbn_only>::layer_t,
+                    dll::mp_3d_layer<K3, NH3_1, NH3_1, 1, C3, C3, dll::weight_type<weight>>>>::dbn_t;
 #else
         static_assert(false, "No architecture has been selected");
 #endif
@@ -522,10 +519,6 @@ void patches_train(
         }
 
         auto cdbn = std::make_unique<cdbn_t>();
-
-        if(conf.iam && !conf.sub){
-            cdbn->batch_mode_run = true;
-        }
 
         // Level 1
         half::rate_0(cdbn->template layer_get<L1>().learning_rate);
@@ -694,7 +687,7 @@ void patches_train(
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::clipping_cond<clipping_1>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t>,
+                    dll::mp_3d_layer<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>>,
                 dll::batch_mode>::dbn_t;
 #elif defined(THIRD_CRBM_MP_2)
         using cdbn_t =
@@ -702,10 +695,10 @@ void patches_train(
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::visible<third::VT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::clipping_cond<clipping_1>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
+                    dll::mp_3d_layer<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>,
                     dll::conv_rbm_desc<
                         K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::visible<third::VT1>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::clipping_cond<clipping_2>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
+                    dll::mp_3d_layer<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>>
                 , dll::batch_mode>::dbn_t;
 #elif defined(THIRD_CRBM_MP_3)
         using cdbn_t =
@@ -713,25 +706,13 @@ void patches_train(
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::clipping_cond<clipping_1>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
+                    dll::mp_3d_layer<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>,
                     dll::conv_rbm_desc<
                         K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::clipping_cond<clipping_2>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_1, 1, C2, C2, dll::weight_type<weight>>::layer_t,
+                    dll::mp_3d_layer<K2, NH2_1, NH2_1, 1, C2, C2, dll::weight_type<weight>>,
                     dll::conv_rbm_desc<
                         K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, dll::weight_type<weight>, dll::batch_size<third::B3>, dll::momentum, dll::weight_decay<third::DT3>, dll::hidden<third::HT3>, dll::sparsity<third::SM3>, dll::shuffle_cond<shuffle_3>, dll::clipping_cond<clipping_3>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K3, NH3_1, NH3_1, 1, C3, C3, dll::weight_type<weight>>::layer_t>>::dbn_t;
-#elif defined(THIRD_PATCH_CRBM_MP_2)
-        using cdbn_t =
-            dll::dbn_desc<
-                dll::dbn_layers<
-                    dll::patches_layer_padh_desc<third::patch_width, third::patch_height, 1, third::train_stride, 1, dll::weight_type<weight>>::layer_t,
-                    dll::conv_rbm_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::clipping_cond<clipping_1>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
-                    dll::conv_rbm_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::clipping_cond<clipping_2>, dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
-                , dll::batch_mode>::dbn_t;
+                    dll::mp_3d_layer<K3, NH3_1, NH3_1, 1, C3, C3, dll::weight_type<weight>>>>::dbn_t;
 #elif defined(THIRD_RBM_1)
         using cdbn_t =
             dll::dbn_desc<
@@ -763,34 +744,12 @@ void patches_train(
                     dll::conv_rbm_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::clipping_cond<clipping_1>, dll::dbn_only>::layer_t,
                     //dll::lcn_layer_desc<5>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
+                    dll::mp_3d_layer<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>,
                     dll::conv_rbm_desc<
                         K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::clipping_cond<clipping_2>, dll::dbn_only>::layer_t,
                     dll::lcn_layer_desc<3>::layer_t,
-                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>
+                    dll::mp_3d_layer<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>>
                 /*, dll::batch_mode*/>::dbn_t;
-#elif defined(THIRD_MODERN)
-        using cdbn_train_t =
-            dll::dbn_desc<
-                dll::dbn_layers<
-                    //dll::augment_layer_desc<dll::elastic<third::elastic_augment, 17>>::layer_t,
-                    dll::patches_layer_padh_desc<third::patch_width, third::patch_height, 1, third::train_stride, 1, dll::weight_type<weight>>::layer_t,
-                    dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::clipping_cond<clipping_1>, dll::dbn_only>::layer_t,
-                    dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::clipping_cond<clipping_2>, dll::dbn_only>::layer_t>
-                , dll::batch_mode>::dbn_t;
-        using cdbn_test_t =
-            dll::dbn_desc<
-                dll::dbn_layers<
-                    //dll::augment_layer_desc<dll::elastic<third::elastic_augment, 17>>::layer_t,
-                    dll::patches_layer_padh_desc<third::patch_width, third::patch_height, 1, third::train_stride, 1, dll::weight_type<weight>>::layer_t,
-                    dll::conv_rbm_mp_desc<
-                        1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<third::B1>, dll::momentum, dll::weight_decay<third::DT1>, dll::hidden<third::HT1>, dll::sparsity<third::SM1>, dll::shuffle_cond<shuffle_1>, dll::clipping_cond<clipping_1>, dll::dbn_only>::layer_t,
-                    dll::conv_rbm_mp_desc<
-                        K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, C2, dll::weight_type<weight>, dll::batch_size<third::B2>, dll::momentum, dll::weight_decay<third::DT2>, dll::hidden<third::HT2>, dll::sparsity<third::SM2>, dll::shuffle_cond<shuffle_2>, dll::clipping_cond<clipping_2>, dll::dbn_only>::layer_t>
-                , dll::batch_mode>::dbn_t;
-        using cdbn_t = cdbn_test_t;
 #else
         static_assert(false, "No architecture has been selected");
 #endif
@@ -832,10 +791,6 @@ void patches_train(
 #else
         auto& cdbn_ref = cdbn;
 #endif
-
-        if(conf.iam && !conf.sub){
-            cdbn_ref->batch_mode_run = true;
-        }
 
         // Level 1
         third::rate_0(cdbn_ref->template layer_get<L1>().learning_rate);
@@ -1067,12 +1022,11 @@ void patches_train(
                     dll::conv_rbm_mp_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, /*dll::shuffle_cond<shuffle_1>,*/ dll::dbn_only>::layer_t>>::dbn_t;
 #elif defined(FULL_CRBM_PMP_2)
-        static constexpr const bool DBN_Patch = true;
+        static constexpr const bool DBN_Patch = false;
 
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
-                    dll::patches_layer_padh_desc<full::patch_width, full::patch_height, 1, full::train_stride, 1, dll::weight_type<weight>>::layer_t,
                     dll::conv_rbm_mp_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, C1, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, /*dll::shuffle_cond<shuffle_1>,*/ dll::dbn_only>::layer_t,
                     dll::conv_rbm_mp_desc<
@@ -1099,7 +1053,7 @@ void patches_train(
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, /*dll::shuffle_cond<shuffle_1>,*/ dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t>,
+                    dll::mp_3d_layer<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>>,
                 dll::batch_mode>::dbn_t;
 #elif defined(FULL_CRBM_MP_2)
         static constexpr const bool DBN_Patch = false;
@@ -1109,10 +1063,10 @@ void patches_train(
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, /*dll::shuffle_cond<shuffle_1>,*/ dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
+                    dll::mp_3d_layer<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>,
                     dll::conv_rbm_desc<
                         K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<full::B2>, dll::momentum, dll::weight_decay<full::DT2>, dll::hidden<full::HT2>, dll::sparsity<full::SM2>, /*dll::shuffle_cond<shuffle_2>,*/ dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>::layer_t>,
+                    dll::mp_3d_layer<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>>,
                 dll::batch_mode>::dbn_t;
 #elif defined(FULL_CRBM_MP_3)
         static constexpr const bool DBN_Patch = false;
@@ -1122,12 +1076,12 @@ void patches_train(
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
                         1, NV1_1, NV1_2, K1, NH1_1, NH1_2, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, /*dll::shuffle_cond<shuffle_1>,*/ dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>::layer_t,
+                    dll::mp_3d_layer<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>,
                     dll::conv_rbm_desc<K1, NV2_1, NV2_2, K2, NH2_1, NH2_2, dll::weight_type<weight>, dll::batch_size<full::B2>, dll::momentum, dll::weight_decay<full::DT2>, dll::hidden<full::HT2>, dll::sparsity<full::SM2>, /*dll::shuffle_cond<shuffle_2>,*/ dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K2, NH2_1, NH2_1, 1, C2, C2, dll::weight_type<weight>>::layer_t,
+                    dll::mp_3d_layer<K2, NH2_1, NH2_1, 1, C2, C2, dll::weight_type<weight>>,
                     dll::conv_rbm_desc<
                         K2, NV3_1, NV3_2, K3, NH3_1, NH3_2, dll::weight_type<weight>, dll::batch_size<full::B3>, dll::momentum, dll::weight_decay<full::DT3>, dll::hidden<full::HT3>, dll::sparsity<full::SM3>, /*dll::shuffle_cond<shuffle_3>,*/ dll::dbn_only>::layer_t,
-                    dll::mp_layer_3d_desc<K3, NH3_1, NH3_1, 1, C3, C3, dll::weight_type<weight>>::layer_t>>::dbn_t;
+                    dll::mp_3d_layer<K3, NH3_1, NH3_1, 1, C3, C3, dll::weight_type<weight>>>>::dbn_t;
 #else
         static_assert(false, "No architecture has been selected");
 #endif
@@ -1149,10 +1103,6 @@ void patches_train(
 #endif
 
         auto cdbn = std::make_unique<cdbn_t>();
-
-        if(conf.iam && !conf.sub){
-            cdbn->batch_mode_run = true;
-        }
 
         // Level 1
         full::rate_0(cdbn->template layer_get<L1>().learning_rate);
