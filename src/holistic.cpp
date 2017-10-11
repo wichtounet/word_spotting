@@ -78,7 +78,7 @@ void holistic_train(
                                 [&test_features_a, &dbn, &dataset, &conf](auto& test_image, std::size_t i) {
                                     auto test_v = holistic_mat<dbn_t>(conf, dataset.word_images.at(test_image));
 
-                                    test_features_a[i] = dbn->activation_probabilities(test_v);
+                                    test_features_a[i] = dbn->features(test_v);
                                 });
 
         std::cout << "... done" << std::endl;
@@ -123,7 +123,7 @@ void holistic_train(
                 auto ref_v = holistic_mat<dbn_t>(conf, dataset.word_images.at(training_image + ".png"));
                 auto ref_a = dbn->template prepare_one_output<typename dbn_t::input_t>();
 
-                ref_a = dbn->activation_probabilities(ref_v);
+                ref_a = dbn->features(ref_v);
 
                 std::vector<std::pair<std::string, weight>> diffs_a;
 
@@ -197,30 +197,25 @@ void holistic_train(
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
                         1, WIDTH / 2, HEIGHT / 2 //330x60 input image (1 channel)
-                        ,
-                        30 //Number of feature maps
-                        ,
-                        WIDTH / 2 + 1 - NF, HEIGHT / 2 + 1 - NF //Configure the size of the filter
+                        , 30 //Number of feature maps
+                        , NF, NF //Configure the size of the filter
                         //, 2                                       //Probabilistic max pooling (2x2)
-                        ,
-                        dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum
+                        , dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum
                         //, dll::weight_decay<dll::decay_type::L2>
-                        ,
-                        dll::dbn_only
+                        , dll::dbn_only
                         //, dll::sparsity<dll::sparsity_method::LEE>
                         >::layer_t,
-                    dll::mp_layer_3d_desc<30, 318, 48, 1, 2, 2, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
-                                                                                                        30, 159, 24, 30, 159 + 1 - NF2, 24 + 1 - NF2, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum
-                                                                                                        //, dll::weight_decay<dll::decay_type::L2>
-                                                                                                        ,
-                                                                                                        dll::dbn_only
-                                                                                                        //, dll::sparsity<dll::sparsity_method::LEE>
-                                                                                                        >::layer_t,
+                    dll::mp_3d_layer_desc<30, 318, 48, 1, 2, 2, dll::weight_type<weight>>::layer_t,
                     dll::conv_rbm_desc<
-                        30, 152, 17, 30, 152 + 1 - NF3, 17 + 1 - NF3, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum
+                        30, 159, 24, 30, NF2, NF2, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum
                         //, dll::weight_decay<dll::decay_type::L2>
-                        ,
-                        dll::dbn_only
+                        , dll::dbn_only
+                        //, dll::sparsity<dll::sparsity_method::LEE>
+                        >::layer_t,
+                    dll::conv_rbm_desc<
+                        30, 152, 17, 30, NF3, NF3, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum
+                        //, dll::weight_decay<dll::decay_type::L2>
+                        , dll::dbn_only
                         //, dll::sparsity<dll::sparsity_method::LEE>
                         >::layer_t>,
                 dll::batch_mode>::dbn_t;
@@ -245,8 +240,8 @@ void holistic_train(
         std::cout << "Layer 2 tmp storage: " << cdbn->template layer_get<2>().output_size() * mul << "MB necessary" << std::endl;
         std::cout << "Layer 3 tmp storage: " << cdbn->template layer_get<3>().output_size() * mul << "MB necessary" << std::endl;
 
-        std::cout << "Trainer 0 storage: " << sizeof(dll::base_cd_trainer<1, cdbn_t::layer_type<0>, false, false>) / mini_div << "MB necessary" << std::endl;
-        std::cout << "Trainer 2 storage: " << sizeof(dll::base_cd_trainer<1, cdbn_t::layer_type<2>, false, false>) / mini_div << "MB necessary" << std::endl;
+        std::cout << "Trainer 0 storage: " << sizeof(dll::base_cd_trainer<1, cdbn_t::layer_type<0>, false>) / mini_div << "MB necessary" << std::endl;
+        std::cout << "Trainer 2 storage: " << sizeof(dll::base_cd_trainer<1, cdbn_t::layer_type<2>, false>) / mini_div << "MB necessary" << std::endl;
 
         std::cout << "Final test features:" << test_image_names.size() * cdbn->output_size() * div << "MB" << std::endl;
 
@@ -275,19 +270,16 @@ void holistic_train(
                 dll::dbn_layers<
                     dll::conv_rbm_desc<
                         1, WIDTH / 3, HEIGHT / 3 //165x30 input image (1 channel)
-                        ,
-                        30 //Number of feature maps
-                        ,
-                        WIDTH / 3 + 1 - NF, HEIGHT / 3 + 1 - NF //Configure the size of the filter
+                        , 30 //Number of feature maps
+                        , NF, NF //Configure the size of the filter
                         //, 2                                       //Probabilistic max pooling (2x2)
-                        ,
-                        dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum, dll::weight_decay<dll::decay_type::L2>, dll::dbn_only, dll::hidden<dll::unit_type::RELU6>
+                        , dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum, dll::weight_decay<dll::decay_type::L2>, dll::dbn_only, dll::hidden<dll::unit_type::RELU6>
                         //, dll::sparsity<dll::sparsity_method::LEE>
                         >::layer_t,
-                    dll::mp_layer_3d_desc<30, 208, 28, 1, 2, 2, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
-                                                                                                        30, 104, 14, 30, 104 + 1 - NF2, 14 + 1 - NF2, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum, dll::weight_decay<dll::decay_type::L2>, dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t,
-                    dll::mp_layer_3d_desc<30, 98, 8, 1, 2, 2, dll::weight_type<weight>>::layer_t, dll::conv_rbm_desc<
-                                                                                                      30, 49, 4, 30, 49 + 1 - NF3, 4 + 1 - NF3, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum, dll::weight_decay<dll::decay_type::L2>, dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t>,
+                    dll::mp_3d_layer_desc<30, 208, 28, 1, 2, 2, dll::weight_type<weight>>::layer_t,
+                    dll::conv_rbm_desc<30, 104, 14, 30, NF2, NF2, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum, dll::weight_decay<dll::decay_type::L2>, dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t,
+                    dll::mp_3d_layer_desc<30, 98, 8, 1, 2, 2, dll::weight_type<weight>>::layer_t,
+                    dll::conv_rbm_desc<30, 49, 4, 30, NF3, NF3, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum, dll::weight_decay<dll::decay_type::L2>, dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t>,
                 dll::batch_mode>::dbn_t;
 
         auto training_images = read_images<cdbn_t>(dataset, conf, train_image_names);
@@ -348,7 +340,7 @@ void holistic_train(
 
                     auto test_v = holistic_mat<cdbn_t>(conf, dataset.word_images.at(test_image));
 
-                    training_features[i] = cdbn->activation_probabilities(test_v);
+                    training_features[i] = cdbn->features(test_v);
 
                     std::copy(training_features[i].begin(), training_features[i].end(), std::back_inserter(training_samples[i]));
 
@@ -414,26 +406,24 @@ void holistic_train(
                         ,
                         30 //Number of feature maps
                         ,
-                        WIDTH / 4 + 1 - NF, HEIGHT / 4 + 1 - NF //Configure the size of the filter
+                        NF, NF //Configure the size of the filter
                         //, 2                                       //Probabilistic max pooling (2x2)
                         ,
                         dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum
                         //, dll::weight_decay<dll::decay_type::L2>
                         ,
                         dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t
-                    //, dll::mp_layer_3d_desc<30,318,48,1,2,2, dll::weight_type<weight>>::layer_t
-                    ,
-                    dll::conv_rbm_desc<
-                        30, 159, 24, 30, 159 + 1 - NF2, 24 + 1 - NF2, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum
+                    //, dll::mp_3d_layer_desc<30,318,48,1,2,2, dll::weight_type<weight>>::layer_t
+                    , dll::conv_rbm_desc<
+                        30, 159, 24, 30, NF2, NF2, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum
                         //, dll::weight_decay<dll::decay_type::L2>
-                        ,
-                        dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t,
-                    dll::conv_rbm_desc<
-                        30, 157, 22, 30, 157 + 1 - NF3, 22 + 1 - NF3, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum
+                        , dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t
+                    , dll::conv_rbm_desc<
+                        30, 157, 22, 30, NF3, NF3, dll::weight_type<weight>, dll::batch_size<25>, dll::verbose, dll::momentum
                         //, dll::weight_decay<dll::decay_type::L2>
-                        ,
-                        dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t>,
-                dll::batch_mode>::dbn_t;
+                        , dll::dbn_only, dll::sparsity<dll::sparsity_method::LEE>>::layer_t
+                >
+                , dll::batch_mode>::dbn_t;
 
         auto training_images = read_images<cdbn_t>(dataset, conf, train_image_names);
 
