@@ -297,6 +297,7 @@ void optimize_parameters(const spot_dataset& dataset, const Set& set, config& co
     double best_mean_ap = 0.0;
 
     parameters best_param;
+    best_param.sc_band = sc_band_values.front();
 
     std::size_t i = 0;
     for (auto sc : sc_band_values) {
