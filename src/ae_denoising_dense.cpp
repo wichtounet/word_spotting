@@ -20,7 +20,7 @@ using network_t = dll::dbn_desc<
         dll::dense_desc<patch_height * patch_width, 50>::layer_t,
         dll::dense_desc<50, patch_height * patch_width>::layer_t
     >,
-    dll::momentum,
+    dll::updater<dll::updater_type::MOMENTUM>,
     dll::weight_decay<dll::decay_type::L2>,
     dll::trainer<dll::sgd_trainer>,
     dll::batch_size<batch_size>,

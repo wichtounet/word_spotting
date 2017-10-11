@@ -26,7 +26,7 @@ void stacked_dense_evaluate(const spot_dataset& dataset, const spot_dataset_set&
             typename dll::dense_desc<patch_height * patch_width, M>::layer_t,
             typename dll::dense_desc<M, patch_height * patch_width>::layer_t
         >,
-        dll::momentum,
+        dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,
         dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>,
@@ -38,7 +38,7 @@ void stacked_dense_evaluate(const spot_dataset& dataset, const spot_dataset_set&
             typename dll::dense_desc<M, N>::layer_t,
             typename dll::dense_desc<N, M>::layer_t
         >,
-        dll::momentum,
+        dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,
         dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>,

@@ -27,12 +27,12 @@ void denoising_conv_mp_evaluate(double noise, const spot_dataset& dataset, const
 
     using network_t = dll::dbn_desc<
         dll::dbn_layers<
-            dll::conv_desc<1, patch_height, patch_width, K, NH1_1, NH1_2>::layer_t,
-            dll::mp_layer_3d_desc<K, NH1_1, NH1_2, 1, 2, 2>::layer_t,
-            dll::upsample_layer_3d_desc<K, NH1_1 / 2, NH1_2 / 2, 1, 2, 2>::layer_t,
-            dll::deconv_desc<K, NH1_1, NH1_2, 1, K1, K1>::layer_t
+            dll::conv_layer<1, patch_height, patch_width, K, K1, K1>,
+            dll::mp_3d_layer<K, NH1_1, NH1_2, 1, 2, 2>,
+            dll::upsample_3d_layer<K, NH1_1 / 2, NH1_2 / 2, 1, 2, 2>,
+            dll::deconv_layer<K, NH1_1, NH1_2, 1, K1, K1>
         >,
-        dll::momentum,
+        dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,
         dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>,

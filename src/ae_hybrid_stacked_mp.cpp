@@ -37,7 +37,7 @@ void hybrid_stacked_mp_evaluate(const spot_dataset& dataset, const spot_dataset_
             dll::upsample_layer_3d_desc<KK, NH1_1 / 2, NH1_2 / 2, 1, 2, 2>::layer_t,
             dll::deconv_desc<KK, NH1_1, NH1_2, 1, K1, K1>::layer_t
         >,
-        dll::momentum,
+        dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,
         dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>,
@@ -50,7 +50,7 @@ void hybrid_stacked_mp_evaluate(const spot_dataset& dataset, const spot_dataset_
             typename dll::dense_desc<KK * (NH1_1 / 2) * (NH1_2 / 2), N>::layer_t,
             typename dll::dense_desc<N, KK * (NH1_1 / 2) * (NH1_2 / 2)>::layer_t
         >,
-        dll::momentum,
+        dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,
         dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>,

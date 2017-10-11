@@ -38,7 +38,7 @@ void stacked_conv_evaluate(const spot_dataset& dataset, const spot_dataset_set& 
             dll::conv_desc<1, patch_height, patch_width, KK, NH1_1, NH1_2>::layer_t,
             dll::deconv_desc<KK, NH1_1, NH1_2, 1, K1, K1>::layer_t
         >,
-        dll::momentum,
+        dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,
         dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>,
@@ -51,7 +51,7 @@ void stacked_conv_evaluate(const spot_dataset& dataset, const spot_dataset_set& 
             typename dll::conv_desc<KK, NH1_1, NH1_2, K, NH2_1, NH2_2>::layer_t,
             typename dll::deconv_desc<K, NH2_1, NH2_2, KK, K2, K2>::layer_t
         >,
-        dll::momentum,
+        dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,
         dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>,
