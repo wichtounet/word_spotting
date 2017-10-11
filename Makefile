@@ -21,6 +21,13 @@ endif
 # Performance Flags (ETL)
 CXX_FLAGS += -DETL_VECTORIZE_FULL -DETL_PARALLEL -DETL_CONV4_PREFER_BLAS
 
+# Tune GCC warnings
+ifeq (,$(findstring clang,$(CXX)))
+ifneq (,$(findstring g++,$(CXX)))
+CXX_FLAGS += -Wno-ignored-attributes -Wno-misleading-indentation
+endif
+endif
+
 # Configure HMM
 ifneq (,$(SPOTTER_NO_HMM))
 CXX_FLAGS += -DSPOTTER_NO_MLPACK
