@@ -5,6 +5,9 @@ default: release
 include make-utils/flags.mk
 include make-utils/cpp-utils.mk
 
+# Use C++14
+$(eval $(call use_cpp14))
+
 CXX_FLAGS += -pedantic
 
 CXX_FLAGS += -Idll/etl/include -Idll/etl/lib/include -Idll/nice_svm/include -Idll/include
