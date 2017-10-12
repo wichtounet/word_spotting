@@ -30,12 +30,12 @@ void hybrid_rbm_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set&
         dll::dbn_layers<
             dll::conv_rbm_desc<
                 1, patch_height, patch_width,
-                K, NH1_1, NH1_2,
+                K, K1, K1,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
                 dll::momentum
             >::layer_t,
-            dll::mp_layer_3d_desc<K, NH1_1, NH1_2, 1, 2, 2>::layer_t,
+            dll::mp_3d_layer<K, NH1_1, NH1_2, 1, 2, 2>,
             typename dll::rbm_desc<
                 K * (NH1_1 / 2) * (NH1_2 / 2), N,
                 dll::batch_size<batch_size>,

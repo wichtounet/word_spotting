@@ -11,6 +11,7 @@
 #include "dll/pooling/upsample_layer.hpp"
 #include "dll/dbn.hpp"
 #include "dll/trainer/stochastic_gradient_descent.hpp"
+#include "dll/util/flatten.hpp"
 
 #include "ae_config.hpp" // Must be first
 
@@ -20,7 +21,8 @@
 
 namespace {
 
-void denoising_stacked_conv_mp_evaluate(double noise, const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate, size_t epochs) {
+template<size_t Noise>
+void denoising_stacked_conv_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate, size_t epochs) {
     static constexpr size_t KK = 6;
     static constexpr size_t K = 5;
 
@@ -33,33 +35,35 @@ void denoising_stacked_conv_mp_evaluate(double noise, const spot_dataset& datase
     static constexpr size_t NH2_1 = (NH1_1 / 2) - K2 + 1;
     static constexpr size_t NH2_2 = (NH1_2 / 2) - K2 + 1;
 
-    using network1_t = dll::dbn_desc<
+    using network1_t = typename dll::dbn_desc<
         dll::dbn_layers<
-            dll::conv_desc<1, patch_height, patch_width, KK, NH1_1, NH1_2>::layer_t,
-            dll::mp_layer_3d_desc<KK, NH1_1, NH1_2, 1, 2, 2>::layer_t,
-            dll::upsample_layer_3d_desc<KK, NH1_1 / 2, NH1_2 / 2, 1, 2, 2>::layer_t,
-            dll::deconv_desc<KK, NH1_1, NH1_2, 1, K1, K1>::layer_t
+            dll::conv_layer<1, patch_height, patch_width, KK, K1, K1>,
+            dll::mp_3d_layer<KK, NH1_1, NH1_2, 1, 2, 2>,
+            dll::upsample_3d_layer<KK, NH1_1 / 2, NH1_2 / 2, 1, 2, 2>,
+            dll::deconv_layer<KK, NH1_1, NH1_2, 1, K1, K1>
         >,
-        dll::momentum,
-        dll::weight_decay<dll::decay_type::L2>,
-        dll::trainer<dll::sgd_trainer>,
-        dll::batch_size<batch_size>,
-        dll::shuffle
-    >::dbn_t;
-
-    using network2_t = dll::dbn_desc<
-        dll::dbn_layers<
-            dll::conv_desc<KK, NH1_1 / 2, NH1_2 / 2, K, NH2_1, NH2_2>::layer_t,
-            dll::mp_layer_3d_desc<K, NH2_1, NH2_2, 1, 2, 2>::layer_t,
-            dll::upsample_layer_3d_desc<K, NH2_1 / 2, NH2_2 / 2, 1, 2, 2>::layer_t,
-            dll::deconv_desc<K, NH2_1, NH2_2, KK, K2, K2>::layer_t
-        >,
-        dll::momentum,
+        dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,
         dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>,
         dll::shuffle,
-        dll::batch_mode
+        dll::noise<Noise>
+    >::dbn_t;
+
+    using network2_t = typename dll::dbn_desc<
+        dll::dbn_layers<
+            dll::conv_layer<KK, NH1_1 / 2, NH1_2 / 2, K, K2, K2>,
+            dll::mp_3d_layer<K, NH2_1, NH2_2, 1, 2, 2>,
+            dll::upsample_3d_layer<K, NH2_1 / 2, NH2_2 / 2, 1, 2, 2>,
+            dll::deconv_layer<K, NH2_1, NH2_2, KK, K2, K2>
+        >,
+        dll::updater<dll::updater_type::MOMENTUM>,
+        dll::weight_decay<dll::decay_type::L2>,
+        dll::trainer<dll::sgd_trainer>,
+        dll::batch_size<batch_size>,
+        dll::shuffle,
+        dll::batch_mode,
+        dll::noise<Noise>
     >::dbn_t;
 
     auto net1 = std::make_unique<network1_t>();
@@ -72,11 +76,7 @@ void denoising_stacked_conv_mp_evaluate(double noise, const spot_dataset& datase
     net1->momentum         = 0.9;
 
     // Train as autoencoder
-    if (noise == 0.0) {
-        net1->fine_tune_ae(training_patches, epochs);
-    } else {
-        net1->fine_tune_dae(training_patches, epochs, noise);
-    }
+    net1->fine_tune_ae(training_patches, epochs);
 
     // Extract intermediate features
 
@@ -96,14 +96,10 @@ void denoising_stacked_conv_mp_evaluate(double noise, const spot_dataset& datase
     net2->momentum         = 0.9;
 
     // Train as autoencoder
-    if (noise == 0.0) {
-        net2->fine_tune_ae(int_features_flat, epochs);
-    } else {
-        net2->fine_tune_dae(int_features_flat, epochs, noise);
-    }
+    net2->fine_tune_ae(int_features_flat, epochs);
 
     auto folder = spot::evaluate_patches_ae_stacked_2<1, 1, image_t>(dataset, set, conf, *net1, *net2, train_word_names, test_image_names, false, params);
-    std::cout << "AE-Result: Denoising-Stacked-Conv-MP(" << noise << "):" << folder << std::endl;
+    std::cout << "AE-Result: Denoising-Stacked-Conv-MP(" << Noise << "):" << folder << std::endl;
 }
 
 } // end of anonymous namespace
@@ -112,16 +108,16 @@ void denoising_stacked_conv_mp_evaluate_all(const spot_dataset& dataset, const s
     if (conf.denoising && !conf.rbm) {
         const auto lr = 1e-3;
 
-        denoising_stacked_conv_mp_evaluate(0.0, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_stacked_conv_mp_evaluate(0.05, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_stacked_conv_mp_evaluate(0.10, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_stacked_conv_mp_evaluate(0.15, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_stacked_conv_mp_evaluate(0.20, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_stacked_conv_mp_evaluate(0.25, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_stacked_conv_mp_evaluate(0.30, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_stacked_conv_mp_evaluate(0.35, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_stacked_conv_mp_evaluate(0.40, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_stacked_conv_mp_evaluate(0.45, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_stacked_conv_mp_evaluate(0.50, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_stacked_conv_mp_evaluate<0>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_stacked_conv_mp_evaluate<5>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_stacked_conv_mp_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_stacked_conv_mp_evaluate<15>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_stacked_conv_mp_evaluate<20>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_stacked_conv_mp_evaluate<25>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_stacked_conv_mp_evaluate<30>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_stacked_conv_mp_evaluate<35>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_stacked_conv_mp_evaluate<40>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_stacked_conv_mp_evaluate<45>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_stacked_conv_mp_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
     }
 }

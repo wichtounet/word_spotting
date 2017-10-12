@@ -26,19 +26,19 @@ void hybrid_rbm_evaluate(const spot_dataset& dataset, const spot_dataset_set& se
 
     using network_t = typename dll::dbn_desc<
         dll::dbn_layers<
-            dll::conv_rbm_desc<
+            typename dll::conv_rbm_desc<
                 1, patch_height, patch_width,
-                6, NH1_1, NH1_2,
+                6, K1, K1,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
                 dll::momentum
             >::layer_t,
-            typename dll::rbm_desc<
+            dll::rbm<
                 6 * NH1_1 * NH1_2, N,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
                 dll::momentum
-            >::layer_t
+            >
         >,
         dll::batch_mode
     >::dbn_t;

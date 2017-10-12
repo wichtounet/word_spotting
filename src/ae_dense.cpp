@@ -21,10 +21,10 @@ template<size_t N>
 void dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate, size_t epochs) {
     using network_t = typename dll::dbn_desc<
         dll::dbn_layers<
-            typename dll::dense_desc<patch_height * patch_width, N>::layer_t,
-            typename dll::dense_desc<N, patch_height * patch_width>::layer_t
+            dll::dense_layer<patch_height * patch_width, N>,
+            dll::dense_layer<N, patch_height * patch_width>
         >,
-        dll::momentum,
+        dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,
         dll::trainer<dll::sgd_trainer>,
         dll::batch_size<batch_size>,

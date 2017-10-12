@@ -28,13 +28,13 @@ void crbm_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, 
         dll::dbn_layers<
             typename dll::conv_rbm_desc<
                 1, patch_height, patch_width,
-                K, NH1_1, NH1_2,
+                K, K1, K1,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
                 dll::momentum,
                 dll::shuffle
-        >::layer_t,
-        typename dll::mp_layer_3d_desc<K, NH1_1, NH1_2, 1, 2, 2>::layer_t
+            >::layer_t
+            , dll::mp_3d_layer<K, NH1_1, NH1_2, 1, 2, 2>
     >>::dbn_t;
 
     auto net = std::make_unique<network_t>();

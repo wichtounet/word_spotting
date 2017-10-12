@@ -8,6 +8,7 @@
 #include "dll/neural/dense_layer.hpp"
 #include "dll/dbn.hpp"
 #include "dll/trainer/stochastic_gradient_descent.hpp"
+#include "dll/util/flatten.hpp"
 
 #include "ae_config.hpp" // Must be first
 
@@ -23,8 +24,8 @@ void stacked_dense_evaluate(const spot_dataset& dataset, const spot_dataset_set&
 
     using network1_t = typename dll::dbn_desc<
         dll::dbn_layers<
-            typename dll::dense_desc<patch_height * patch_width, M>::layer_t,
-            typename dll::dense_desc<M, patch_height * patch_width>::layer_t
+            dll::dense_layer<patch_height * patch_width, M>,
+            dll::dense_layer<M, patch_height * patch_width>
         >,
         dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,
@@ -35,8 +36,8 @@ void stacked_dense_evaluate(const spot_dataset& dataset, const spot_dataset_set&
 
     using network2_t = typename dll::dbn_desc<
         dll::dbn_layers<
-            typename dll::dense_desc<M, N>::layer_t,
-            typename dll::dense_desc<N, M>::layer_t
+            dll::dense_layer<M, N>,
+            dll::dense_layer<N, M>
         >,
         dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,

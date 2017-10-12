@@ -197,13 +197,13 @@ int command_features(config& conf) {
 }
 
 std::size_t bench_runtime_std(config& conf, Method method, const spot_dataset& dataset, names image_names){
-    auto start = chrono::steady_clock::now();
+    auto start = std::chrono::steady_clock::now();
 
     conf.method = method;
     standard_runtime(dataset, conf, image_names);
 
-    auto end = chrono::steady_clock::now();
-    auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
     std::cout << "   Total: " << (double(duration) / 1000 / 1000) << "ms" << std::endl;
     std::cout << "   Image: " << (double(duration) / image_names.size() / 1000) << "us" << std::endl;
@@ -212,12 +212,12 @@ std::size_t bench_runtime_std(config& conf, Method method, const spot_dataset& d
 }
 
 std::size_t bench_runtime_patches(config& conf, const spot_dataset& dataset, const spot_dataset_set& set, names train_word_names, names image_names){
-    auto start = chrono::steady_clock::now();
+    auto start = std::chrono::steady_clock::now();
 
     patches_runtime(dataset, set, conf, train_word_names, image_names);
 
-    auto end = chrono::steady_clock::now();
-    auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
     std::cout << "   Total: " << (double(duration) / 1000 / 1000) << "ms" << std::endl;
     std::cout << "   Image: " << (double(duration) / image_names.size() / 1000) << "us" << std::endl;

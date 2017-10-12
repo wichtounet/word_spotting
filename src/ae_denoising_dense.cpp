@@ -15,19 +15,21 @@
 
 namespace {
 
-using network_t = dll::dbn_desc<
-    dll::dbn_layers<
-        dll::dense_desc<patch_height * patch_width, 50>::layer_t,
-        dll::dense_desc<50, patch_height * patch_width>::layer_t
-    >,
-    dll::updater<dll::updater_type::MOMENTUM>,
-    dll::weight_decay<dll::decay_type::L2>,
-    dll::trainer<dll::sgd_trainer>,
-    dll::batch_size<batch_size>,
-    dll::shuffle
->::dbn_t;
+template<size_t Noise>
+void denoising_dense_evaluate(const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate, size_t epochs) {
+    using network_t = typename dll::dbn_desc<
+        dll::dbn_layers<
+            dll::dense_layer<patch_height * patch_width, 50>,
+            dll::dense_layer<50, patch_height * patch_width>
+        >,
+        dll::updater<dll::updater_type::MOMENTUM>,
+        dll::weight_decay<dll::decay_type::L2>,
+        dll::trainer<dll::sgd_trainer>,
+        dll::batch_size<batch_size>,
+        dll::shuffle,
+        dll::noise<Noise>
+    >::dbn_t;
 
-void denoising_dense_evaluate(double noise, const spot_dataset& dataset, const spot_dataset_set& set, config& conf, names train_word_names, names test_image_names, parameters params, const std::vector<image_t>& training_patches, float learning_rate, size_t epochs) {
     auto net = std::make_unique<network_t>();
 
     net->display();
@@ -38,14 +40,10 @@ void denoising_dense_evaluate(double noise, const spot_dataset& dataset, const s
     net->momentum         = 0.9;
 
     // Train as autoencoder
-    if (noise == 0.0) {
-        net->fine_tune_ae(training_patches, epochs);
-    } else {
-        net->fine_tune_dae(training_patches, epochs, noise);
-    }
+    net->fine_tune_ae(training_patches, epochs);
 
     auto folder = spot::evaluate_patches_ae<0, image_t>(dataset, set, conf, *net, train_word_names, test_image_names, false, params);
-    std::cout << "AE-Result: Denoising-Dense(" << noise << "):" << folder << std::endl;
+    std::cout << "AE-Result: Denoising-Dense(" << Noise << "):" << folder << std::endl;
 }
 
 } // end of anonymous namespace
@@ -54,16 +52,16 @@ void denoising_dense_evaluate_all(const spot_dataset& dataset, const spot_datase
     if (conf.denoising && !conf.rbm) {
         auto lr = 1e-3;
 
-        denoising_dense_evaluate(0.0, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_dense_evaluate(0.05, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_dense_evaluate(0.10, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_dense_evaluate(0.15, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_dense_evaluate(0.20, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_dense_evaluate(0.25, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_dense_evaluate(0.30, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_dense_evaluate(0.35, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_dense_evaluate(0.40, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_dense_evaluate(0.45, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
-        denoising_dense_evaluate(0.50, dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_dense_evaluate<0>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_dense_evaluate<5>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_dense_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_dense_evaluate<15>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_dense_evaluate<20>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_dense_evaluate<25>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_dense_evaluate<30>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_dense_evaluate<35>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_dense_evaluate<40>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_dense_evaluate<45>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
+        denoising_dense_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
     }
 }

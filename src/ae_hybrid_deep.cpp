@@ -29,10 +29,10 @@ void hybrid_deep_evaluate(const spot_dataset& dataset, const spot_dataset_set& s
 
     using network_t = typename dll::dbn_desc<
         dll::dbn_layers<
-            dll::conv_desc<1, patch_height, patch_width, KK, NH1_1, NH1_2>::layer_t,
-            typename dll::dense_desc<KK * NH1_1 * NH1_2, N>::layer_t,
-            typename dll::dense_desc<N, KK * NH1_1 * NH1_2>::layer_t,
-            dll::deconv_desc<KK, NH1_1, NH1_2, 1, K1, K1>::layer_t
+            dll::conv_layer<1, patch_height, patch_width, KK, K1, K1>,
+            dll::dense_layer<KK * NH1_1 * NH1_2, N>,
+            dll::dense_layer<N, KK * NH1_1 * NH1_2>,
+            dll::deconv_layer<KK, NH1_1, NH1_2, 1, K1, K1>
         >,
         dll::updater<dll::updater_type::MOMENTUM>,
         dll::weight_decay<dll::decay_type::L2>,

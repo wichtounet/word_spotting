@@ -32,22 +32,22 @@ void deep_crbm_mp_evaluate(const spot_dataset& dataset, const spot_dataset_set& 
 
     using network_t = typename dll::dbn_desc<
         dll::dbn_layers<
-            dll::conv_rbm_desc<
+            typename dll::conv_rbm_desc<
                 1, patch_height, patch_width,
-                KK, NH1_1, NH1_2,
+                KK, K1, K1,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
                 dll::momentum
             >::layer_t,
-            dll::mp_layer_3d_desc<KK, NH1_1, NH1_2, 1, 2, 2>::layer_t,
+            dll::mp_3d_layer<KK, NH1_1, NH1_2, 1, 2, 2>,
             typename dll::conv_rbm_desc<
                 KK, NH1_1 / 2, NH1_2 / 2,
-                K, NH2_1, NH2_2,
+                K, K2, K2,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
                 dll::momentum
             >::layer_t,
-            typename dll::mp_layer_3d_desc<K, NH2_1, NH2_2, 1, 2, 2>::layer_t
+            dll::mp_3d_layer<K, NH2_1, NH2_2, 1, 2, 2>
         >,
         dll::shuffle,
         dll::batch_mode

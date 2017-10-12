@@ -26,25 +26,22 @@ void deep_crbm_pmp_evaluate(const spot_dataset& dataset, const spot_dataset_set&
     static constexpr size_t NH1_1 = patch_height - K1 + 1;
     static constexpr size_t NH1_2 = patch_width - K1 + 1;
 
-    static constexpr size_t NH2_1 = (NH1_1 / 2) - K2 + 1;
-    static constexpr size_t NH2_2 = (NH1_2 / 2) - K2 + 1;
-
     using network_t = typename dll::dbn_desc<
         dll::dbn_layers<
-            typename dll::conv_rbm_mp_desc<
+            dll::conv_rbm_mp<
                 1, patch_height, patch_width,
-                KK, NH1_1, NH1_2, 2,
+                KK, K1, K1, 2,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
                 dll::momentum
-            >::layer_t,
-            typename dll::conv_rbm_mp_desc<
+            >,
+            dll::conv_rbm_mp<
                 KK, NH1_1 / 2, NH1_2 / 2,
-                K, NH2_1, NH2_2, 2,
+                K, K2, K2, 2,
                 dll::batch_size<batch_size>,
                 dll::weight_decay<dll::decay_type::L2>,
                 dll::momentum
-            >::layer_t
+            >
         >,
         dll::shuffle,
         dll::batch_mode
