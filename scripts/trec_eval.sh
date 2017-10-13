@@ -17,9 +17,9 @@ fi
 if [ -f "/home/wichtounet/dev/trec_eval/trec_eval" ]; then
     TREC="/home/wichtounet/dev/trec_eval/trec_eval"
 elif [ -f "/localhome/wicht/dev/trec_eval/trec_eval" ]; then
-    GREP="/localhome/wicht/dev/trec_eval/trec_eval"
+    TREC="/localhome/wicht/dev/trec_eval/trec_eval"
 else
-    GREP="trec_eval"
+    TREC="trec_eval"
 fi
 
 if [ -d "$folder" ]; then
