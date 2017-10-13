@@ -164,18 +164,18 @@ struct patch_iterator : std::iterator<std::input_iterator_tag, typename DBN::tem
     }
 };
 
-template <bool DBN_Patch, typename DBN>
+template <typename DBN>
 using dbn_output_t = decltype(std::declval<DBN>().template prepare_one_output<typename DBN::input_one_t>());
 
-template <bool DBN_Patch, typename DBN>
-using features_t = std::vector<std::vector<dbn_output_t<DBN_Patch, DBN>>>;
+template <typename DBN>
+using features_t = std::vector<std::vector<dbn_output_t<DBN>>>;
 
-template <bool DBN_Patch, typename DBN>
-features_t<DBN_Patch, DBN> prepare_outputs(
+template <typename DBN>
+features_t<DBN> prepare_outputs(
     thread_pool& pool, const spot_dataset& dataset, const DBN& dbn, const config& conf,
     names test_image_names, bool training, bool runtime = false) {
 
-    features_t<DBN_Patch, DBN> test_features_a(test_image_names.size());
+    features_t<DBN> test_features_a(test_image_names.size());
 
     if(!runtime){
         std::cout << "Prepare the outputs ..." << std::endl;
@@ -185,20 +185,14 @@ features_t<DBN_Patch, DBN> prepare_outputs(
         auto& vec = test_features_a[i];
 
         //Get features from DBN
-        cpp::static_if<DBN_Patch>([&](auto f) {
-            auto image = mat_for_patches(conf, dataset.word_images.at(test_image));
-            vec = f(dbn).features(image);
-        }).else_([&](auto f) {
-            auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(test_image), training);
+        auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(test_image), training);
 
-            vec.reserve(patches.size());
+        vec.reserve(patches.size());
 
-            for(auto& patch : patches){
-                f(vec).push_back(f(dbn).template prepare_one_output<typename DBN::input_t>());
-                vec.back() = f(dbn).features(patch);
-
-            }
-        });
+        for(auto& patch : patches){
+            vec.push_back(dbn.template prepare_one_output<typename DBN::input_t>());
+            vec.back() = dbn.features(patch);
+        }
 
         spot::normalize_feature_vector(vec);
     };
@@ -218,31 +212,25 @@ features_t<DBN_Patch, DBN> prepare_outputs(
     return test_features_a;
 }
 
-template <bool DBN_Patch, typename DBN>
-features_t<DBN_Patch, DBN> compute_reference(
+template <typename DBN>
+features_t<DBN> compute_reference(
     thread_pool& pool, const spot_dataset& dataset, const DBN& dbn, const config& conf,
     names training_images) {
 
-    features_t<DBN_Patch, DBN> ref_a(training_images.size());
+    features_t<DBN> ref_a(training_images.size());
 
     auto feature_extractor = [&](auto& test_image, std::size_t i) {
         auto& vec = ref_a[i];
 
         //Get features from DBN
-        cpp::static_if<DBN_Patch>([&](auto f) {
-            auto image = mat_for_patches(conf, dataset.word_images.at(test_image + ".png"));
-            vec = f(dbn).features(image);
-        }).else_([&](auto f) {
-            auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(test_image + ".png"), false);
+        auto patches = mat_to_patches<DBN>(conf, dataset.word_images.at(test_image + ".png"), false);
 
-            vec.reserve(patches.size());
+        vec.reserve(patches.size());
 
-            for(auto& patch : patches){
-                f(vec).push_back(f(dbn).template prepare_one_output<typename DBN::input_t>());
-                vec.back() = f(dbn).features(patch);
-
-            }
-        });
+        for(auto& patch : patches){
+            vec.push_back(dbn.template prepare_one_output<typename DBN::input_t>());
+            vec.back() = dbn.features(patch);
+        }
 
         spot::normalize_feature_vector(vec);
     };
@@ -254,7 +242,7 @@ features_t<DBN_Patch, DBN> compute_reference(
     return ref_a;
 }
 
-template <bool DBN_Patch, typename TF, typename KV, typename DBN>
+template <typename TF, typename KV, typename DBN>
 double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywords, const spot_dataset& dataset, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters parameters) {
     // 2. Evaluate the performances
 
@@ -269,13 +257,13 @@ double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywor
 
         // b) Compute the reference features
 
-        auto ref_a = compute_reference<DBN_Patch>(pool, dataset, dbn, conf, training_images);
+        auto ref_a = compute_reference(pool, dataset, dbn, conf, training_images);
 
         // c) Compute the distances
 
         auto diffs_a = compute_distances(conf, pool, dataset, test_features_a, ref_a, training_images,
             test_image_names, train_word_names,
-            parameters, [&](names train_names){ return compute_reference<DBN_Patch>(pool, dataset, dbn, conf, train_names); });
+            parameters, [&](names train_names){ return compute_reference(pool, dataset, dbn, conf, train_names); });
 
         // d) Update the local stats
 
@@ -287,7 +275,7 @@ double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywor
     return mean_ap;
 }
 
-template <bool DBN_Patch, typename Set, typename DBN>
+template <typename Set, typename DBN>
 void optimize_parameters(const spot_dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, parameters& param) {
     std::vector<double> sc_band_values;
 
@@ -313,7 +301,7 @@ void optimize_parameters(const spot_dataset& dataset, const Set& set, config& co
 
     // 1. Prepare all the outputs
 
-    auto test_features_a = prepare_outputs<DBN_Patch>(pool, dataset, dbn, conf, test_image_names, false);
+    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, false);
 
     double best_mean_ap = 0.0;
 
@@ -325,7 +313,7 @@ void optimize_parameters(const spot_dataset& dataset, const Set& set, config& co
         parameters current_param;
         current_param.sc_band = sc;
 
-        double mean_ap = evaluate_patches_param<DBN_Patch>(
+        double mean_ap = evaluate_patches_param(
             pool, test_features_a, keywords, dataset, conf, dbn, train_word_names, test_image_names, current_param);
 
         std::cout << "(" << i++ << "/" << sc_band_values.size() << ") sc:" << sc << " map: " << mean_ap << std::endl;
@@ -342,12 +330,12 @@ void optimize_parameters(const spot_dataset& dataset, const Set& set, config& co
     param = best_param;
 }
 
-template <bool DBN_Patch, typename Set, typename DBN>
+template <typename Set, typename DBN>
 std::string evaluate_patches(const spot_dataset& dataset, const Set& set, config& conf, const DBN& dbn, names train_word_names, names test_image_names, bool training, parameters parameters, bool features, bool runtime = false) {
     thread_pool pool;
 
     if (features) {
-        auto test_features_a = prepare_outputs<DBN_Patch>(pool, dataset, dbn, conf, test_image_names, training, runtime);
+        auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, training, runtime);
 
         if(!runtime){
             export_features(conf, test_image_names, test_features_a, ".2");
@@ -369,7 +357,7 @@ std::string evaluate_patches(const spot_dataset& dataset, const Set& set, config
 
         // 3. Prepare all the outputs
 
-        auto test_features_a = prepare_outputs<DBN_Patch>(pool, dataset, dbn, conf, test_image_names, training, runtime);
+        auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, training, runtime);
 
         // 4. Evaluate the performances
 
@@ -390,13 +378,13 @@ std::string evaluate_patches(const spot_dataset& dataset, const Set& set, config
 
             // b) Compute the reference features
 
-            auto ref_a = compute_reference<DBN_Patch>(pool, dataset, dbn, conf, training_images);
+            auto ref_a = compute_reference(pool, dataset, dbn, conf, training_images);
 
             // c) Compute the distances
 
             auto diffs_a = compute_distances(conf, pool, dataset, test_features_a, ref_a, training_images,
                 test_image_names, train_word_names,
-                parameters, [&](names train_names){ return compute_reference<DBN_Patch>(pool, dataset, dbn, conf, train_names);});
+                parameters, [&](names train_names){ return compute_reference(pool, dataset, dbn, conf, train_names);});
 
             // d) Update the local stats
 
@@ -631,7 +619,7 @@ void patches_train(
                 std::cout << "Evaluate on training set" << std::endl;
             }
 
-            auto folder = evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
+            auto folder = evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
 
             if(!runtime){
                 cdbn->store(folder + "/" + file_name);
@@ -645,13 +633,13 @@ void patches_train(
                 std::cout << "\tsc_band: " << params.sc_band << std::endl;
             } else {
                 std::cout << "Optimize parameters" << std::endl;
-                optimize_parameters<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+                optimize_parameters(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
             }
         }
 
         if(!runtime && (features || !(conf.load && conf.novalid))){
             std::cout << "Evaluate on validation set" << std::endl;
-            auto folder = evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
 
             if(!runtime){
                 cdbn->store(folder + "/" + file_name);
@@ -660,7 +648,7 @@ void patches_train(
 
         if(!runtime){
             std::cout << "Evaluate on test set" << std::endl;
-            auto folder = evaluate_patches<false>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
 
             if(!runtime){
                 cdbn->store(folder + "/" + file_name);
@@ -877,12 +865,6 @@ void patches_train(
         conf.train_stride = train_stride;
         conf.test_stride  = test_stride;
 
-#if defined(THIRD_MODERN) || defined(THIRD_PATCH_CRBM_MP_2)
-        static constexpr const bool DBN_Patch = true;
-#else
-        static constexpr const bool DBN_Patch = false;
-#endif
-
         const std::string file_name("method_2_third.dat");
 
         if (!runtime) {
@@ -963,7 +945,7 @@ void patches_train(
                 std::cout << "Evaluate on training set" << std::endl;
             }
 
-            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
+            auto folder = evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
 
             if(!runtime){
                 cdbn->store(folder + "/" + file_name);
@@ -981,7 +963,7 @@ void patches_train(
                 std::cout << "\tsc_band: " << params.sc_band << std::endl;
             } else {
                 std::cout << "Optimize parameters" << std::endl;
-                optimize_parameters<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, params);
+                optimize_parameters(dataset, set, conf, *cdbn, train_word_names, test_image_names, params);
             }
         }
 
@@ -989,7 +971,7 @@ void patches_train(
             dll::auto_timer timer("evaluate:validation");
 
             std::cout << "Evaluate on validation set" << std::endl;
-            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
 
             if(!runtime){
                 cdbn->store(folder + "/" + file_name);
@@ -1000,7 +982,7 @@ void patches_train(
             dll::auto_timer timer("evaluate:test");
 
             std::cout << "Evaluate on test set" << std::endl;
-            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
 
             if(!runtime){
                 cdbn->store(folder + "/" + file_name);
@@ -1038,16 +1020,12 @@ void patches_train(
         cpp_unused(shuffle_2);
 
 #if defined(FULL_CRBM_PMP_1)
-        static constexpr const bool DBN_Patch = false;
-
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
                     dll::conv_rbm_mp_desc<
                         1, NV1_1, NV1_2, K1, NF1, NF1, C1, dll::weight_type<weight>, dll::batch_size<full::B1>, dll::momentum, dll::weight_decay<full::DT1>, dll::hidden<full::HT1>, dll::sparsity<full::SM1>, /*dll::shuffle_cond<shuffle_1>,*/ dll::dbn_only>::layer_t>>::dbn_t;
 #elif defined(FULL_CRBM_PMP_2)
-        static constexpr const bool DBN_Patch = false;
-
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
@@ -1058,8 +1036,6 @@ void patches_train(
                 dll::batch_mode,
                 dll::batch_size<5>>::dbn_t;
 #elif defined(FULL_CRBM_PMP_3)
-        static constexpr const bool DBN_Patch = false;
-
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
@@ -1070,8 +1046,6 @@ void patches_train(
                     dll::conv_rbm_mp_desc<
                         K2, NV3_1, NV3_2, K3, NF3, NF3, C3, dll::weight_type<weight>, dll::batch_size<full::B3>, dll::momentum, dll::weight_decay<full::DT3>, dll::hidden<full::HT3>, dll::sparsity<full::SM3>, /*dll::shuffle_cond<shuffle_3>,*/ dll::dbn_only>::layer_t>>::dbn_t;
 #elif defined(FULL_CRBM_MP_1)
-        static constexpr const bool DBN_Patch = false;
-
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
@@ -1080,8 +1054,6 @@ void patches_train(
                     dll::mp_3d_layer<K1, NH1_1, NH1_2, 1, C1, C1, dll::weight_type<weight>>>,
                 dll::batch_mode>::dbn_t;
 #elif defined(FULL_CRBM_MP_2)
-        static constexpr const bool DBN_Patch = false;
-
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
@@ -1093,8 +1065,6 @@ void patches_train(
                     dll::mp_3d_layer<K2, NH2_1, NH2_2, 1, C2, C2, dll::weight_type<weight>>>,
                 dll::batch_mode>::dbn_t;
 #elif defined(FULL_CRBM_MP_3)
-        static constexpr const bool DBN_Patch = false;
-
         using cdbn_t =
             dll::dbn_desc<
                 dll::dbn_layers<
@@ -1215,7 +1185,7 @@ void patches_train(
                 std::cout << "Evaluate on training set" << std::endl;
             }
 
-            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
+            auto folder = evaluate_patches(dataset, set, conf, *cdbn, train_word_names, train_image_names, true, params, features, runtime);
 
             if(!runtime){
                 cdbn->store(folder + "/" + file_name);
@@ -1229,13 +1199,13 @@ void patches_train(
                 std::cout << "\tsc_band: " << params.sc_band << std::endl;
             } else {
                 std::cout << "Optimize parameters" << std::endl;
-                optimize_parameters<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
+                optimize_parameters(dataset, set, conf, *cdbn, train_word_names, valid_image_names, params);
             }
         }
 
         if(!runtime && (features || !(conf.load && conf.novalid))){
             std::cout << "Evaluate on validation set" << std::endl;
-            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches(dataset, set, conf, *cdbn, train_word_names, valid_image_names, false, params, features, runtime);
 
             if(!runtime){
                 cdbn->store(folder + "/" + file_name);
@@ -1244,7 +1214,7 @@ void patches_train(
 
         if(!runtime){
             std::cout << "Evaluate on test set" << std::endl;
-            auto folder = evaluate_patches<DBN_Patch>(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
+            auto folder = evaluate_patches(dataset, set, conf, *cdbn, train_word_names, test_image_names, false, params, features, runtime);
 
             if(!runtime){
                 cdbn->store(folder + "/" + file_name);
