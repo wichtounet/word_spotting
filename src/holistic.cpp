@@ -57,9 +57,12 @@ std::vector<typename DBN::template layer_type<0>::input_one_t> read_images(const
     return training_images;
 }
 
+
 void holistic_train(
     const spot_dataset& dataset, const spot_dataset_set& set, config& conf,
     names train_word_names, names train_image_names, names valid_image_names, names test_image_names, bool features) {
+
+#ifndef SPOTTER_NO_HOL
 
     auto evaluate   = [&dataset, &set, &conf](auto& dbn, auto& train_word_names, auto& test_image_names, bool features) {
         using dbn_t = std::decay_t<decltype(*dbn)>;
@@ -490,6 +493,16 @@ void holistic_train(
         std::cout << "Evaluate on test set" << std::endl;
         evaluate(cdbn, train_word_names, test_image_names, features);
     }
+#else
+    cpp_unused(dataset);
+    cpp_unused(set);
+    cpp_unused(conf);
+    cpp_unused(train_word_names);
+    cpp_unused(train_image_names);
+    cpp_unused(valid_image_names);
+    cpp_unused(test_image_names);
+    cpp_unused(features);
+#endif //SPOTTER_NO_HOL
 }
 
 void holistic_features(

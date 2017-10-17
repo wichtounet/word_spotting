@@ -89,6 +89,7 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
     params.sc_band = 0.05;
     std::cout << "\tsc_band: " << params.sc_band << std::endl;
 
+#ifndef SPOTTER_NO_AE
     if (!conf.denoising) {
         // Dense modules
         dense_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
@@ -145,4 +146,5 @@ void ae_train(const spot_dataset& dataset, const spot_dataset_set& set, config& 
         denoising_deep_crbm_mp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
         denoising_deep_crbm_pmp_evaluate_all(dataset, set, conf, train_word_names, test_image_names, params, training_patches);
     }
+#endif //SPOTTER_NO_AE
 }

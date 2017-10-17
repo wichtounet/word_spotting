@@ -5,6 +5,8 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
+#ifndef SPOTTER_NO_AE
+
 #include "dll/neural/dense_layer.hpp"
 #include "dll/neural/conv_layer.hpp"
 #include "dll/neural/deconv_layer.hpp"
@@ -81,3 +83,5 @@ void hybrid_deep_mp_evaluate_all(const spot_dataset& dataset, const spot_dataset
         hybrid_deep_mp_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
     }
 }
+
+#endif // SPOTTER_NO_AE

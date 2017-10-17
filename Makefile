@@ -31,6 +31,16 @@ CXX_FLAGS += -Wno-ignored-attributes -Wno-misleading-indentation
 endif
 endif
 
+# Configure AE
+ifneq (,$(SPOTTER_NO_AE))
+CXX_FLAGS += -DSPOTTER_NO_AE
+endif
+
+# Configure Holistic
+ifneq (,$(SPOTTER_NO_HOL))
+CXX_FLAGS += -DSPOTTER_NO_HOL
+endif
+
 # Configure HMM
 ifneq (,$(SPOTTER_NO_HMM))
 CXX_FLAGS += -DSPOTTER_NO_MLPACK

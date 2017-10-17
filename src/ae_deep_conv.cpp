@@ -5,6 +5,8 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
+#ifndef SPOTTER_NO_AE
+
 #include "dll/neural/conv_layer.hpp"
 #include "dll/neural/deconv_layer.hpp"
 #include "dll/dbn.hpp"
@@ -81,3 +83,5 @@ void deep_conv_evaluate_all(const spot_dataset& dataset, const spot_dataset_set&
         deep_conv_evaluate<10>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
     }
 }
+
+#endif // SPOTTER_NO_AE

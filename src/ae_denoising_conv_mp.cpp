@@ -5,6 +5,8 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
+#ifndef SPOTTER_NO_AE
+
 #include "dll/neural/conv_layer.hpp"
 #include "dll/neural/deconv_layer.hpp"
 #include "dll/pooling/mp_layer.hpp"
@@ -77,3 +79,5 @@ void denoising_conv_mp_evaluate_all(const spot_dataset& dataset, const spot_data
         denoising_conv_mp_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
     }
 }
+
+#endif // SPOTTER_NO_AE

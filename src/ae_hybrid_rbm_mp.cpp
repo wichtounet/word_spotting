@@ -5,6 +5,8 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
+#ifndef SPOTTER_NO_AE
+
 #include "dll/rbm/rbm.hpp"
 #include "dll/rbm/conv_rbm.hpp"
 #include "dll/pooling/mp_layer.hpp"
@@ -85,3 +87,5 @@ void hybrid_rbm_mp_evaluate_all(const spot_dataset& dataset, const spot_dataset_
         hybrid_rbm_mp_evaluate<100>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, lr, epochs);
     }
 }
+
+#endif // SPOTTER_NO_AE

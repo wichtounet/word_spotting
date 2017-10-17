@@ -5,6 +5,8 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
+#ifndef SPOTTER_NO_AE
+
 #include "dll/rbm/conv_rbm_mp.hpp"
 #include "dll/dbn.hpp"
 
@@ -87,3 +89,5 @@ void denoising_deep_crbm_pmp_evaluate_all(const spot_dataset& dataset, const spo
         denoising_deep_crbm_pmp_evaluate<50>(dataset, set, conf, train_word_names, test_image_names, params, clean, lr, epochs);
     }
 }
+
+#endif // SPOTTER_NO_AE

@@ -5,6 +5,8 @@
 //  http://opensource.org/licenses/MIT)
 //=======================================================================
 
+#ifndef SPOTTER_NO_AE
+
 #include "dll/neural/dense_layer.hpp"
 #include "dll/dbn.hpp"
 #include "dll/trainer/stochastic_gradient_descent.hpp"
@@ -95,3 +97,5 @@ void stacked_dense_evaluate_all(const spot_dataset& dataset, const spot_dataset_
         stacked_dense_evaluate<500>(dataset, set, conf, train_word_names, test_image_names, params, training_patches, 1e-5, epochs);
     }
 }
+
+#endif // SPOTTER_NO_AE
