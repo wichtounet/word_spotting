@@ -31,7 +31,7 @@ constexpr const std::size_t patch_width  = 20;
 // Data augmentation
 constexpr const std::size_t elastic_augment = 0; //not ready
 
-constexpr const std::size_t epochs       = 2;
+constexpr const std::size_t epochs       = 0;
 constexpr const std::size_t train_stride = 1;
 constexpr const std::size_t test_stride  = 1;
 

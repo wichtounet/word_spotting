@@ -172,7 +172,7 @@ using features_t = std::vector<std::vector<dbn_output_t<DBN>>>;
 
 template <typename DBN>
 features_t<DBN> prepare_outputs(
-    thread_pool& pool, const spot_dataset& dataset, const DBN& dbn, const config& conf,
+    const spot_dataset& dataset, const DBN& dbn, const config& conf,
     names test_image_names, bool training, bool runtime = false) {
 
     features_t<DBN> test_features_a(test_image_names.size());
@@ -181,7 +181,9 @@ features_t<DBN> prepare_outputs(
         std::cout << "Prepare the outputs ..." << std::endl;
     }
 
-    auto feature_extractor = [&](auto& test_image, std::size_t i) {
+    for(size_t i = 0; i < test_image_names.size(); ++i){
+        auto& test_image = test_image_names[i];
+
         auto& vec = test_features_a[i];
 
         //Get features from DBN
@@ -195,12 +197,6 @@ features_t<DBN> prepare_outputs(
         }
 
         spot::normalize_feature_vector(vec);
-    };
-
-    if(!runtime){
-        cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), feature_extractor);
-    } else {
-        cpp::foreach_i(test_image_names.begin(), test_image_names.end(), feature_extractor);
     }
 
     spot::normalize_features(conf, training, test_features_a);
@@ -214,12 +210,14 @@ features_t<DBN> prepare_outputs(
 
 template <typename DBN>
 features_t<DBN> compute_reference(
-    thread_pool& pool, const spot_dataset& dataset, const DBN& dbn, const config& conf,
+    const spot_dataset& dataset, const DBN& dbn, const config& conf,
     names training_images) {
 
     features_t<DBN> ref_a(training_images.size());
 
-    auto feature_extractor = [&](auto& test_image, std::size_t i) {
+    for(size_t i = 0; i < training_images.size(); ++i){
+        auto& test_image = training_images[i];
+
         auto& vec = ref_a[i];
 
         //Get features from DBN
@@ -233,9 +231,7 @@ features_t<DBN> compute_reference(
         }
 
         spot::normalize_feature_vector(vec);
-    };
-
-    cpp::parallel_foreach_i(pool, training_images.begin(), training_images.end(), feature_extractor);
+    }
 
     spot::normalize_features(conf, false, ref_a);
 
@@ -257,22 +253,20 @@ double evaluate_patches_param(thread_pool& pool, TF& test_features_a, KV& keywor
 
         // b) Compute the reference features
 
-        auto ref_a = compute_reference(pool, dataset, dbn, conf, training_images);
+        auto ref_a = compute_reference(dataset, dbn, conf, training_images);
 
         // c) Compute the distances
 
         auto diffs_a = compute_distances(conf, pool, dataset, test_features_a, ref_a, training_images,
             test_image_names, train_word_names,
-            parameters, [&](names train_names){ return compute_reference(pool, dataset, dbn, conf, train_names); });
+            parameters, [&](names train_names){ return compute_reference(dataset, dbn, conf, train_names); });
 
         // d) Update the local stats
 
         update_stats_light(k, dataset, keyword, diffs_a, ap, test_image_names);
     }
 
-    double mean_ap = std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
-
-    return mean_ap;
+    return std::accumulate(ap.begin(), ap.end(), 0.0) / ap.size();
 }
 
 template <typename Set, typename DBN>
@@ -301,7 +295,7 @@ void optimize_parameters(const spot_dataset& dataset, const Set& set, config& co
 
     // 1. Prepare all the outputs
 
-    auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, false);
+    auto test_features_a = prepare_outputs(dataset, dbn, conf, test_image_names, false);
 
     double best_mean_ap = 0.0;
 
@@ -335,7 +329,7 @@ std::string evaluate_patches(const spot_dataset& dataset, const Set& set, config
     thread_pool pool;
 
     if (features) {
-        auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, training, runtime);
+        auto test_features_a = prepare_outputs(dataset, dbn, conf, test_image_names, training, runtime);
 
         if(!runtime){
             export_features(conf, test_image_names, test_features_a, ".2");
@@ -357,7 +351,7 @@ std::string evaluate_patches(const spot_dataset& dataset, const Set& set, config
 
         // 3. Prepare all the outputs
 
-        auto test_features_a = prepare_outputs(pool, dataset, dbn, conf, test_image_names, training, runtime);
+        auto test_features_a = prepare_outputs(dataset, dbn, conf, test_image_names, training, runtime);
 
         // 4. Evaluate the performances
 
@@ -378,13 +372,13 @@ std::string evaluate_patches(const spot_dataset& dataset, const Set& set, config
 
             // b) Compute the reference features
 
-            auto ref_a = compute_reference(pool, dataset, dbn, conf, training_images);
+            auto ref_a = compute_reference(dataset, dbn, conf, training_images);
 
             // c) Compute the distances
 
             auto diffs_a = compute_distances(conf, pool, dataset, test_features_a, ref_a, training_images,
                 test_image_names, train_word_names,
-                parameters, [&](names train_names){ return compute_reference(pool, dataset, dbn, conf, train_names);});
+                parameters, [&](names train_names){ return compute_reference(dataset, dbn, conf, train_names);});
 
             // d) Update the local stats
 
