@@ -93,6 +93,8 @@ spot_dataset read_dataset(config& conf) {
         dataset = read_manmatha(conf, dataset_path);
     } else if(conf.ak){
         dataset = read_ak(conf, dataset_path);
+    } else if(conf.botany){
+        dataset = read_botany(conf, dataset_path);
     } else {
         std::cerr << "Invalid configuration of the dataset" << std::endl;
     }
@@ -116,7 +118,7 @@ spot_dataset read_dataset(config& conf) {
     } else if (conf.iam) {
         conf.cv_full_path   = dataset_path + "/sets/";
         conf.data_full_path = dataset_path + "/data/word_images_normalized/";
-    } else if (conf.ak) {
+    } else if (conf.ak || conf.botany) {
         conf.cv_full_path   = dataset_path + "/sets/";
         conf.data_full_path = dataset_path + "/data/word_images_normalized/";
     }

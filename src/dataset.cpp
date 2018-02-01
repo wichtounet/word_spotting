@@ -344,6 +344,11 @@ spot_dataset read_ak(const config& conf, const std::string& path) {
     return dataset;
 }
 
+spot_dataset read_botany(const config& conf, const std::string& path) {
+    // Seems the same crap
+    return read_ak(conf, path);
+}
+
 spot_dataset read_manmatha(const config& conf, const std::string& path) {
     spot_dataset dataset;
 
@@ -389,7 +394,7 @@ spot_dataset read_iam(const config& conf, const std::string& path) {
 std::vector<std::vector<std::string>> select_keywords(const config& conf, const spot_dataset& dataset, const spot_dataset_set& set, names train_word_names, names test_image_names, bool verbose) {
     std::vector<std::vector<std::string>> keywords;
 
-    if(conf.ak){
+    if(conf.ak || conf.botany){
         std::set<std::vector<std::string>> base_keywords;
 
         for (auto& labels : dataset.word_labels) {
