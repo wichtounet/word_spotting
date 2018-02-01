@@ -62,6 +62,8 @@ struct config {
     bool manmatha   = false;
     bool parzival   = false;
     bool iam        = false;
+    bool ak         = false;
+    bool botany     = false;
 
     // Special options for washington
     bool gray   = false;

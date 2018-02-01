@@ -14,12 +14,13 @@
 
 #include "config.hpp"
 #include "reports.hpp"
+#include "utils.hpp"
 
 void generate_rel_files(
         const std::string& result_folder, const spot_dataset& dataset,
         const std::vector<std::string>& test_image_names, const std::vector<std::vector<std::string>>& keywords, bool verbose) {
     if(verbose){
-        std::cout << "Generate relevance files..." << std::endl;
+        std::cout << "Generate relevance files for " << keywords.size() << " keywords..."<< std::endl;
     }
 
     std::ofstream global_relevance_stream(result_folder + "/global_rel_file");
@@ -33,7 +34,8 @@ void generate_rel_files(
             global_relevance_stream << "cv1 0 " << keyword_str << "_" << test_image;
             local_relevance_stream << "cv1_" << keyword_str << " 0 " << test_image;
 
-            if (dataset.word_labels.at({test_image.begin(), test_image.end() - 4}) == keyword) {
+            std::string key{test_image.begin(), test_image.end() - 4};
+            if (dataset.word_labels.at(key) == keyword) {
                 global_relevance_stream << " 1" << std::endl;
                 local_relevance_stream << " 1" << std::endl;
             } else {
@@ -52,7 +54,10 @@ void update_stats(std::size_t k, const std::string& result_folder, const spot_da
     std::sort(diffs_a.begin(), diffs_a.end(), [](auto& a, auto& b) { return a.second < b.second; });
 
     auto total_positive = std::count_if(test_image_names.begin(), test_image_names.end(),
-                                        [&dataset, &keyword](auto& i) { return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
+                                        [&dataset, &keyword](auto& i) {
+                                            std::string key{i.begin(), i.end() - 4};
+                                            return dataset.word_labels.at(key) == keyword;
+                                        });
 
     cpp_assert(total_positive > 0, "No example for one keyword");
 

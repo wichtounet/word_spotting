@@ -28,30 +28,43 @@ namespace {
 using string_vector = std::vector<std::string>;
 
 template <typename Set>
-void extract_names(spot_dataset& dataset, Set& set, string_vector& train_image_names, string_vector& train_word_names, string_vector& test_image_names, string_vector& valid_image_names) {
-    std::cout << set.train_set.size() << " training line images in set" << std::endl;
-    std::cout << set.validation_set.size() << " validation line images in set" << std::endl;
-    std::cout << set.test_set.size() << " test line images in set" << std::endl;
+void extract_names(const config& conf, spot_dataset& dataset, Set& set, string_vector& train_image_names, string_vector& train_word_names, string_vector& test_image_names, string_vector& valid_image_names) {
+    if(conf.ak){
+        test_image_names  = set.test_set;
+        train_image_names = set.train_set;
+        valid_image_names = set.validation_set;
 
-    for (auto& word_image : dataset.word_images) {
-        auto& name = word_image.first;
-        for (auto& train_image : set.train_set) {
-            if (name.find(train_image) == 0) {
-                train_image_names.push_back(name);
-                train_word_names.emplace_back(name.begin(), name.end() - 4);
-                break;
-            }
+        for(auto& name : set.train_set){
+            train_word_names.emplace_back(name.begin(), name.end() - 4);
         }
-        for (auto& test_image : set.test_set) {
-            if (name.find(test_image) == 0) {
-                test_image_names.push_back(name);
-                break;
+    } else {
+        std::cout << set.train_set.size() << " training line images in set" << std::endl;
+        std::cout << set.validation_set.size() << " validation line images in set" << std::endl;
+        std::cout << set.test_set.size() << " test line images in set" << std::endl;
+
+        for (auto& word_image : dataset.word_images) {
+            auto& name = word_image.first;
+
+            for (auto& train_image : set.train_set) {
+                if (name.find(train_image) == 0) {
+                    train_image_names.push_back(name);
+                    train_word_names.emplace_back(name.begin(), name.end() - 4);
+                    break;
+                }
             }
-        }
-        for (auto& valid_image : set.validation_set) {
-            if (name.find(valid_image) == 0) {
-                valid_image_names.push_back(name);
-                break;
+
+            for (auto& test_image : set.test_set) {
+                if (name.find(test_image) == 0) {
+                    test_image_names.push_back(name);
+                    break;
+                }
+            }
+
+            for (auto& valid_image : set.validation_set) {
+                if (name.find(valid_image) == 0) {
+                    valid_image_names.push_back(name);
+                    break;
+                }
             }
         }
     }
@@ -78,6 +91,8 @@ spot_dataset read_dataset(config& conf) {
         dataset = read_iam(conf, dataset_path);
     } else if(conf.manmatha){
         dataset = read_manmatha(conf, dataset_path);
+    } else if(conf.ak){
+        dataset = read_ak(conf, dataset_path);
     } else {
         std::cerr << "Invalid configuration of the dataset" << std::endl;
     }
@@ -99,6 +114,9 @@ spot_dataset read_dataset(config& conf) {
         conf.cv_full_path   = dataset_path + "/sets1/";
         conf.data_full_path = dataset_path + "/data/word_images_normalized/";
     } else if (conf.iam) {
+        conf.cv_full_path   = dataset_path + "/sets/";
+        conf.data_full_path = dataset_path + "/data/word_images_normalized/";
+    } else if (conf.ak) {
         conf.cv_full_path   = dataset_path + "/sets/";
         conf.data_full_path = dataset_path + "/data/word_images_normalized/";
     }
@@ -125,7 +143,7 @@ int command_train(config& conf) {
 
     string_vector train_image_names, train_word_names, test_image_names, valid_image_names;
 
-    extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
+    extract_names(conf, dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
 
     switch (conf.method) {
         case Method::Marti2001:
@@ -171,7 +189,7 @@ int command_features(config& conf) {
 
     string_vector train_image_names, train_word_names, test_image_names, valid_image_names;
 
-    extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
+    extract_names(conf, dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
 
     switch (conf.method) {
         case Method::Marti2001:
@@ -244,7 +262,7 @@ int command_runtime(config& conf) {
 
     string_vector train_image_names, train_word_names, test_image_names, valid_image_names;
 
-    extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
+    extract_names(conf, dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
 
     std::cout << std::endl << "Benchmark the running time of feature extraction" << std::endl;
 
@@ -282,7 +300,7 @@ int command_evaluate_features(config& conf) {
 
     string_vector train_image_names, train_word_names, test_image_names, valid_image_names;
 
-    extract_names(dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
+    extract_names(conf, dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
 
     //TODO At this point, we need to pass the features to DTW but we ned to match them to images first for evaluation
     //     Format them just like evaluation does before DTW

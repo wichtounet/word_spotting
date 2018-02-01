@@ -291,7 +291,7 @@ void optimize_parameters(const spot_dataset& dataset, const Set& set, config& co
 
     // 0. Select the keywords
 
-    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+    auto keywords = select_keywords(conf, dataset, set, train_word_names, test_image_names);
 
     // 1. Prepare all the outputs
 
@@ -339,7 +339,7 @@ std::string evaluate_patches(const spot_dataset& dataset, const Set& set, config
     } else {
         // 0. Select the keywords
 
-        auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+        auto keywords = select_keywords(conf, dataset, set, train_word_names, test_image_names);
 
         // 1. Select a folder
 

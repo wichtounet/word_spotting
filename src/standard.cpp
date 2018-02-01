@@ -931,7 +931,7 @@ void evaluate_dtw(const spot_dataset& dataset, const Set& set, const config& con
 
     // 0. Select the keywords
 
-    auto keywords = select_keywords(dataset, set, train_word_names, test_image_names);
+    auto keywords = select_keywords(conf, dataset, set, train_word_names, test_image_names);
 
     // 1. Select a folder
 

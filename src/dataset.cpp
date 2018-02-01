@@ -12,6 +12,7 @@
 
 #include "dataset.hpp"
 #include "config.hpp"
+#include "utils.hpp"
 
 namespace {
 
@@ -34,6 +35,33 @@ void read_word_labels(spot_dataset& dataset, const std::string& path) {
 
         while (std::getline(ss, token, '-')) {
             dataset.word_labels[image_name].push_back(token);
+        }
+    }
+}
+
+void read_word_labels_ak(spot_dataset& dataset, const std::string& path) {
+    std::ifstream word_labels_stream(path + "/ground_truth/word_labels.txt");
+
+    while (!word_labels_stream.eof()) {
+        std::string image_name;
+        word_labels_stream >> image_name;
+
+        std::string label;
+        word_labels_stream >> label;
+
+        if (image_name.empty() || label.empty()) {
+            continue;
+        }
+
+        // Get rid of AK crap
+        if (label == "N/A" || label == "." || label == "," || label == "\"" || label == "-") {
+            continue;
+        }
+
+        std::transform(label.begin(), label.end(), label.begin(), ::tolower);
+
+        for(char c : label){
+            dataset.word_labels[image_name].push_back(std::string() + c);
         }
     }
 }
@@ -93,6 +121,33 @@ void read_images(std::unordered_map<std::string, cv::Mat>& map, const std::strin
     }
 }
 
+void read_images_ak(std::unordered_map<std::string, cv::Mat>& map, const std::string& file_path, const std::string& sub) {
+    std::cout << "Read images from '" << file_path << "/" << sub << "'" << std::endl;
+
+    auto full_path = file_path + "/" + sub;
+
+    struct dirent* entry;
+    auto dir = opendir(full_path.c_str());
+
+    while ((entry = readdir(dir))) {
+        std::string file_name(entry->d_name);
+
+        if (file_name.size() <= 3 || file_name.find(".png") != file_name.size() - 4) {
+            continue;
+        }
+
+        std::string full_name(full_path + "/" + file_name);
+
+        auto key = sub + "/" + file_name;
+
+        map[key] = cv::imread(full_name, CV_LOAD_IMAGE_ANYDEPTH);
+
+        if (!map[key].data) {
+            std::cout << "Impossible to read image " << full_name << std::endl;
+        }
+    }
+}
+
 void read_line_images(spot_dataset& dataset, const std::string& path) {
     read_images(dataset.line_images, path + "/data/line_images_normalized/");
 }
@@ -109,6 +164,11 @@ void read_word_images_gw(const config& conf, spot_dataset& dataset, const std::s
     } else {
         read_images(dataset.word_images, path + "/data/word_images_normalized/");
     }
+}
+
+void read_word_images_ak(const config& conf, spot_dataset& dataset, const std::string& path) {
+    read_images_ak(dataset.word_images, path + "/data/word_images_normalized", "test");
+    read_images_ak(dataset.word_images, path + "/data/word_images_normalized", "train");
 }
 
 void read_list(std::vector<std::string>& list, const std::string& path) {
@@ -194,6 +254,24 @@ void load_sets_washington(spot_dataset& dataset, const std::string& path) {
     }
 }
 
+void load_sets_ak(spot_dataset& dataset, const std::string& path) {
+    std::string set_name = "cv1";
+
+    auto& test_set  = dataset.sets[set_name].test_set;
+    auto& train_set = dataset.sets[set_name].train_set;
+    auto& valid_set = dataset.sets[set_name].validation_set;
+
+    for(auto& image : dataset.word_images){
+        if(image.first.substr(0, 5) == "train"){
+            train_set.push_back(image.first);
+        } else if(image.first.substr(0, 4) == "test"){
+            test_set.push_back(image.first);
+        }
+    }
+
+    valid_set.clear(); // Nothing
+}
+
 void load_sets_parzival(spot_dataset& dataset, const std::string& path) {
     std::string full_name(path + "/sets1/");
 
@@ -243,6 +321,29 @@ spot_dataset read_washington(const config& conf, const std::string& path) {
     return dataset;
 }
 
+spot_dataset read_ak(const config& conf, const std::string& path) {
+    spot_dataset dataset;
+
+    read_word_labels_ak(dataset, path);
+    read_word_images_ak(conf, dataset, path);
+
+    // Now we need to filter the crap out of the data set
+
+    auto it = dataset.word_images.begin();
+
+    while (it != dataset.word_images.end()) {
+        if (!dataset.word_labels.count({it->first.begin(), it->first.end() - 4})) {
+            it = dataset.word_images.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    load_sets_ak(dataset, path);
+
+    return dataset;
+}
+
 spot_dataset read_manmatha(const config& conf, const std::string& path) {
     spot_dataset dataset;
 
@@ -285,25 +386,56 @@ spot_dataset read_iam(const config& conf, const std::string& path) {
     return dataset;
 }
 
-std::vector<std::vector<std::string>> select_keywords(const spot_dataset& dataset, const spot_dataset_set& set, names train_word_names, names test_image_names, bool verbose) {
+std::vector<std::vector<std::string>> select_keywords(const config& conf, const spot_dataset& dataset, const spot_dataset_set& set, names train_word_names, names test_image_names, bool verbose) {
     std::vector<std::vector<std::string>> keywords;
 
-    for (auto& keyword : set.keywords) {
-        bool found = false;
+    if(conf.ak){
+        std::set<std::vector<std::string>> base_keywords;
 
         for (auto& labels : dataset.word_labels) {
-            if (keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()) {
-                found = true;
-                break;
-            }
+            base_keywords.insert(labels.second);
         }
 
-        if (found) {
-            auto total_test = std::count_if(test_image_names.begin(), test_image_names.end(),
-                                            [&dataset, &keyword](auto& i) { return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
+        for (auto& keyword : base_keywords) {
+            bool found = false;
 
-            if (total_test > 0) {
-                keywords.push_back(keyword);
+            for (auto& labels : dataset.word_labels) {
+                if (keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found) {
+                auto total_test = std::count_if(test_image_names.begin(), test_image_names.end(),
+                                                [&dataset, &keyword](auto& i) {
+                                                    std::string key{i.begin(), i.end() - 4};
+                                                    return dataset.word_labels.at(key) == keyword;
+                                                });
+
+                if (total_test > 0) {
+                    keywords.push_back(keyword);
+                }
+            }
+        }
+    } else {
+        for (auto& keyword : set.keywords) {
+            bool found = false;
+
+            for (auto& labels : dataset.word_labels) {
+                if (keyword == labels.second && std::find(train_word_names.begin(), train_word_names.end(), labels.first) != train_word_names.end()) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found) {
+                auto total_test = std::count_if(test_image_names.begin(), test_image_names.end(),
+                                                [&dataset, &keyword](auto& i) { return dataset.word_labels.at({i.begin(), i.end() - 4}) == keyword; });
+
+                if (total_test > 0) {
+                    keywords.push_back(keyword);
+                }
             }
         }
     }

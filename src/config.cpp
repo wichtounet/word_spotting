@@ -39,6 +39,8 @@ void print_usage() {
     std::cout << " -parzival : The dataset is Parzival" << std::endl;
     std::cout << " -manmatha : The dataset is manmatha version of GW (for export only)" << std::endl;
     std::cout << " -iam : The dataset is IAM" << std::endl;
+    std::cout << " -ak : The dataset is Alvermann KonzillsProtokoll" << std::endl;
+    std::cout << " -botany : The dataset is Botany" << std::endl;
     std::cout << " -hmm : Use HMM (with mlpack) in place of DTW" << std::endl;
     std::cout << " -htk : Use HTK in place of mlpack" << std::endl;
     std::cout << " -hmm-var: Use variable number of HMM states instead of fixed ones" << std::endl;
@@ -132,18 +134,43 @@ config parse_args(int argc, char** argv) {
             conf.washington = false;
             conf.parzival   = false;
             conf.iam        = false;
+            conf.ak         = false;
+            conf.botany     = false;
         } else if (conf.args[i] == "-washington") {
+            conf.manmatha   = false;
             conf.washington = true;
             conf.parzival   = false;
             conf.iam        = false;
+            conf.ak         = false;
+            conf.botany     = false;
         } else if (conf.args[i] == "-parzival") {
+            conf.manmatha   = false;
             conf.washington = false;
             conf.parzival   = true;
             conf.iam        = false;
+            conf.ak         = false;
+            conf.botany     = false;
         } else if (conf.args[i] == "-iam") {
+            conf.manmatha   = false;
             conf.washington = false;
             conf.parzival   = false;
             conf.iam        = true;
+            conf.ak         = false;
+            conf.botany     = false;
+        } else if (conf.args[i] == "-botany") {
+            conf.manmatha   = false;
+            conf.washington = false;
+            conf.parzival   = false;
+            conf.iam        = false;
+            conf.ak         = false;
+            conf.botany     = true;
+        } else if (conf.args[i] == "-ak") {
+            conf.manmatha   = false;
+            conf.washington = false;
+            conf.parzival   = false;
+            conf.iam        = false;
+            conf.ak         = true;
+            conf.botany     = false;
         } else {
             break;
         }
