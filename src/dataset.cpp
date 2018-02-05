@@ -121,7 +121,7 @@ void read_images(std::unordered_map<std::string, cv::Mat>& map, const std::strin
     }
 }
 
-void read_images_ak(std::unordered_map<std::string, cv::Mat>& map, const std::string& file_path, const std::string& sub) {
+void read_images_ak(const config& conf, std::unordered_map<std::string, cv::Mat>& map, const std::string& file_path, const std::string& sub) {
     std::cout << "Read images from '" << file_path << "/" << sub << "'" << std::endl;
 
     auto full_path = file_path + "/" + sub;
@@ -140,7 +140,23 @@ void read_images_ak(std::unordered_map<std::string, cv::Mat>& map, const std::st
 
         auto key = sub + "/" + file_name;
 
-        map[key] = cv::imread(full_name, CV_LOAD_IMAGE_ANYDEPTH);
+        cv::Mat base_image = cv::imread(full_name, CV_LOAD_IMAGE_ANYDEPTH);
+
+        if (conf.method == Method::Patches) {
+            if (base_image.size().height == HEIGHT) {
+                map[key] = base_image;
+            } else {
+                float ratio = float(HEIGHT) / base_image.size().height;
+
+                cv::Mat scaled_normalized(
+                    cv::Size(static_cast<size_t>(base_image.size().width * ratio), HEIGHT),
+                    CV_8U);
+                cv::resize(base_image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
+                cv::adaptiveThreshold(scaled_normalized, map[key], 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
+            }
+        } else {
+            map[key] = base_image;
+        }
 
         if (!map[key].data) {
             std::cout << "Impossible to read image " << full_name << std::endl;
@@ -167,8 +183,8 @@ void read_word_images_gw(const config& conf, spot_dataset& dataset, const std::s
 }
 
 void read_word_images_ak(const config& conf, spot_dataset& dataset, const std::string& path) {
-    read_images_ak(dataset.word_images, path + "/data/word_images_normalized", "test");
-    read_images_ak(dataset.word_images, path + "/data/word_images_normalized", "train");
+    read_images_ak(conf, dataset.word_images, path + "/data/word_images_normalized", "test");
+    read_images_ak(conf, dataset.word_images, path + "/data/word_images_normalized", "train");
 }
 
 void read_list(std::vector<std::string>& list, const std::string& path) {
