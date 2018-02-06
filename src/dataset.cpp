@@ -142,7 +142,8 @@ void read_images_ak(const config& conf, std::unordered_map<std::string, cv::Mat>
 
         cv::Mat base_image = cv::imread(full_name, CV_LOAD_IMAGE_ANYDEPTH);
 
-        if (conf.method == Method::Patches) {
+        // Some methods need resizing
+        if (conf.method == Method::Patches || conf.method == Method::Terasawa2009 || conf.method == Method::Rodriguez2008) {
             if (base_image.size().height == HEIGHT) {
                 map[key] = base_image;
             } else {
