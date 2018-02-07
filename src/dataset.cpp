@@ -42,6 +42,8 @@ void read_word_labels(spot_dataset& dataset, const std::string& path) {
 void read_word_labels_ak(spot_dataset& dataset, const std::string& path) {
     std::ifstream word_labels_stream(path + "/ground_truth/word_labels.txt");
 
+    std::unordered_map<std::string, std::string> encoded;
+
     while (!word_labels_stream.eof()) {
         std::string image_name;
         word_labels_stream >> image_name;
@@ -58,12 +60,90 @@ void read_word_labels_ak(spot_dataset& dataset, const std::string& path) {
             continue;
         }
 
+        auto unfuck = [](std::string& raw){
+            if(raw == std::string("Ä")){
+                raw = std::string("ä");
+            }
+
+            if(raw == std::string("Ö")){
+                raw = std::string("ö");
+            }
+
+            if(raw == std::string("Ü")){
+                raw = std::string("ü");
+            }
+        };
+
+        //std::cout << "Before: " << label << std::endl;
+
         std::transform(label.begin(), label.end(), label.begin(), ::tolower);
 
-        for(char c : label){
-            dataset.word_labels[image_name].push_back(std::string() + c);
+        //std::cout << "After: " << label << std::endl;
+
+        for(size_t i = 0; i < label.size(); ++i){
+            auto c = label[i];
+
+            if (( c & 0x80 ) == 0 ){
+                // The lead bit is zero, this must be ASCII
+                dataset.word_labels[image_name].push_back(std::string() + c);
+            } else if (( c & 0xE0 ) == 0xC0 ){
+                // This indicates encoding on two octets
+
+                std::string raw;
+                raw += c;
+                raw += label[++i];
+
+                unfuck(raw);
+
+                if(encoded.find(raw) == encoded.end()){
+                    encoded[raw] = std::string("E") + std::to_string(encoded.size());
+                }
+
+                dataset.word_labels[image_name].push_back(encoded[raw]);
+            } else if (( c & 0xF0 ) == 0xE0 ){
+                // This indicates encoding on three octets
+
+                std::string raw;
+                raw += c;
+                raw += label[++i];
+                raw += label[++i];
+
+                unfuck(raw);
+
+                if(encoded.find(raw) == encoded.end()){
+                    encoded[raw] = std::string("E") + std::to_string(encoded.size());
+                }
+
+                dataset.word_labels[image_name].push_back(encoded[raw]);
+            } else if (( c & 0xF8 ) == 0xF0 ){
+                // This indicates encoding on three octets
+
+                std::string raw;
+                raw += c;
+                raw += label[++i];
+                raw += label[++i];
+                raw += label[++i];
+
+                unfuck(raw);
+
+                if(encoded.find(raw) == encoded.end()){
+                    encoded[raw] = std::string("E") + std::to_string(encoded.size());
+                }
+
+                dataset.word_labels[image_name].push_back(encoded[raw]);
+            } else {
+                std::cerr << "FUCK CHARACTER " << c << std::endl;
+            }
         }
+
+        //std::cout << "Final: " << dataset.word_labels[image_name] << std::endl;
     }
+
+    //for(auto e : encoded){
+        //std::cout << e.first << ":" << e.second << std::endl;
+    //}
+
+    //std::exit(0);
 }
 
 void read_line_transcriptions(spot_dataset& dataset, const std::string& path) {
