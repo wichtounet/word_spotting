@@ -47,18 +47,24 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
         auto& global_l = global_likelihoods;
 
         if(global_hmm.empty()){
+            std::cout << "Prepare features for HMM" << std::endl;
+
+            hmm_htk::prepare_train_features(conf, train_word_names, functor);
+            hmm_htk::prepare_test_features(conf, test_image_names, test_features_a);
+
+            std::cout << "... features prepared" << std::endl;
+
             std::cout << "Prepare global HMM" << std::endl;
-
-            std::cout << "Prepare features" << std::endl;
-
-            hmm_htk::prepare_train_features(train_word_names, functor);
-            hmm_htk::prepare_test_features(test_image_names, test_features_a);
 
             global_hmm = hmm_htk::train_global_hmm(conf, dataset, train_word_names);
 
+            std::cout << ".... global done" << std::endl;
+
+            std::cout << "Compute global likelihoods" << std::endl;
+
             hmm_htk::global_likelihood_all(conf, pool, global_hmm, test_image_names, global_likelihoods);
 
-            std::cout << ".... global done" << std::endl;
+            std::cout << "... global likelihoods computed" << std::endl;
         }
 
         auto hmm = hmm_htk::prepare_test_keywords(dataset, training_images);
