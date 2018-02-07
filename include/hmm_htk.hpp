@@ -61,12 +61,21 @@ void htk_features_write(std::ostream& os, const V1& test_features){
 }
 
 template <typename V1>
-void prepare_features(const std::string& folder_name, names test_image_names, const V1& test_features_a, bool lst_file) {
+void prepare_features(const config& conf, const std::string& folder_name, names test_image_names, const V1& test_features_a, bool lst_file) {
     const std::string base_folder = ".hmm";
     const std::string folder = base_folder + "/" + folder_name;
 
     mkdir(base_folder.c_str(), 0777);
     mkdir(folder.c_str(), 0777);
+
+    // Fucking kill me already
+    if (conf.ak || conf.botany){
+        const std::string sub_train_folder = folder + "/train/";
+        const std::string sub_test_folder = folder + "/test/";
+
+        mkdir(sub_train_folder.c_str(), 0777);
+        mkdir(sub_test_folder.c_str(), 0777);
+    }
 
     for(std::size_t t = 0; t < test_image_names.size(); ++t){
         auto& test_image = test_image_names[t];
@@ -78,7 +87,7 @@ void prepare_features(const std::string& folder_name, names test_image_names, co
 
         // Generate the file with the list of feature files
 
-        if(lst_file) {
+        if (lst_file) {
             std::ofstream os(features_file);
             os << file_path << "\n";
         }
@@ -94,13 +103,13 @@ void prepare_features(const std::string& folder_name, names test_image_names, co
 }
 
 template <typename V1>
-void prepare_test_features(names test_image_names, const V1& test_features_a) {
+void prepare_test_features(const config& conf, names test_image_names, const V1& test_features_a) {
     dll::auto_timer timer("htk_test_features");
-    prepare_features("test", test_image_names, test_features_a, false);
+    prepare_features(conf, "test", test_image_names, test_features_a, false);
 }
 
 template <typename Functor>
-void prepare_train_features(names train_image_names, Functor functor) {
+void prepare_train_features(const config& conf, names train_image_names, Functor functor) {
     dll::auto_timer timer("htk_train_features");
 
     static constexpr const std::size_t limit = 1000;
@@ -115,7 +124,7 @@ void prepare_train_features(names train_image_names, Functor functor) {
         std::copy(train_image_names.begin() + i, train_image_names.begin() + end, std::back_inserter(current_batch));
 
         auto train_features_a = functor(current_batch);
-        prepare_features("train", current_batch, train_features_a, false);
+        prepare_features(conf, "train", current_batch, train_features_a, false);
 
         i += (end - i);
     }
