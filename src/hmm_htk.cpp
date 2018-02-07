@@ -21,6 +21,8 @@
 constexpr const std::size_t n_hmm_gaussians_gw  = 3;
 constexpr const std::size_t n_hmm_gaussians_par = 5;
 constexpr const std::size_t n_hmm_gaussians_iam = 7;
+constexpr const std::size_t n_hmm_gaussians_ak = 7; //TODO CHECK
+constexpr const std::size_t n_hmm_gaussians_bot = 7; //TODO CHECK
 
 // Number of training iterations for the HMM
 constexpr const std::size_t n_hmm_iterations = 4;
@@ -49,6 +51,10 @@ std::size_t hmm_htk::select_gaussians(const config& conf){
         return n_hmm_gaussians_par;
     } else if(conf.iam){
         return n_hmm_gaussians_iam;
+    } else if(conf.ak){
+        return n_hmm_gaussians_ak;
+    } else if(conf.botany){
+        return n_hmm_gaussians_bot;
     } else {
         std::cout << "ERROR: Dataset is not handled in select_gaussians" << std::endl;
         return 0;
