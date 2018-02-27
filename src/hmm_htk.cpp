@@ -21,8 +21,8 @@
 constexpr const std::size_t n_hmm_gaussians_gw  = 3;
 constexpr const std::size_t n_hmm_gaussians_par = 5;
 constexpr const std::size_t n_hmm_gaussians_iam = 7;
-constexpr const std::size_t n_hmm_gaussians_ak = 7; //TODO CHECK
-constexpr const std::size_t n_hmm_gaussians_bot = 7; //TODO CHECK
+constexpr const std::size_t n_hmm_gaussians_ak = 3; //TODO CHECK
+constexpr const std::size_t n_hmm_gaussians_bot = 3; //TODO CHECK
 
 // Number of training iterations for the HMM
 constexpr const std::size_t n_hmm_iterations = 4;
