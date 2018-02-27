@@ -39,6 +39,22 @@ void read_word_labels(spot_dataset& dataset, const std::string& path) {
     }
 }
 
+bool strict_filter(const std::string& label){
+    for (size_t i = 0; i < label.size(); ++i) {
+        auto c = label[i];
+
+        if ((c & 0x80) == 0) {
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
+                return true;
+            }
+        } else {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void read_word_labels_ak(spot_dataset& dataset, const std::string& path) {
     std::ifstream word_labels_stream(path + "/ground_truth/word_labels.txt");
 
@@ -59,6 +75,10 @@ void read_word_labels_ak(spot_dataset& dataset, const std::string& path) {
         if (label == "N/A" || label == "." || label == "," || label == "\"" || label == "-") {
             continue;
         }
+
+        //if(strict_filter(label)){
+            //continue;
+        //}
 
         auto unfuck = [](std::string& raw){
             if(raw == std::string("Ä")){
@@ -85,7 +105,26 @@ void read_word_labels_ak(spot_dataset& dataset, const std::string& path) {
 
             if (( c & 0x80 ) == 0 ){
                 // The lead bit is zero, this must be ASCII
-                dataset.word_labels[image_name].push_back(std::string() + c);
+
+                // For HTK, we actually need to get rid of special characters :(
+
+                std::string raw;
+                raw += c;
+
+                unfuck(raw);
+
+                c = raw[0];
+
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+                    dataset.word_labels[image_name].push_back(std::string() + c);
+                } else {
+                    if(encoded.find(raw) == encoded.end()){
+                        encoded[raw] = std::string("E") + std::to_string(encoded.size());
+                    }
+
+                    dataset.word_labels[image_name].push_back(encoded[raw]);
+                }
+
             } else if (( c & 0xE0 ) == 0xC0 ){
                 // This indicates encoding on two octets
 
