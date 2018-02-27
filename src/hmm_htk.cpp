@@ -106,6 +106,8 @@ hmm_htk::hmm_p hmm_htk::train_global_hmm(const config& conf, const spot_dataset&
         }
     }
 
+    std::cout << characters.size() << std::endl;
+
     // Generate the HTK config file (no idea what is in it)
 
     {
@@ -299,6 +301,7 @@ hmm_htk::hmm_p hmm_htk::train_global_hmm(const config& conf, const spot_dataset&
     std::cout << "Start training HMM" << std::endl
         << "    " << train_word_names.size() << " word images" << std::endl
         << "    " << n_hmm_gaussians << " gaussians" << std::endl
+        << "    " << characters.size() << " characters" << std::endl
         << "    " << n_hmm_iterations << " training iterations" << std::endl;
 
     if (conf.hmm_var) {
