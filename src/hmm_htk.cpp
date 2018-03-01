@@ -106,8 +106,6 @@ hmm_htk::hmm_p hmm_htk::train_global_hmm(const config& conf, const spot_dataset&
         }
     }
 
-    std::cout << characters.size() << std::endl;
-
     // Generate the HTK config file (no idea what is in it)
 
     {
