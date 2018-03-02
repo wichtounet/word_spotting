@@ -914,6 +914,8 @@ parameters get_parameters(const config& conf){
 
     if(conf.parzival){
         parameters.sc_band = 0.14;
+    } else if (conf.ak){
+        parameters.sc_band = 0.10;
     } else {
         parameters.sc_band = 0.12;
     }
