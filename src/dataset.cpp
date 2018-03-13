@@ -406,6 +406,30 @@ void load_sets_ak(spot_dataset& dataset, const std::string& path) {
     }
 
     valid_set.clear(); // Nothing
+
+#if 0
+    cv::namedWindow("Image");
+
+    for(std::size_t i = 0; i < 50; ++i){
+        auto test_image = test_set[i];
+        auto test_label = dataset.word_labels.at({test_image.begin(), test_image.end() - 4});
+
+        std::cout << "test_image:" << test_image << std::endl;
+        std::cout << "test_label:" << test_label << std::endl;
+
+        cv::imshow("Image", dataset.word_images[test_image]);
+        cv::waitKey(0);
+
+        auto train_image = train_set[i];
+        auto train_label = dataset.word_labels.at({train_image.begin(), train_image.end() - 4});
+
+        std::cout << "train_image:" << train_image << std::endl;
+        std::cout << "train_label:" << train_label << std::endl;
+
+        cv::imshow("Image", dataset.word_images[train_image]);
+        cv::waitKey(0);
+    }
+#endif
 }
 
 void load_sets_parzival(spot_dataset& dataset, const std::string& path) {
