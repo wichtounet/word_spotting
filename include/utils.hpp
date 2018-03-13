@@ -167,10 +167,18 @@ std::vector<Input> mat_to_patches_t(const config& conf, const cv::Mat& image, bo
         cv::Mat buffer_image;
 
         if (conf.downscale > 1) {
+            cv::Mat converted_image;
+
+            if (image.type() != CV_8UC1){
+                image.convertTo(converted_image, CV_8UC1);
+            }
+
+            const cv::Mat& source_image = image.type() != CV_8UC1 ? converted_image : image;
+
             cv::Mat scaled_normalized(
-                cv::Size(std::max(1UL, static_cast<size_t>(image.size().width)), std::max(1UL, image.size().height / conf.downscale)),
+                cv::Size(std::max(1UL, static_cast<size_t>(source_image.size().width)), std::max(1UL, source_image.size().height / conf.downscale)),
                 CV_8U);
-            cv::resize(image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
+            cv::resize(source_image, scaled_normalized, scaled_normalized.size(), cv::INTER_AREA);
             cv::adaptiveThreshold(scaled_normalized, buffer_image, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 7, 2);
         }
 
