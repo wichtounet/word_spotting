@@ -622,8 +622,13 @@ void patches_train(
 
         if (!conf.hmm && !runtime) {
             if (conf.fix) {
+                if (conf.ak || conf.botany) {
+                    params.sc_band = 0.09;
+                } else {
+                    params.sc_band = 0.06;
+                }
+
                 std::cout << "Switch to optimal parameters" << std::endl;
-                params.sc_band = 0.06;
                 std::cout << "\tsc_band: " << params.sc_band << std::endl;
             } else {
                 std::cout << "Optimize parameters" << std::endl;
