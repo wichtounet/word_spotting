@@ -125,10 +125,11 @@ hmm_htk::hmm_p hmm_htk::train_global_hmm(const config& conf, const spot_dataset&
 
     if (conf.hmm_var) {
         const std::string fixed_hmm_info_file =
-            conf.washington ? "scripts/gw-hmm-info"
-                            : conf.iam ? "scripts/iam-hmm-info"
-                                       : conf.parzival ? "scripts/par-hmm-info"
-                                                  : "scripts/ak-hmm-info";
+              conf.washington   ? "scripts/gw-hmm-info"
+            : conf.iam          ? "scripts/iam-hmm-info"
+            : conf.parzival     ? "scripts/par-hmm-info"
+            : conf.ak           ? "scripts/ak-hmm-info"
+            :                     "scripts/bot-hmm-info";
 
         std::string cp_command = "cp " + fixed_hmm_info_file + " " + hmm_info_file;
         auto cp_result         = exec_command(cp_command);
