@@ -6,9 +6,14 @@
 //=======================================================================
 
 #include <iostream>
+#include <sstream>
+#include <fstream>
 
 #include "config.hpp"
+#include "utils.hpp"
 #include "dataset.hpp" //Dataset handling
+
+#include <dirent.h>
 
 //Include methods
 #include "standard.hpp" // Method 0
@@ -168,6 +173,142 @@ int command_train(config& conf) {
     }
 
     dll::dump_timers();
+
+    return 0;
+}
+
+int command_hmm_var(config& conf) {
+    if (conf.files.size() < 2) {
+        std::cout << "hmm_var needs the path to the dataset and the cv set to use" << std::endl;
+        return -1;
+    }
+
+    auto dataset = read_dataset(conf);
+
+    decltype(auto) cv_set = conf.files[1];
+
+    if (!dataset.sets.count(cv_set)) {
+        std::cout << "The subset \"" << cv_set << "\" does not exist" << std::endl;
+        return -1;
+    }
+
+    auto& set = dataset.sets[cv_set];
+
+    string_vector train_image_names, train_word_names, test_image_names, valid_image_names;
+
+    extract_names(conf, dataset, set, train_image_names, train_word_names, test_image_names, valid_image_names);
+
+    std::cout << "Find all trans files" << std::endl;
+
+    struct dirent* hmm_entry;
+    auto hmm_dir = opendir(".hmm");
+
+    std::unordered_map<std::string, std::pair<size_t, size_t>> accs;
+
+    while ((hmm_entry = readdir(hmm_dir))) {
+        std::string keyword(hmm_entry->d_name);
+
+        if(keyword == "." || keyword == ".." || keyword == "test" || keyword == "train" || keyword == "global"){
+            continue;
+        }
+
+        std::string keyword_full_name(".hmm/" + keyword);
+
+        std::ifstream grammar_stream((keyword_full_name + "/grammar.bnf").c_str());
+
+        std::vector<std::string> grammar;
+
+        while(true){
+            std::string c;
+            grammar_stream >> c;
+
+            if(c == "("){
+                continue;
+            }
+
+            if(c == ")"){
+                break;
+            }
+
+            grammar.push_back(c);
+        }
+
+        struct dirent* file_entry;
+        auto keyword_dir = opendir(keyword_full_name.c_str());
+
+        while ((file_entry = readdir(keyword_dir))) {
+            std::string file_name(file_entry->d_name);
+
+            if (file_name.size() <= 6 || file_name.find(".trans") != file_name.size() - 6) {
+                continue;
+            }
+
+            std::ifstream trans_stream((keyword_full_name + "/" + file_name).c_str());
+
+            std::string line;
+
+            // Drop the first line
+            std::getline(trans_stream, line);
+
+            while (true)
+            {
+                // Get the file name
+                std::string image_file_name;
+                if (!std::getline(trans_stream, image_file_name)) {
+                    break;
+                }
+
+                auto i = image_file_name.rfind('/');
+                auto i2 = image_file_name.rfind('/', i - 1);
+                std::string image_name(image_file_name.begin() + i2 + 1, image_file_name.end() - 9);
+
+                auto label = dataset.word_labels[image_name];
+
+                if (label == grammar) {
+                    // Get the probabilities
+                    for (size_t i = 0; i < grammar.size(); ++i) {
+                        std::getline(trans_stream, line);
+
+                        std::istringstream ss(line);
+
+                        size_t start;
+                        size_t end;
+                        std::string c;
+
+                        ss >> start;
+                        ss >> end;
+                        ss >> c;
+
+                        ++accs[c].first;
+                        accs[c].second += end - start;
+                    }
+                } else {
+                    // Ignore everything
+                    for (size_t i = 0; i < grammar.size(); ++i) {
+                        std::getline(trans_stream, line);
+                    }
+                }
+
+                // Get rid of the last line
+                std::getline(trans_stream, line);
+            }
+        }
+    }
+
+    for(auto& entry : accs){
+        //std::cout << entry.first << " = " << entry.second.second / double(entry.second.first) << std::endl;
+        //std::cout << entry.first << " = " << entry.second.second << ":" << entry.second.first << std::endl;
+
+        auto n = int((entry.second.second / double(entry.second.first)) / 2.0);
+
+        if (!n) {
+            n = 1;
+        }
+
+        n += 2;
+
+        std::cout << entry.first << " " << n << " nocov noinit" << std::endl;
+    }
 
     return 0;
 }
@@ -357,6 +498,8 @@ int main(int argc, char** argv) {
         ret = command_runtime(conf);
     } else if (conf.command == "evaluate_features") {
         ret = command_evaluate_features(conf);
+    } else if (conf.command == "hmm_var") {
+        ret = command_hmm_var(conf);
     } else {
         ok = false;
     }
