@@ -15,7 +15,7 @@
 
 //#define SPACE_MODEL
 //#define HMM_VERBOSE
-//#define WRITE_LOG
+#define WRITE_LOG
 
 // Number of gaussians for the HMM
 constexpr const std::size_t n_hmm_gaussians_gw  = 3;
@@ -28,11 +28,11 @@ constexpr const std::size_t n_hmm_gaussians_bot = 3; //TODO CHECK
 constexpr const std::size_t n_hmm_iterations = 4;
 
 // Number of states per character
-constexpr const auto n_states_per_char_std     = 10;
+constexpr const auto n_states_per_char_std     = 3;
 constexpr const auto n_states_per_char_patches = 20;
 
 // Number of states per space character
-constexpr const auto n_states_per_space = 10;
+constexpr const auto n_states_per_space = 3;
 
 // Minimum variance for training
 constexpr const double herest_min_variance = 0.000001;
@@ -127,7 +127,8 @@ hmm_htk::hmm_p hmm_htk::train_global_hmm(const config& conf, const spot_dataset&
         const std::string fixed_hmm_info_file =
             conf.washington ? "scripts/gw-hmm-info"
                             : conf.iam ? "scripts/iam-hmm-info"
-                                       : "scripts/par-hmm-info";
+                                       : conf.parzival ? "scripts/par-hmm-info"
+                                                  : "scripts/ak-hmm-info";
 
         std::string cp_command = "cp " + fixed_hmm_info_file + " " + hmm_info_file;
         auto cp_result         = exec_command(cp_command);
