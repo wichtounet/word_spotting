@@ -67,7 +67,7 @@ void local_mean_feature_scaling(std::vector<Features>& features) {
 }
 
 template <typename Features>
-auto global_mean_scaling(Features& features, config& conf, bool training) {
+auto global_mean_scaling(Features& features, const config& conf, bool training) {
     if (training) {
         for (std::size_t f = 0; f < features.back().back().size(); ++f) {
             // Compute the mean
@@ -92,8 +92,8 @@ auto global_mean_scaling(Features& features, config& conf, bool training) {
             }
             std = std::sqrt(std / count);
 
-            conf.scale_a[f] = mean;
-            conf.scale_b[f] = std;
+            const_cast<config&>(conf).scale_a[f] = mean;
+            const_cast<config&>(conf).scale_b[f] = std;
         }
     }
 
@@ -101,7 +101,7 @@ auto global_mean_scaling(Features& features, config& conf, bool training) {
 }
 
 template <typename Features>
-auto global_linear_scaling(Features& features, config& conf, bool training) {
+auto global_linear_scaling(Features& features, const config& conf, bool training) {
     if (training) {
         for (std::size_t f = 0; f < features.back().back().size(); ++f) {
             double A = features[0][0][f];
