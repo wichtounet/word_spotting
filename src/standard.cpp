@@ -24,6 +24,7 @@
 
 //#define LOCAL_LINEAR_SCALING
 #define LOCAL_MEAN_SCALING
+//#define GLOBAL_MEAN_SCALING
 
 #include "scaling.hpp" //Scaling functions
 
@@ -709,7 +710,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
     for (std::size_t i = 0; i < width; ++i) {
         double lower = 0.0;
         for (std::size_t y = 0; y < height; ++y) {
-            if (clean_image.at<uint8_t>(y, i) == 0) {
+            if (clean_image.at<uint8_t>(y, i) < 200) {
                 lower = y;
                 break;
             }
@@ -717,7 +718,7 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
 
         double upper = 0.0;
         for (std::size_t y = height - 1; y > 0; --y) {
-            if (clean_image.at<uint8_t>(y, i) == 0) {
+            if (clean_image.at<uint8_t>(y, i) < 200) {
                 upper = y;
                 break;
             }
@@ -725,49 +726,66 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
 
         std::size_t black = 0;
         for (std::size_t y = 0; y < height; ++y) {
-            if (clean_image.at<uint8_t>(y, i) == 0) {
+            if (clean_image.at<uint8_t>(y, i) < 200) {
                 ++black;
             }
         }
 
         std::size_t inner_black = 0;
         for (std::size_t y = lower; y < upper + 1; ++y) {
-            if (clean_image.at<uint8_t>(y, i) == 0) {
+            if (clean_image.at<uint8_t>(y, i) < 200) {
                 ++inner_black;
             }
         }
 
         std::size_t transitions = 0;
         for (std::size_t y = 1; y < height; ++y) {
-            if (clean_image.at<uint8_t>(y - 1, i) == 0 && clean_image.at<uint8_t>(y, i) != 0) {
+            if (clean_image.at<uint8_t>(y - 1, i) < 200 && clean_image.at<uint8_t>(y, i) >= 200) {
                 ++transitions;
             }
         }
 
-        double gravity = 0;
-        double moment = 0;
+        double gravity = 0.0;
+
         for (std::size_t y = 0; y < height; ++y) {
-            auto pixel = clean_image.at<uint8_t>(y, i) == 0 ? 0.0 : 1.0;
-            gravity += y * pixel;
-            moment += y * y * pixel;
+            auto local_d = height / 2.0 - y;
+            gravity += local_d * ( 1.0 - clean_image.at<uint8_t>(y, i) / 255.0);
         }
-        gravity /= height;
-        moment /= (height * height);
+
+        gravity = gravity / double(height);
+
+        double moment = 0.0;
+
+        for (std::size_t y = 0; y < height; ++y) {
+            moment += (y * y) * (1.0 - clean_image.at<uint8_t>(y, i) / 255.0);
+        }
+
+        moment = moment / (double(height) * double(height));
+
+        //double gravity = 0;
+        //double moment = 0;
+        //for (std::size_t y = 0; y < height; ++y) {
+            //auto pixel = clean_image.at<uint8_t>(y, i) < 200 ? 0.0 : 1.0;
+            //gravity += y * pixel;
+            //moment += y * y * pixel;
+        //}
+        //gravity /= height;
+        //moment /= (height * height);
 
         if(conf.method == Method::Marti2001){
             features.emplace_back(9);
 
             auto& f = features.back();
 
-            f[0] = black;
+            f[0] = black/* / double(height)*/;
             f[1] = gravity;
             f[2] = moment;
-            f[3] = lower;
-            f[4] = upper;
+            f[3] = lower/* / double(height)*/;
+            f[4] = upper/* / double(height)*/;
             f[5] = 0.0;
             f[6] = 0.0;
             f[7] = transitions;
-            f[8] = inner_black;
+            f[8] = inner_black/* / (double(upper) - double(lower))*/;
         } else if(conf.method == Method::Rath2007){
             features.emplace_back(4);
 
@@ -783,8 +801,8 @@ std::vector<etl::dyn_vector<weight>> standard_features(const config& conf, const
     if(conf.method == Method::Marti2001){
         for (std::size_t i = 0; i < width - 1; ++i) {
             //TODO Should be 3 and 4...
-            features[i][5] = features[i + 1][1] - features[i][1];
-            features[i][6] = features[i + 1][2] - features[i][2];
+            features[i][5] = (features[i][1] - features[i+1][1]);
+            features[i][6] = (features[i][2] - features[i+1][2]);
         }
     } else if (conf.method == Method::Rath2007 && interpolate){
         //Interpolate contour gaps
@@ -915,7 +933,7 @@ parameters get_parameters(const config& conf){
     if(conf.parzival){
         parameters.sc_band = 0.14;
     } else if (conf.ak){
-        parameters.sc_band = 0.10;
+        parameters.sc_band = 0.1;
     } else if (conf.botany){
         parameters.sc_band = 0.05;
     } else {
