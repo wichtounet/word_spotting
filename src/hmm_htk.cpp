@@ -21,18 +21,18 @@
 constexpr const std::size_t n_hmm_gaussians_gw  = 3;
 constexpr const std::size_t n_hmm_gaussians_par = 5;
 constexpr const std::size_t n_hmm_gaussians_iam = 7;
-constexpr const std::size_t n_hmm_gaussians_ak = 3; //TODO CHECK
+constexpr const std::size_t n_hmm_gaussians_ak  = 3; //TODO CHECK
 constexpr const std::size_t n_hmm_gaussians_bot = 3; //TODO CHECK
 
 // Number of training iterations for the HMM
 constexpr const std::size_t n_hmm_iterations = 4;
 
 // Number of states per character
-constexpr const auto n_states_per_char_std     = 3;
+constexpr const auto n_states_per_char_std     = 20;
 constexpr const auto n_states_per_char_patches = 20;
 
 // Number of states per space character
-constexpr const auto n_states_per_space = 3;
+constexpr const auto n_states_per_space = 10;
 
 // Minimum variance for training
 constexpr const double herest_min_variance = 0.000001;
