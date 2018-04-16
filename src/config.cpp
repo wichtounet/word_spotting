@@ -35,16 +35,25 @@ void print_usage() {
     std::cout << " -fix : Don't optimize sc_band" << std::endl;
     std::cout << " -notrain : No evaluation on the training set" << std::endl;
     std::cout << " -novalid : No evaluation on the validation set" << std::endl;
+
+    // Select the data set to use
     std::cout << " -washington : The dataset is Washington [default]" << std::endl;
     std::cout << " -parzival : The dataset is Parzival" << std::endl;
     std::cout << " -manmatha : The dataset is manmatha version of GW (for export only)" << std::endl;
     std::cout << " -iam : The dataset is IAM" << std::endl;
     std::cout << " -ak : The dataset is Alvermann KonzillsProtokoll" << std::endl;
     std::cout << " -botany : The dataset is Botany" << std::endl;
+
+    // Use HMM as classifier
     std::cout << " -hmm : Use HMM (with mlpack) in place of DTW" << std::endl;
     std::cout << " -htk : Use HTK in place of mlpack" << std::endl;
     std::cout << " -hmm-var: Use variable number of HMM states instead of fixed ones" << std::endl;
     std::cout << " -distribute: Use the full grid (only for -hmm -htk)" << std::endl;
+
+    // Use LSTM as classifier
+    std::cout << " -lstm : Use LSTM (with schindler) in place of DTW (slow/experimental)" << std::endl;
+
+    // Special dataset options
     std::cout << " -gray: Use the gray images (only for -washington)" << std::endl;
     std::cout << " -binary: Use the binary images (only for -washington)" << std::endl;
 }
@@ -109,6 +118,8 @@ config parse_args(int argc, char** argv) {
             conf.hmm_var = true;
         } else if (conf.args[i] == "-distribute") {
             conf.distribute = true;
+        } else if (conf.args[i] == "-lstm") {
+            conf.lstm = true;
         } else if (conf.args[i] == "-grayscale") {
             conf.grayscale = true;
         } else if (conf.args[i] == "-gray") {

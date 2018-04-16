@@ -52,11 +52,15 @@ struct config {
     bool novalid    = false;
     bool all        = false;
     bool load       = false;
+
+    // HMM Options
     bool hmm        = false;
     bool htk        = false;
     bool hmm_var    = false;
     bool distribute = false;
-    bool grayscale  = false;
+
+    // LSTM Options
+    bool lstm        = false;
 
     bool washington = true;
     bool manmatha   = false;
@@ -64,6 +68,9 @@ struct config {
     bool iam        = false;
     bool ak         = false;
     bool botany     = false;
+
+    // I don't know what the fuck this is!
+    bool grayscale  = false;
 
     // Special options for washington
     bool gray   = false;
