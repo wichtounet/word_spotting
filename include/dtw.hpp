@@ -18,7 +18,7 @@ double dtw_distance(const V1& s, const V2& t, bool sc_band = true, double band =
         return 100000.0;
     }
 
-    auto d = [&s, &t](std::size_t i, std::size_t j) { return etl::sum((s[i] - t[j]) >> (s[i] - t[j])); };
+    auto d = [&s, &t](std::size_t i, std::size_t j) { return std::sqrt(etl::sum((s[i] - t[j]) >> (s[i] - t[j]))); };
 
     etl::dyn_matrix<double> dtw(n, m);
 
