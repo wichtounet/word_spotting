@@ -946,7 +946,7 @@ parameters get_parameters(const config& conf){
 }
 
 template <typename Set>
-void evaluate_dtw(const spot_dataset& dataset, const Set& set, const config& conf, names train_word_names, names test_image_names, bool training) {
+void evaluate_standard(const spot_dataset& dataset, const Set& set, const config& conf, names train_word_names, names test_image_names, bool training) {
     thread_pool pool;
 
     auto parameters = get_parameters(conf);
@@ -1081,19 +1081,19 @@ void standard_train(
     if (!conf.notrain) {
         dll::auto_timer timer("evaluate:train");
         std::cout << "Evaluate on training set" << std::endl;
-        evaluate_dtw(dataset, set, conf, train_word_names, train_image_names, true);
+        evaluate_standard(dataset, set, conf, train_word_names, train_image_names, true);
     }
 
     if (!conf.novalid) {
         dll::auto_timer timer("evaluate:validation");
         std::cout << "Evaluate on validation set" << std::endl;
-        evaluate_dtw(dataset, set, conf, train_word_names, valid_image_names, false);
+        evaluate_standard(dataset, set, conf, train_word_names, valid_image_names, false);
     }
 
     {
         dll::auto_timer timer("evaluate:test");
         std::cout << "Evaluate on test set" << std::endl;
-        evaluate_dtw(dataset, set, conf, train_word_names, test_image_names, false);
+        evaluate_standard(dataset, set, conf, train_word_names, test_image_names, false);
     }
 }
 
