@@ -480,6 +480,8 @@ int main(int argc, char** argv) {
         std::cout << "       Eval: HMM (HTK)" << std::endl;
     } else if (conf.hmm) {
         std::cout << "       Eval: HMM (mlpack)" << std::endl;
+    } else if (conf.lstm) {
+        std::cout << "       Eval: LSTM (schindler)" << std::endl;
     } else {
         std::cout << "       Eval: DTW" << std::endl;
     }
