@@ -21,6 +21,7 @@
 #include "dtw.hpp"
 #include "hmm_htk.hpp"
 #include "hmm_mlpack.hpp"
+#include "lstm.hpp"
 
 using thread_pool = cpp::default_thread_pool<>;
 
@@ -100,6 +101,44 @@ std::vector<std::pair<std::string, weight>> compute_distances(const config& conf
 
             diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
         });
+    } else if(conf.lstm){
+        static std::string global_lstm;
+
+        if(global_lstm.empty()){
+            std::cout << "Prepare features for LSTM" << std::endl;
+
+            lstm::prepare_train_features(conf, train_word_names, functor);
+            lstm::prepare_test_features(conf, test_image_names, test_features_a);
+            lstm::prepare_valid_features(conf);
+
+            std::cout << "... features prepared" << std::endl;
+
+            std::cout << "Prepare ground truth for LSTM" << std::endl;
+
+            lstm::prepare_encodings(dataset);
+            lstm::prepare_ground_truth(dataset);
+
+            std::cout << "... ground truth prepared" << std::endl;
+
+            std::cout << "Train global LSTM" << std::endl;
+
+            //lstm::train_global_lstm();
+
+            std::cout << ".... done" << std::endl;
+
+            global_lstm = ".lstm";
+        }
+
+        // This the word we are looking for
+        const decltype(auto) label = dataset.word_labels.at(training_images[0]);
+
+        lstm::prepare_keyword(conf, dataset, label);
+
+        //cpp::foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
+            //auto best_diff_a = lstm::distance(dataset, test_image, test_features_a[t]);
+
+            //diffs_a[t] = std::make_pair(std::string(test_image.begin(), test_image.end() - 4), best_diff_a);
+        //});
     } else {
         cpp::parallel_foreach_i(pool, test_image_names.begin(), test_image_names.end(), [&](auto& test_image, std::size_t t) {
             auto t_size = dataset.word_images.at(test_image).size().width;
